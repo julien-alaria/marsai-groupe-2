@@ -916,7 +916,7 @@ export default function ProducerHome() {
           <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
             <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">Gérer les collaborateurs</h3>
+                <h3 className="text-xl font-bold text-white">Gérer les collaborateurs et médias</h3>
                 <button
                   type="button"
                   onClick={() => setShowCollaboratorsModal(false)}
@@ -924,6 +924,69 @@ export default function ProducerHome() {
                 >
                   ✕
                 </button>
+              </div>
+
+              {/* Upload vignette (max 3) */}
+              <div className="mb-4">
+                <label className="text-white font-semibold mb-1 text-xs uppercase">Vignettes</label>
+                {[0,1,2].map(idx => (
+                  <div key={idx} className="flex items-center gap-2 mb-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setThumbnailNames(prev => {
+                            const next = [...prev];
+                            next[idx] = file.name;
+                            return next;
+                          });
+                          setThumbnailUploadSuccess(true);
+                          setTimeout(() => setThumbnailUploadSuccess(false), 2000);
+                        }
+                      }}
+                      className="sr-only"
+                      id={`modal-thumbnail-upload-${idx}`}
+                      disabled={thumbnailNames.filter(n => n && n !== "Aucun fichier sélectionné").length >= 3}
+                    />
+                    <label htmlFor={`modal-thumbnail-upload-${idx}`} className="cursor-pointer text-white font-semibold text-sm bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5">
+                      Choisir
+                    </label>
+                    <span className="text-gray-400 text-xs truncate">{thumbnailNames[idx]}</span>
+                    {thumbnailNames[idx] && thumbnailNames[idx] !== "Aucun fichier sélectionné" && (
+                      <button type="button" onClick={() => {
+                        setThumbnailNames(prev => {
+                          const next = [...prev];
+                          next[idx] = "Aucun fichier sélectionné";
+                          return next;
+                        });
+                      }} className="text-red-500 text-xs ml-2">Supprimer</button>
+                    )}
+                  </div>
+                ))}
+                {thumbnailUploadSuccess && (
+                  <div className="text-green-400 text-xs mb-2">Vignette téléchargée avec succès !</div>
+                )}
+              </div>
+
+              {/* Upload film file */}
+              <div className="mb-4">
+                <label className="text-white font-semibold mb-1 text-xs uppercase">Fichier du film</label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    setFilmFileName(file ? file.name : "Aucun fichier sélectionné");
+                  }}
+                  className="sr-only"
+                  id="modal-film-upload"
+                />
+                <label htmlFor="modal-film-upload" className="cursor-pointer text-white font-semibold text-sm bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5">
+                  Choisir
+                </label>
+                <span className="text-gray-400 text-xs truncate">{filmFileName}</span>
               </div>
 
               <div className="mb-4">
