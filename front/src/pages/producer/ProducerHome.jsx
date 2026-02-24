@@ -1,6 +1,3 @@
-  // Stato per mostrare la modale di upload/update
-  const [showEditMovieModal, setShowEditMovieModal] = useState(false);
-  const [editMovieFiles, setEditMovieFiles] = useState({ filmFile: null, thumbnails: [] });
 /**
  * Composant ProducerHome (Accueil Producteur)
  * Page permettant aux producteurs de voir et modifier leur profil complet
@@ -24,6 +21,9 @@ import { getCurrentUser, updateCurrentUser } from "../../api/users";
 import { createMovie, getMyMovies, updateMovieCollaborators } from "../../api/movies";
 import { getCategories } from "../../api/videos.js";
 
+// Stato per mostrare la modale di upload/update
+const [showEditMovieModal, setShowEditMovieModal] = useState(false);
+const [editMovieFiles, setEditMovieFiles] = useState({ filmFile: null, thumbnails: [] });
 const movieSchema = z.object({
   filmTitleOriginal: z.string().min(1, "Le titre du film est requis"),
   durationSeconds: z.coerce
@@ -491,6 +491,7 @@ export default function ProducerHome() {
                             onClick={e => {
                               e.stopPropagation();
                               setSelectedMovie(movie);
+                              setShowEditMovieModal(true);
                             }}
                           >
                             Modifier le film
