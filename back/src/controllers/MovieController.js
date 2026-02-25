@@ -375,7 +375,24 @@ async function updateMovie(req, res) {
       });
     }
 
-    await movie.update(req.body);
+
+    // Gestion fichiers uploadés (film, vignettes, SRT)
+    const files = req.files || {};
+    const filmFile = files.filmFile?.[0]?.filename || null;
+    const thumb1 = files.thumbnail1?.[0]?.filename || null;
+    const thumb2 = files.thumbnail2?.[0]?.filename || null;
+    const thumb3 = files.thumbnail3?.[0]?.filename || null;
+    const subtitleFile = files.subtitlesSrt?.[0]?.filename || null;
+
+    const updateData = { ...req.body };
+    if (filmFile) updateData.trailer = filmFile;
+    if (thumb1) updateData.picture1 = thumb1;
+    if (thumb2) updateData.picture2 = thumb2;
+    if (thumb3) updateData.picture3 = thumb3;
+    if (thumb1) updateData.thumbnail = thumb1;
+    if (subtitleFile) updateData.subtitle = subtitleFile;
+
+    await movie.update(updateData);
 
     res.status(200).json({
       message: "Film mis à jour avec succès",

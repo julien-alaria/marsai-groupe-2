@@ -21,9 +21,6 @@ import { getCurrentUser, updateCurrentUser } from "../../api/users";
 import { createMovie, getMyMovies, updateMovieCollaborators } from "../../api/movies";
 import { getCategories } from "../../api/videos.js";
 
-// Stato per mostrare la modale di upload/update
-const [showEditMovieModal, setShowEditMovieModal] = useState(false);
-const [editMovieFiles, setEditMovieFiles] = useState({ filmFile: null, thumbnails: [] });
 const movieSchema = z.object({
   filmTitleOriginal: z.string().min(1, "Le titre du film est requis"),
   durationSeconds: z.coerce
@@ -62,6 +59,9 @@ const movieSchema = z.object({
 });
 
 export default function ProducerHome() {
+  // Stato per mostrare la modale di upload/update
+  const [showEditMovieModal, setShowEditMovieModal] = useState(false);
+  const [editMovieFiles, setEditMovieFiles] = useState({ filmFile: null, thumbnails: [] });
   const { t } = useTranslation();
   // État pour stocker les données utilisateur
   const [user, setUser] = useState(null);
@@ -1288,7 +1288,7 @@ export default function ProducerHome() {
                                 <button
                                   type="submit"
                                   className="px-4 py-2 bg-[#AD46FF] text-white rounded-lg hover:bg-[#F6339A]"
-                                >Enregistrer</button>
+                                >Sauvegarder</button>
                               </div>
                             </form>
                           </div>
@@ -1348,7 +1348,7 @@ export default function ProducerHome() {
                     onClick={() => startEditCollaborators(selectedMovie)}
                     className="text-sm text-[#AD46FF] hover:text-[#F6339A]"
                   >
-                    Modifier
+                    Éditer
                   </button>
                 </div>
                 {selectedMovie.Collaborators?.length ? (

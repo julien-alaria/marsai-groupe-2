@@ -21,7 +21,47 @@ import { useEffect as useEffectReact, useState as useStateReact } from "react";
 import { loadTutorialSteps } from "../../utils/tutorialLoader.js";
 
 export default function Movies() {
+      const [editMovieFile, setEditMovieFile] = useState(null);
+      const [editMovieVignettes, setEditMovieVignettes] = useState([]);
+    const [selectedMovie, setSelectedMovie] = useState(null);
     const [tutorial, setTutorial] = useStateReact({ title: "Tutoriel", steps: [] });
+    // Edit modal state
+    const [showEditMovieModal, setShowEditMovieModal] = useState(false);
+    const [editMovieTitle, setEditMovieTitle] = useState("");
+    const [editMovieSynopsis, setEditMovieSynopsis] = useState("");
+    const [editMovieSrtFile, setEditMovieSrtFile] = useState(null);
+    const [editMoviePosterFile, setEditMoviePosterFile] = useState(null);
+
+    useEffect(() => {
+      if (selectedMovie && showEditMovieModal) {
+        setEditMovieTitle(selectedMovie.title || "");
+        setEditMovieSynopsis(selectedMovie.synopsis || "");
+        setEditMovieSrtFile(null);
+        setEditMoviePosterFile(null);
+      }
+    }, [selectedMovie, showEditMovieModal]);
+
+    const handleEditMovieSubmit = async (e) => {
+      e.preventDefault();
+      if (!selectedMovie) return;
+      const formData = new FormData();
+      formData.append("title", editMovieTitle);
+      formData.append("synopsis", editMovieSynopsis);
+      if (editMovieFile) formData.append("filmFile", editMovieFile);
+      editMovieVignettes.forEach((file, idx) => {
+        if (file) formData.append(`thumbnail${idx+1}`, file);
+      });
+      if (editMovieSrtFile) formData.append("subtitle", editMovieSrtFile);
+      if (editMoviePosterFile) formData.append("display_picture", editMoviePosterFile);
+      try {
+        await updateMovie(selectedMovie.id_movie, formData);
+        setModalNotice("Film modifié avec succès.");
+        setShowEditMovieModal(false);
+        queryClient.invalidateQueries({ queryKey: ["listVideos"] });
+      } catch (err) {
+        setModalNotice("Erreur lors de la modification du film.");
+      }
+    };
 
     useEffectReact(() => {
       async function fetchTutorial() {
@@ -53,7 +93,6 @@ export default function Movies() {
   const filteredMovies = videos;
 
   const [categorySelection, setCategorySelection] = useState({});
-  const [selectedMovie, setSelectedMovie] = useState(null);
   const [activeFolder, setActiveFolder] = useState(null);
   const [adminComment, setAdminComment] = useState("");
   const [modalNotice, setModalNotice] = useState(null);
@@ -1145,14 +1184,92 @@ export default function Movies() {
               <button
                 type="button"
                 className="px-4 py-2 bg-[#AD46FF] text-white rounded-lg hover:bg-[#F6339A]"
-                onClick={() => {
-                  // Apri modale di upload/update film
-                  alert('Fonctionnalité de modification du film (upload/update) à implémenter ici.');
-                  // Qui puoi aprire una modale o navigare verso la pagina di upload/update
-                }}
+                onClick={() => setShowEditMovieModal(true)}
               >
                 Modifier le film
               </button>
+              {showEditMovieModal && (
+                <div className="fixed inset-0 z-60 bg-black/70 flex items-center justify-center p-4">
+                  <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-auto p-5">
+                    <h3 className="text-lg font-bold text-white mb-4">Modifier le film</h3>
+                    <form
+                      onSubmit={handleEditMovieSubmit}
+                      className="space-y-4"
+                    >
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Titre</label>
+                        <input
+                          type="text"
+                          value={editMovieTitle}
+                          onChange={e => setEditMovieTitle(e.target.value)}
+                          className="w-full bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Synopsis (FR)</label>
+                        <textarea
+                          value={editMovieSynopsis}
+                          onChange={e => setEditMovieSynopsis(e.target.value)}
+                          rows={2}
+                          className="w-full bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Remplacer le fichier du film</label>
+                        <input
+                          type="file"
+                          accept="video/*"
+                          onChange={e => setEditMovieFile(e.target.files[0])}
+                          className="w-full bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Remplacer les vignettes</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={e => setEditMovieVignettes(Array.from(e.target.files))}
+                          className="w-full bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Sous-titres SRT</label>
+                        <input
+                          type="file"
+                          accept=".srt"
+                          onChange={e => setEditMovieSrtFile(e.target.files[0])}
+                          className="w-full bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-400 mb-1">Poster</label>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={e => setEditMoviePosterFile(e.target.files[0])}
+                          className="w-full bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg"
+                        />
+                      </div>
+                      <div className="flex justify-end gap-2">
+                        <button
+                          type="button"
+                          className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800"
+                          onClick={() => setShowEditMovieModal(false)}
+                        >
+                          Annuler
+                        </button>
+                        <button
+                          type="submit"
+                          className="px-4 py-2 bg-[#AD46FF] text-white rounded-lg hover:bg-[#F6339A]"
+                        >
+                          Enregistrer
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+                </div>
+              )}
             </div>
 
             {modalNotice && (

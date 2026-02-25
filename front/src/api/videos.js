@@ -42,7 +42,13 @@ async function updateMovieStatus(id, selection_status, payload = {}) {
  * Endpoint: PUT /movies/:id
  */
 async function updateMovie(id, payload) {
-  return await instance.put(`movies/${id}`, payload);
+  if (payload instanceof FormData) {
+    return await instance.put(`movies/${id}`, payload, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+  } else {
+    return await instance.put(`movies/${id}`, payload);
+  }
 }
 
 /**
