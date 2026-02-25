@@ -254,7 +254,7 @@ function Awards() {
         </div>
       </div>
 
-      <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
+      <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={false} />
 
       {/* Feedback */}
       {feedback && (

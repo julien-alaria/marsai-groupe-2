@@ -71,6 +71,7 @@ export default function Dashboard() {
           "Surveillez les films récents pour repérer les statuts en attente, approuvés ou refusés.",
           "Commencez chaque session admin ici pour prioriser les tâches urgentes."
         ]}
+        defaultOpen={false}
       />
 
       {/* Stats Grid */}

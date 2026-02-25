@@ -507,7 +507,7 @@ export default function Movies() {
   // Affichage de la liste des vidéos ou message si aucune vidéo n'existe
   return (
     <div className="space-y-6">
-      <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
+      <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={false} />
 
       {filteredMovies.length > 0 ? (
         <>

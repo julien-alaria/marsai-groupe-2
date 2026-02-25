@@ -125,6 +125,7 @@ function Categories() {
               "Supprimez une catégorie uniquement si elle n'est plus utilisée.",
               "Vérifiez le message de confirmation après chaque action."
             ]}
+            defaultOpen={false}
           />
         </div>
 

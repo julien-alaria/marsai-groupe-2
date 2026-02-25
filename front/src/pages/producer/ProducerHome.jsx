@@ -90,6 +90,9 @@ export default function ProducerHome() {
   const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
+  // Stato per il successo upload vignette
+  const [thumbnailUploadSuccess, setThumbnailUploadSuccess] = useState(false);
+
   const handleFileName = (event, setter) => {
     const file = event.target.files?.[0];
     setter(file ? file.name : "Aucun fichier sélectionné");
@@ -256,9 +259,7 @@ export default function ProducerHome() {
     setMovieError(null); // Nascondere eventuali errori
     resetMovie();
     setFilmFileName("Aucun fichier sélectionné");
-    setThumbnail1Name("Aucun fichier sélectionné");
-    setThumbnail2Name("Aucun fichier sélectionné");
-    setThumbnail3Name("Aucun fichier sélectionné");
+    setThumbnailNames(["Aucun fichier sélectionné"]);
     setSubtitlesName("Aucun fichier sélectionné");
   };
 
@@ -909,6 +910,22 @@ export default function ProducerHome() {
             )}
 
             <div className="flex flex-col gap-4 pt-2">
+                          {/* Mostra errori globali dei campi obbligatori in entrambe le parti del form */}
+                          {movieErrors.categoryId && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.categoryId.message}</p>
+                          )}
+                          {movieErrors.filmTitleOriginal && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.filmTitleOriginal.message}</p>
+                          )}
+                          {movieErrors.durationSeconds && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.durationSeconds.message}</p>
+                          )}
+                          {movieErrors.synopsisOriginal && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.synopsisOriginal.message}</p>
+                          )}
+                          {movieErrors.aiClassification && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.aiClassification.message}</p>
+                          )}
               {formStep === 1 && (
                 <button
                   type="button"
@@ -932,7 +949,7 @@ export default function ProducerHome() {
                     disabled={createMovieMutation.isPending || !acceptTerms}
                     className="w-full bg-gradient-to-r from-[#AD46FF] to-[#F6339A] text-white font-bold py-4 rounded-lg uppercase hover:opacity-90 transition disabled:opacity-50"
                   >
-                    {createMovieMutation.isPending ? t('producerHome.submitting') : t('producerHome.submit')}
+                    {createMovieMutation.isPending ? t('producerHome.submitting') : 'SOUMETTRE LE FILM'}
                   </button>
                 </>
               )}
@@ -1023,9 +1040,10 @@ export default function ProducerHome() {
                   }}
                   className="sr-only"
                   id="modal-film-upload"
+                  placeholder="Choisir un fichier"
                 />
                 <label htmlFor="modal-film-upload" className="cursor-pointer text-white font-semibold text-sm bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5">
-                  Choisir
+                  Choisir un fichier
                 </label>
                 <span className="text-gray-400 text-xs truncate">{filmFileName}</span>
               </div>
