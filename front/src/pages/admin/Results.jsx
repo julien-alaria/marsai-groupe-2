@@ -133,26 +133,29 @@ export default function Results() {
 
   if (moviesLoading || votesLoading || awardsLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-300">Chargement des résultats...</div>
+      <div className="min-h-screen bg-gradient-to-br from-[#0a0c0f] to-[#0d0f12] flex items-center justify-center">
+        <div className="bg-white/5 backdrop-blur-xl border border-white/10 rounded-xl px-6 py-4 flex items-center gap-3">
+          <div className="w-5 h-5 border-2 border-purple-500/30 border-t-purple-500 rounded-full animate-spin" />
+          <span className="text-sm text-white/70">Chargement des résultats...</span>
+        </div>
       </div>
     );
   }
 
   const VoteBadge = ({ yes, no, toDiscuss }) => (
-    <div className="flex items-center gap-1 flex-wrap">
+    <div className="flex items-center gap-1">
       {yes > 0 && (
-        <span className="px-1.5 py-0.5 text-[10px] rounded bg-green-500/20 text-green-400 border border-green-500/30">
+        <span className="px-2 py-0.5 text-[10px] font-medium bg-green-500/10 border border-green-500/30 text-green-300 rounded-full">
           ✓ {yes}
         </span>
       )}
       {toDiscuss > 0 && (
-        <span className="px-1.5 py-0.5 text-[10px] rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+        <span className="px-2 py-0.5 text-[10px] font-medium bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 rounded-full">
           ? {toDiscuss}
         </span>
       )}
       {no > 0 && (
-        <span className="px-1.5 py-0.5 text-[10px] rounded bg-red-500/20 text-red-400 border border-red-500/30">
+        <span className="px-2 py-0.5 text-[10px] font-medium bg-red-500/10 border border-red-500/30 text-red-300 rounded-full">
           ✗ {no}
         </span>
       )}
@@ -163,7 +166,7 @@ export default function Results() {
     if (list.length === 0) {
       return (
         <tr>
-          <td className="px-3 py-4 text-gray-400" colSpan={6}>
+          <td colSpan={6} className="px-4 py-8 text-center text-white/40">
             {emptyText}
           </td>
         </tr>
@@ -171,125 +174,208 @@ export default function Results() {
     }
 
     return list.map((movie, index) => (
-      <tr key={movie.id_movie} className="border-t border-gray-800 hover:bg-white/5 transition-colors">
-        <td className="px-3 py-2 text-gray-400">#{index + 1}</td>
-        <td className="px-3 py-2 text-white font-semibold">{movie.title}</td>
-        <td className="px-3 py-2 text-gray-300">{movie.voteCount}</td>
-        <td className="px-3 py-2">
+      <tr key={movie.id_movie} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+        <td className="px-4 py-2 text-white/40 text-xs">#{index + 1}</td>
+        <td className="px-4 py-2">
+          <span className="text-sm font-medium text-white">{movie.title}</span>
+        </td>
+        <td className="px-4 py-2">
+          <span className="text-sm text-white/80">{movie.voteCount}</span>
+        </td>
+        <td className="px-4 py-2">
           <VoteBadge yes={movie.voteYes} no={movie.voteNo} toDiscuss={movie.voteToDiscuss} />
         </td>
-        <td className="px-3 py-2 text-gray-300">
-          {movie.voteCount > 0 ? (movie.voteAverage * 100).toFixed(0) + "%" : "–"}
+        <td className="px-4 py-2">
+          {movie.voteCount > 0 ? (
+            <div className="flex items-center gap-2">
+              <div className="w-16 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full"
+                  style={{ width: `${(movie.voteAverage * 100)}%` }}
+                />
+              </div>
+              <span className="text-xs text-white/60">{(movie.voteAverage * 100).toFixed(0)}%</span>
+            </div>
+          ) : (
+            <span className="text-xs text-white/40">–</span>
+          )}
         </td>
-        <td className="px-3 py-2 text-gray-300">{movie.awards.length}</td>
+        <td className="px-4 py-2">
+          {movie.awards.length > 0 ? (
+            <span className="px-2 py-0.5 text-[10px] font-medium bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 rounded-full">
+              🏆 {movie.awards.length}
+            </span>
+          ) : (
+            <span className="text-xs text-white/40">–</span>
+          )}
+        </td>
       </tr>
     ));
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-[#AD46FF] to-[#F6339A] bg-clip-text text-transparent">
-          Results
-        </h1>
-        <p className="text-gray-400 mt-1">
-          Films les plus votés, primés, répartition YES/NO/TO DISCUSS et statuts.
-        </p>
-      </div>
-
-      <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
-
-      {/* Summary cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Total films</p>
-          <p className="text-white text-2xl font-bold">{movies.length}</p>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Films primés</p>
-          <p className="text-white text-2xl font-bold">{awardedMovies.length}</p>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Acceptés</p>
-          <p className="text-white text-2xl font-bold">{acceptedMovies.length}</p>
-        </div>
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">
-          <p className="text-gray-400 text-sm">Refusés</p>
-          <p className="text-white text-2xl font-bold">{refusedMovies.length}</p>
-        </div>
-      </div>
-
-      {/* Most voted */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 overflow-x-auto">
-        <h2 className="text-white font-semibold mb-3">Films les plus votés</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-400 border-b border-gray-800">
-              <th className="px-3 py-2">#</th>
-              <th className="px-3 py-2">Film</th>
-              <th className="px-3 py-2">Votes</th>
-              <th className="px-3 py-2">Répartition</th>
-              <th className="px-3 py-2">Score</th>
-              <th className="px-3 py-2">Prix</th>
-            </tr>
-          </thead>
-          <tbody>{renderRows(mostVoted, "Aucun vote pour le moment")}</tbody>
-        </table>
-      </div>
-
-      {/* Accepted / Refused */}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 overflow-x-auto">
-          <h2 className="text-white font-semibold mb-3">Films acceptés</h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-800">
-                <th className="px-3 py-2">#</th>
-                <th className="px-3 py-2">Film</th>
-                <th className="px-3 py-2">Votes</th>
-                <th className="px-3 py-2">Répartition</th>
-                <th className="px-3 py-2">Score</th>
-                <th className="px-3 py-2">Prix</th>
-              </tr>
-            </thead>
-            <tbody>{renderRows(acceptedMovies, "Aucun film accepté")}</tbody>
-          </table>
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0c0f] via-[#0c0e11] to-[#0d0f12] text-white pt-8 pb-12 px-4">
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full mb-4">
+            <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
+            <p className="text-xs uppercase tracking-wider text-white/60">Statistiques</p>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-light bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+            Résultats des votes
+          </h1>
+          <p className="text-white/40 text-sm mt-2 max-w-2xl mx-auto">
+            Films les plus votés, primés, répartition des votes et statuts de sélection.
+          </p>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 overflow-x-auto">
-          <h2 className="text-white font-semibold mb-3">Films refusés</h2>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-gray-400 border-b border-gray-800">
-                <th className="px-3 py-2">#</th>
-                <th className="px-3 py-2">Film</th>
-                <th className="px-3 py-2">Votes</th>
-                <th className="px-3 py-2">Répartition</th>
-                <th className="px-3 py-2">Score</th>
-                <th className="px-3 py-2">Prix</th>
-              </tr>
-            </thead>
-            <tbody>{renderRows(refusedMovies, "Aucun film refusé")}</tbody>
-          </table>
+        {/* Tutorial Box */}
+        <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+          <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={false} />
         </div>
-      </div>
 
-      {/* Awarded */}
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 overflow-x-auto">
-        <h2 className="text-white font-semibold mb-3">Films primés</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-left text-gray-400 border-b border-gray-800">
-              <th className="px-3 py-2">#</th>
-              <th className="px-3 py-2">Film</th>
-              <th className="px-3 py-2">Votes</th>
-              <th className="px-3 py-2">Répartition</th>
-              <th className="px-3 py-2">Score</th>
-              <th className="px-3 py-2">Prix</th>
-            </tr>
-          </thead>
-          <tbody>{renderRows(awardedMovies, "Aucun film primé")}</tbody>
-        </table>
+        {/* Summary cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl p-5 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+            <div className="relative">
+              <p className="text-xs text-white/40 uppercase tracking-wider">Total films</p>
+              <p className="text-3xl font-light text-white mt-2">{movies.length}</p>
+            </div>
+          </div>
+          
+          <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl p-5 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+            <div className="relative">
+              <p className="text-xs text-white/40 uppercase tracking-wider">Films primés</p>
+              <p className="text-3xl font-light text-white mt-2">{awardedMovies.length}</p>
+            </div>
+          </div>
+          
+          <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl p-5 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+            <div className="relative">
+              <p className="text-xs text-white/40 uppercase tracking-wider">Acceptés</p>
+              <p className="text-3xl font-light text-white mt-2">{acceptedMovies.length}</p>
+            </div>
+          </div>
+          
+          <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl p-5 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+            <div className="relative">
+              <p className="text-xs text-white/40 uppercase tracking-wider">Refusés</p>
+              <p className="text-3xl font-light text-white mt-2">{refusedMovies.length}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Most voted */}
+        <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl p-5 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+          
+          <div className="relative">
+            <h2 className="text-lg font-light text-white/90 mb-4">Films les plus votés</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">#</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Film</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Votes</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Répartition</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Score</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Prix</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {renderRows(mostVoted, "Aucun vote pour le moment")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* Accepted / Refused */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl p-5 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+            
+            <div className="relative">
+              <h2 className="text-lg font-light text-white/90 mb-4">Films acceptés</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">#</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Film</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Votes</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Répartition</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Score</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Prix</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renderRows(acceptedMovies, "Aucun film accepté")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl p-5 overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+            
+            <div className="relative">
+              <h2 className="text-lg font-light text-white/90 mb-4">Films refusés</h2>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10">
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">#</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Film</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Votes</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Répartition</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Score</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Prix</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {renderRows(refusedMovies, "Aucun film refusé")}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Awarded */}
+        <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl p-5 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
+          
+          <div className="relative">
+            <h2 className="text-lg font-light text-white/90 mb-4">Films primés</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">#</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Film</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Votes</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Répartition</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Score</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-white/40 uppercase tracking-wider">Prix</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {renderRows(awardedMovies, "Aucun film primé")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

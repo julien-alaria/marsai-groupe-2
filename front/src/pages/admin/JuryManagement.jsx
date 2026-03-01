@@ -1,638 +1,678 @@
-import { useMemo, useState } from "react";
+/**
+ * JuryManagement.jsx — Distribution & Jury
+ *
+ * Source unique de vérité pour l'assignation jury ↔ film.
+ * Le film modal dans Videos.jsx affiche les jurys en lecture seule uniquement.
+ *
+ * Workflow :
+ *  1. Sélectionner un ou plusieurs films dans la liste (colonne droite)
+ *  2. Cliquer sur un membre du jury (colonne gauche) → modale de confirmation
+ *  3. Les films sont assignés à ce jury (status → "assigned" si "submitted")
+ *
+ *  Ou inversement :
+ *  1. Cliquer sur un jury sans film sélectionné → voir ses films assignés
+ *  2. Sélectionner des films → les retirer
+ *
+ * Fixes appliqués :
+ *  - Suppression des imports dupliqués (useEffectReact / useStateReact)
+ *  - UPLOAD_BASE centralisé (plus de hardcode localhost)
+ *  - Badges statut : 7 statuts complets
+ *  - Section "Charge de travail" pour visualiser la répartition
+ *  - Films avec statut "submitted" également assignables
+ *  - Assignation entraîne le passage automatique en "assigned"
+ */
+
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUsers } from "../../api/users.js";
-import { getVideos, updateMovieJuries } from "../../api/videos.js";
+import { getVideos, updateMovieJuries, updateMovieStatus } from "../../api/videos.js";
 import { getCategories } from "../../api/videos.js";
 import TutorialBox from "../../components/TutorialBox.jsx";
-import { useEffect as useEffectReact, useState as useStateReact } from "react";
 import { loadTutorialSteps } from "../../utils/tutorialLoader.js";
+import { UPLOAD_BASE } from "../../utils/constants.js";
 
+/* ─── Statuts ─────────────────────────────────────────── */
+const STATUS_CONFIG = {
+  submitted:   { label: "Soumis",          color: "bg-gray-600/40 text-gray-300 border-gray-600/40"    },
+  assigned:    { label: "En évaluation",   color: "bg-blue-600/30 text-blue-300 border-blue-600/40"    },
+  to_discuss:  { label: "À discuter",      color: "bg-yellow-600/30 text-yellow-300 border-yellow-600/40" },
+  candidate:   { label: "Candidat",        color: "bg-purple-600/30 text-purple-300 border-purple-600/40" },
+  selected:    { label: "Sélectionné",     color: "bg-green-600/30 text-green-300 border-green-600/40" },
+  finalist:    { label: "Finaliste",       color: "bg-orange-600/30 text-orange-300 border-orange-600/40" },
+  refused:     { label: "Refusé",          color: "bg-red-600/30 text-red-300 border-red-600/40"       },
+  awarded:     { label: "Primé 🏆",        color: "bg-yellow-400/30 text-yellow-200 border-yellow-400/40" },
+};
+
+const statusCfg = (s) => STATUS_CONFIG[s] || STATUS_CONFIG.submitted;
+
+/* ─── Utilitaires ─────────────────────────────────────── */
+const getPoster = (movie) =>
+  movie.thumbnail       ? `${UPLOAD_BASE}/${movie.thumbnail}`       :
+  movie.display_picture ? `${UPLOAD_BASE}/${movie.display_picture}` :
+  movie.picture1        ? `${UPLOAD_BASE}/${movie.picture1}`        : null;
+
+/* ════════════════════════════════════════════════════════
+   COMPOSANT PRINCIPAL
+════════════════════════════════════════════════════════ */
 export default function JuryManagement() {
-    const [tutorial, setTutorial] = useStateReact({ title: "Tutoriel", steps: [] });
+  const queryClient = useQueryClient();
 
-    useEffectReact(() => {
-      async function fetchTutorial() {
-        try {
-          // Use relative path for fetch
-          const tutorialData = await loadTutorialSteps("/src/pages/admin/TutorialJury.fr.md");
-          setTutorial(tutorialData);
-        } catch (err) {
-          setTutorial({ title: "Tutoriel", steps: ["Impossible de charger le tutoriel."] });
+  const [tutorial, setTutorial] = useState({ title: "Tutoriel", steps: [] });
+  useEffect(() => {
+    loadTutorialSteps("/src/pages/admin/TutorialJury.fr.md")
+      .then(setTutorial)
+      .catch(() => setTutorial({ title: "Tutoriel", steps: ["Impossible de charger le tutoriel."] }));
+  }, []);
+
+  /* ── États ── */
+  const [selectedMovieIds,  setSelectedMovieIds]  = useState([]);
+  const [selectedCategory,  setSelectedCategory]  = useState("all");
+  const [statusFilter,      setStatusFilter]      = useState("all");
+  const [searchQuery,       setSearchQuery]       = useState("");
+  const [notice,            setNotice]            = useState(null);
+  const [activeJury,        setActiveJury]        = useState(null); // jury whose detail is open
+  const [modalMode,         setModalMode]         = useState(null); // "assign" | "unassign"
+  const [selectedToUnassign,setSelectedToUnassign]= useState([]);
+  const [confirmUnassign,   setConfirmUnassign]   = useState(false);
+  const [viewMode,          setViewMode]          = useState("films"); // "films" | "workload"
+
+  /* ── Données ── */
+  const { data: usersData }  = useQuery({ queryKey: ["users"],      queryFn: getUsers });
+  const { data: videosData } = useQuery({ queryKey: ["listVideos"], queryFn: getVideos, refetchInterval: 30_000 });
+  const { data: catsData }   = useQuery({ queryKey: ["categories"], queryFn: getCategories });
+
+  const allUsers    = usersData?.data  || [];
+  const allMovies   = videosData?.data || [];
+  const categories  = catsData?.data   || [];
+  const juryMembers = useMemo(() => allUsers.filter((u) => u.role === "JURY"), [allUsers]);
+
+  /* Films éligibles à l'assignation : tous sauf refused et awarded */
+  const assignableMovies = useMemo(() =>
+    allMovies.filter((m) => !["refused", "awarded"].includes(m.selection_status || "submitted")),
+  [allMovies]);
+
+  /* Films filtrés pour la liste */
+  const filteredMovies = useMemo(() => {
+    return assignableMovies.filter((m) => {
+      if (selectedCategory !== "all") {
+        const hascat = (m.Categories || []).some((c) => c.id_categorie === parseInt(selectedCategory));
+        if (!hascat) return false;
+      }
+      if (statusFilter !== "all" && (m.selection_status || "submitted") !== statusFilter) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return m.title?.toLowerCase().includes(q);
+      }
+      return true;
+    });
+  }, [assignableMovies, selectedCategory, statusFilter, searchQuery]);
+
+  /* Workload : nb de films assignés par jury */
+  const workload = useMemo(() => {
+    return juryMembers.map((jury) => {
+      const films = allMovies.filter((m) =>
+        (m.Juries || []).some((j) => j.id_user === jury.id_user)
+      );
+      return { jury, films, count: films.length };
+    }).sort((a, b) => b.count - a.count);
+  }, [juryMembers, allMovies]);
+
+  /* ── Mutations ── */
+  function showNotice(msg, isError = false) {
+    setNotice({ msg, isError });
+    setTimeout(() => setNotice(null), 3500);
+  }
+
+  function invalidate() {
+    queryClient.invalidateQueries({ queryKey: ["listVideos"] });
+  }
+
+  const assignMutation = useMutation({
+    mutationFn: async ({ jury, movieIds }) => {
+      for (const movieId of movieIds) {
+        const movie      = allMovies.find((m) => m.id_movie === movieId);
+        const currentIds = (movie?.Juries || []).map((j) => j.id_user);
+        if (!currentIds.includes(jury.id_user)) {
+          await updateMovieJuries(movieId, [...currentIds, jury.id_user]);
+        }
+        // Passer automatiquement de "submitted" → "assigned"
+        if ((movie?.selection_status || "submitted") === "submitted") {
+          await updateMovieStatus(movieId, "assigned");
         }
       }
-      fetchTutorial();
-    }, []);
-  const queryClient = useQueryClient();
-  const [selectedJury, setSelectedJury] = useState(null);
-  const [selectedCategory, setSelectedCategory] = useState("all");
-  const [selectedMovies, setSelectedMovies] = useState([]);
-  const [notice, setNotice] = useState(null);
-  
-  // États pour les modales
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [showUnassignModal, setShowUnassignModal] = useState(false);
-  const [modalJury, setModalJury] = useState(null);
-  const [selectedToUnassign, setSelectedToUnassign] = useState([]);
-  const [showConfirmModal, setShowConfirmModal] = useState(false);
-
-  const { data: usersData } = useQuery({
-    queryKey: ["users"],
-    queryFn: getUsers,
-  });
-  
-  const { data: videosData } = useQuery({
-    queryKey: ["listVideos"],
-    queryFn: getVideos,
-  });
-
-  const { data: categoriesData } = useQuery({
-    queryKey: ["categories"],
-    queryFn: getCategories,
-  });
-
-  const juries = useMemo(
-    () => (usersData?.data || []).filter((user) => user.role === "JURY"),
-    [usersData]
-  );
-
-  const videos = videosData?.data || [];
-  const categories = categoriesData?.data || [];
-
-  const assignJuryMutation = useMutation({
-    mutationFn: ({ movieId, juryIds }) => updateMovieJuries(movieId, juryIds),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["listVideos"] });
-      setNotice("Assignations mises à jour avec succès.");
-      setTimeout(() => setNotice(null), 3000);
-      setShowAssignModal(false);
-      setSelectedMovies([]);
     },
-    onError: () => {
-      setNotice("Erreur lors de l'assignation.");
-      setTimeout(() => setNotice(null), 3000);
-    }
-  });
-
-  const unassignJuryMutation = useMutation({
-    mutationFn: ({ movieId, juryIds }) => updateMovieJuries(movieId, juryIds),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["listVideos"] });
-      setNotice("Désassignations mises à jour avec succès.");
-      setTimeout(() => setNotice(null), 3000);
-      setShowUnassignModal(false);
-      setSelectedToUnassign([]);
-      setShowConfirmModal(false);
+      invalidate();
+      setSelectedMovieIds([]);
+      setActiveJury(null);
+      setModalMode(null);
+      showNotice("Films assignés avec succès.");
     },
-    onError: () => {
-      setNotice("Erreur lors de la désassignation.");
-      setTimeout(() => setNotice(null), 3000);
-    }
+    onError: () => showNotice("Erreur lors de l'assignation.", true),
   });
 
-  const filteredMovies = useMemo(() => {
-    if (selectedCategory === "all") return videos;
-    return videos.filter((movie) =>
-      (movie.Categories || []).some((cat) => cat.id_categorie === parseInt(selectedCategory))
-    );
-  }, [videos, selectedCategory]);
-
-  const handleToggleMovie = (movieId) => {
-    setSelectedMovies((prev) =>
-      prev.includes(movieId)
-        ? prev.filter((id) => id !== movieId)
-        : [...prev, movieId]
-    );
-  };
-
-  const handleSelectAll = () => {
-    if (selectedMovies.length === filteredMovies.length) {
-      setSelectedMovies([]);
-    } else {
-      setSelectedMovies(filteredMovies.map((m) => m.id_movie));
-    }
-  };
-
-  const handleJuryClick = (jury) => {
-    setModalJury(jury);
-    
-    // Si des films sont sélectionnés → mode assignation
-    if (selectedMovies.length > 0) {
-      setShowAssignModal(true);
-    } else {
-      // Sinon → mode retrait (afficher les films assignés à ce jury)
-      setSelectedToUnassign([]);
-      setShowUnassignModal(true);
-    }
-  };
-
-  const handleAssignConfirm = () => {
-    selectedMovies.forEach((movieId) => {
-      const movie = videos.find((m) => m.id_movie === movieId);
-      const currentJuries = (movie?.Juries || []).map((j) => j.id_user);
-      
-      if (!currentJuries.includes(modalJury.id_user)) {
-        assignJuryMutation.mutate({
-          movieId,
-          juryIds: [...currentJuries, modalJury.id_user]
-        });
+  const unassignMutation = useMutation({
+    mutationFn: async ({ jury, movieIds }) => {
+      for (const movieId of movieIds) {
+        const movie      = allMovies.find((m) => m.id_movie === movieId);
+        const currentIds = (movie?.Juries || []).map((j) => j.id_user);
+        await updateMovieJuries(movieId, currentIds.filter((id) => id !== jury.id_user));
       }
-    });
-  };
-
-  const handleUnassignConfirm = () => {
-    setShowConfirmModal(true);
-  };
-
-  const handleUnassignFinal = () => {
-    selectedToUnassign.forEach((movieId) => {
-      const movie = videos.find((m) => m.id_movie === movieId);
-      const currentJuries = (movie?.Juries || []).map((j) => j.id_user);
-      
-      unassignJuryMutation.mutate({
-        movieId,
-        juryIds: currentJuries.filter((id) => id !== modalJury.id_user)
-      });
-    });
-  };
-
-  const toggleToUnassign = (movieId) => {
-    setSelectedToUnassign((prev) =>
-      prev.includes(movieId)
-        ? prev.filter((id) => id !== movieId)
-        : [...prev, movieId]
-    );
-  };
-
-  const selectAllToUnassign = (movies) => {
-    if (selectedToUnassign.length === movies.length) {
+    },
+    onSuccess: () => {
+      invalidate();
       setSelectedToUnassign([]);
+      setConfirmUnassign(false);
+      setModalMode(null);
+      setActiveJury(null);
+      showNotice("Films désassignés avec succès.");
+    },
+    onError: () => showNotice("Erreur lors de la désassignation.", true),
+  });
+
+  /* ── Handlers ── */
+  function handleJuryClick(jury) {
+    setActiveJury(jury);
+    if (selectedMovieIds.length > 0) {
+      setModalMode("assign");
     } else {
-      setSelectedToUnassign(movies.map((m) => m.id_movie));
+      setSelectedToUnassign([]);
+      setModalMode("unassign");
     }
-  };
+  }
 
-  const uploadBase = "http://localhost:3000/uploads";
-  const getPoster = (movie) => (
-    movie.thumbnail
-      ? `${uploadBase}/${movie.thumbnail}`
-      : movie.display_picture
-        ? `${uploadBase}/${movie.display_picture}`
-        : movie.picture1
-          ? `${uploadBase}/${movie.picture1}`
-          : null
-  );
+  function toggleMovie(id) {
+    setSelectedMovieIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  }
 
+  function toggleAll() {
+    if (selectedMovieIds.length === filteredMovies.length) {
+      setSelectedMovieIds([]);
+    } else {
+      setSelectedMovieIds(filteredMovies.map((m) => m.id_movie));
+    }
+  }
+
+  /* Films du jury actif (pour le modal unassign) */
+  const juryFilms = useMemo(() =>
+    activeJury
+      ? allMovies.filter((m) => (m.Juries || []).some((j) => j.id_user === activeJury.id_user))
+      : [],
+  [activeJury, allMovies]);
+
+  /* ════════════════════════════════════════════════════════
+     RENDU
+  ════════════════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0a0c0f] to-[#0d0f12] text-white pt-1 pb-12 px-1">
-      <div className="max-w-7xl mx-auto space-y-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#0a0c0f] to-[#0d0f12] text-white pb-12 px-4">
+      <div className="max-w-7xl mx-auto space-y-5 pt-6">
 
-        {/* Header */}
-        <div className="text-center">
-          <h1 className="text-2xl md:text-3xl font-light bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
-            Distribution & Jury
-          </h1>
-          <p className="text-white/40 text-xs mt-1">Assignez les films aux jurys pour la votation</p>
+        {/* ── En-tête ── */}
+        <div>
+          <h1 className="text-2xl font-light text-white">Distribution & Jury</h1>
+          <p className="text-sm text-white/40 mt-1">
+            Assignez les films aux membres du jury pour lancer l'évaluation
+          </p>
         </div>
 
-        <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
+        {/* Tutorial */}
+        <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={false} />
 
         {/* Notice */}
         {notice && (
-          <div className={`p-3 rounded-lg text-xs ${
-            notice.includes("succès") 
-              ? "bg-green-500/10 border border-green-500/30 text-green-300" 
-              : "bg-red-500/10 border border-red-500/30 text-red-300"
+          <div className={`px-4 py-2 rounded-lg text-xs border ${
+            notice.isError
+              ? "bg-red-900/30 border-red-600/40 text-red-300"
+              : "bg-green-900/30 border-green-600/40 text-green-300"
           }`}>
-            {notice}
+            {notice.msg}
           </div>
         )}
 
-        {/* Selected count indicator */}
-        {selectedMovies.length > 0 && (
-          <div className="bg-purple-500/10 border border-purple-500/30 rounded-lg p-2 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-white/80">{selectedMovies.length} film{selectedMovies.length !== 1 ? 's' : ''} sélectionné{selectedMovies.length !== 1 ? 's' : ''}</span>
-            </div>
-            <button
-              onClick={() => setSelectedMovies([])}
-              className="text-[10px] text-white/40 hover:text-white transition-colors"
-            >
-              Désélectionner tout
+        {/* ── Onglets vue ── */}
+        <div className="flex gap-2">
+          {[
+            { key: "films",    label: "📋 Assigner des films" },
+            { key: "workload", label: "📊 Charge de travail" },
+          ].map((tab) => (
+            <button key={tab.key} onClick={() => setViewMode(tab.key)}
+              className={`px-4 py-2 rounded-lg text-xs font-medium transition ${
+                viewMode === tab.key
+                  ? "bg-purple-600 text-white shadow-lg shadow-purple-600/30"
+                  : "bg-white/5 border border-white/10 text-white/60 hover:bg-white/10"
+              }`}>
+              {tab.label}
             </button>
+          ))}
+        </div>
+
+        {/* ════════════════
+            VUE CHARGE DE TRAVAIL
+        ════════════════ */}
+        {viewMode === "workload" && (
+          <div className="space-y-3">
+            <p className="text-xs text-white/40">
+              Répartition des films assignés par membre du jury.
+            </p>
+            {workload.length === 0 ? (
+              <p className="text-sm text-white/30 py-8 text-center">Aucun membre du jury enregistré.</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+                {workload.map(({ jury, films, count }) => (
+                  <div key={jury.id_user}
+                    className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
+                    {/* Jury header */}
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                        {jury.first_name?.[0]}{jury.last_name?.[0]}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-white truncate">
+                          {jury.first_name} {jury.last_name}
+                        </p>
+                        <p className="text-[10px] text-white/40 truncate">{jury.email}</p>
+                      </div>
+                      <span className="ml-auto text-xl font-bold text-purple-400">{count}</span>
+                    </div>
+
+                    {/* Barre de charge */}
+                    <div className="mb-3">
+                      <div className="flex justify-between text-[10px] text-white/40 mb-1">
+                        <span>Films assignés</span>
+                        <span>{count} / {assignableMovies.length}</span>
+                      </div>
+                      <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-purple-500 to-pink-500 rounded-full transition-all duration-700"
+                          style={{ width: assignableMovies.length ? `${(count / assignableMovies.length) * 100}%` : "0%" }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Films (compacts) */}
+                    {films.length > 0 ? (
+                      <div className="space-y-1 max-h-32 overflow-y-auto">
+                        {films.map((m) => {
+                          const cfg = statusCfg(m.selection_status || "submitted");
+                          return (
+                            <div key={m.id_movie} className="flex items-center gap-2 text-[10px]">
+                              <span className={`px-1.5 py-0.5 rounded-full border text-[8px] ${cfg.color}`}>
+                                {cfg.label}
+                              </span>
+                              <span className="text-white/70 truncate">{m.title}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-white/20 italic">Aucun film assigné</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
-        {/* Main Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-          
-          {/* Left Column - Juries */}
-          <div className="lg:col-span-1 space-y-4">
-            
-            {/* Juries List */}
-            <div className="bg-[#1a1c20] border border-white/10 rounded-lg p-3">
-              <div className="flex items-center gap-2 mb-3">
-                <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                <h2 className="text-sm font-medium text-white/90">Jurys</h2>
-                <span className="ml-1 text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full text-white/60">
-                  {juries.length}
-                </span>
-              </div>
+        {/* ════════════════
+            VUE ASSIGNATION
+        ════════════════ */}
+        {viewMode === "films" && (
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
 
-              {juries.length === 0 ? (
-                <p className="text-xs text-white/40 text-center py-4">Aucun jury disponible</p>
-              ) : (
-                <div className="space-y-1.5 max-h-[400px] overflow-y-auto scrollbar-thin-dark pr-1 pl-1">
-                  {juries.map((jury) => {
-                    const assignedCount = videos.filter((m) =>
-                      (m.Juries || []).some((j) => j.id_user === jury.id_user)
-                    ).length;
-
-                    return (
-                      <button
-                        key={jury.id_user}
-                        onClick={() => handleJuryClick(jury)}
-                        className={`w-full text-left p-2.5 rounded-lg border transition-colors bg-black/40 border-white/10 hover:bg-white/5 ${
-                          selectedMovies.length > 0 ? "cursor-pointer" : ""
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                            {jury.first_name?.[0]}{jury.last_name?.[0]}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h3 className="text-xs font-medium text-white truncate">
-                              {jury.first_name} {jury.last_name}
-                            </h3>
-                            <p className="text-[9px] text-white/40 truncate">{jury.email}</p>
-                            <p className="text-[9px] text-purple-400 mt-0.5">
-                              {assignedCount} film{assignedCount !== 1 ? 's' : ''}
-                            </p>
-                          </div>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Right Column - Movies - MODERN LIST VIEW */}
-          <div className="lg:col-span-3">
-            <div className="bg-[#1a1c20] border border-white/10 rounded-lg p-4">
-              
-              {/* Filters Bar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                  </svg>
-                  <h2 className="text-sm font-medium text-white/90">Films disponibles</h2>
-                  <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full text-white/60">
-                    {filteredMovies.length}
+            {/* ── Colonne gauche : membres du jury ── */}
+            <div className="lg:col-span-1 space-y-3">
+              <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <h2 className="text-sm font-medium text-white">Membres du jury</h2>
+                  <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full text-white/50">
+                    {juryMembers.length}
                   </span>
                 </div>
-                
-                <div className="flex items-center gap-2">
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="bg-black/40 border border-white/10 text-white px-2 py-1.5 text-xs rounded-lg focus:outline-none focus:ring-1 focus:ring-purple-500/30"
-                  >
-                    <option value="all" className="bg-[#1a1c20]">Toutes les catégories</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id_categorie} value={cat.id_categorie} className="bg-[#1a1c20]">
-                        {cat.name}
-                      </option>
+
+                {selectedMovieIds.length > 0 && (
+                  <div className="mb-3 bg-purple-500/10 border border-purple-500/30 rounded-lg px-3 py-2 text-[10px] text-purple-300">
+                    Cliquer sur un jury pour assigner {selectedMovieIds.length} film(s) sélectionné(s)
+                  </div>
+                )}
+
+                {juryMembers.length === 0 ? (
+                  <p className="text-xs text-white/30 text-center py-6">Aucun jury enregistré</p>
+                ) : (
+                  <div className="space-y-1.5 max-h-[520px] overflow-y-auto">
+                    {juryMembers.map((jury) => {
+                      const assigned = allMovies.filter((m) =>
+                        (m.Juries || []).some((j) => j.id_user === jury.id_user)
+                      ).length;
+
+                      return (
+                        <button
+                          key={jury.id_user}
+                          onClick={() => handleJuryClick(jury)}
+                          className={`w-full text-left p-3 rounded-xl border transition-all group ${
+                            selectedMovieIds.length > 0
+                              ? "border-purple-500/30 hover:bg-purple-500/10 hover:border-purple-500/50"
+                              : "border-white/10 hover:bg-white/5"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-bold text-[10px] flex-shrink-0">
+                              {jury.first_name?.[0]}{jury.last_name?.[0]}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-white truncate group-hover:text-purple-300 transition">
+                                {jury.first_name} {jury.last_name}
+                              </p>
+                              <p className="text-[9px] text-white/40 truncate">{jury.email}</p>
+                            </div>
+                            <span className={`text-xs font-bold flex-shrink-0 ${
+                              assigned > 0 ? "text-purple-400" : "text-white/20"
+                            }`}>
+                              {assigned}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ── Colonne droite : films ── */}
+            <div className="lg:col-span-3">
+              <div className="bg-white/[0.03] border border-white/10 rounded-xl p-4">
+
+                {/* Filtres */}
+                <div className="flex flex-wrap items-center gap-2 mb-4">
+                  <h2 className="text-sm font-medium text-white mr-1">Films</h2>
+                  <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded-full text-white/50 mr-2">
+                    {filteredMovies.length}
+                  </span>
+
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Rechercher…"
+                    className="flex-1 min-w-[150px] bg-white/5 border border-white/10 text-white px-2 py-1 text-xs rounded-lg focus:outline-none focus:border-purple-500/50 placeholder:text-white/30"
+                  />
+
+                  <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="bg-black/40 border border-white/10 text-white px-2 py-1 text-xs rounded-lg focus:outline-none">
+                    <option value="all" className="bg-[#1a1c20]">Toutes catégories</option>
+                    {categories.map((c) => (
+                      <option key={c.id_categorie} value={c.id_categorie} className="bg-[#1a1c20]">{c.name}</option>
                     ))}
                   </select>
-                  
-                  <button
-                    onClick={handleSelectAll}
-                    className="px-3 py-1.5 bg-white/5 border border-white/10 text-white/80 text-xs rounded-lg hover:bg-white/10 transition-colors"
-                  >
-                    {selectedMovies.length === filteredMovies.length ? "Désélectionner" : "Tout sélectionner"}
+
+                  <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}
+                    className="bg-black/40 border border-white/10 text-white px-2 py-1 text-xs rounded-lg focus:outline-none">
+                    <option value="all" className="bg-[#1a1c20]">Tous les statuts</option>
+                    {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
+                      <option key={key} value={key} className="bg-[#1a1c20]">{cfg.label}</option>
+                    ))}
+                  </select>
+
+                  <button onClick={toggleAll}
+                    className="px-3 py-1 bg-white/5 border border-white/10 text-white/70 text-xs rounded-lg hover:bg-white/10 transition">
+                    {selectedMovieIds.length === filteredMovies.length && filteredMovies.length > 0
+                      ? "Désélectionner tout"
+                      : "Tout sélectionner"}
                   </button>
-                </div>
-              </div>
 
-              {/* Movies List - MODERN SCROLLABLE LIST */}
-              {filteredMovies.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 bg-black/30 rounded-lg">
-                  <svg className="w-12 h-12 text-white/20 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                  </svg>
-                  <p className="text-xs text-white/40">Aucun film disponible</p>
+                  {selectedMovieIds.length > 0 && (
+                    <button onClick={() => setSelectedMovieIds([])}
+                      className="px-3 py-1 bg-red-600/20 border border-red-600/30 text-red-300 text-xs rounded-lg hover:bg-red-600/30 transition">
+                      ✕ {selectedMovieIds.length} sélectionné(s)
+                    </button>
+                  )}
                 </div>
-              ) : (
-                <div className="space-y-1.5 max-h-[400px] overflow-y-auto scrollbar-thin-dark">
-                  {filteredMovies.map((movie) => {
-                    const poster = getPoster(movie);
-                    const isSelected = selectedMovies.includes(movie.id_movie);
-                    const assignedJuries = movie.Juries || [];
 
-                    return (
-                      <div
-                        key={movie.id_movie}
-                        onClick={() => handleToggleMovie(movie.id_movie)}
-                        className={`flex items-center gap-3 p-2 rounded-lg border cursor-pointer transition-all ${
-                          isSelected 
-                            ? 'bg-purple-500/10 border-purple-500/30' 
-                            : 'bg-black/40 border-white/10 hover:bg-white/5 hover:border-white/20'
-                        }`}
-                      >
-                        {/* Checkbox */}
-                        <div className="flex items-center justify-center">
-                          <div className={`w-5 h-5 rounded-md border flex items-center justify-center transition-colors ${
-                            isSelected 
-                              ? 'bg-purple-500 border-purple-500' 
-                              : 'border-white/20 bg-transparent'
+                {/* Liste */}
+                {filteredMovies.length === 0 ? (
+                  <div className="flex flex-col items-center py-16 text-white/20">
+                    <span className="text-4xl mb-3">🎬</span>
+                    <p className="text-xs">Aucun film disponible pour cette sélection.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-[520px] overflow-y-auto">
+                    {filteredMovies.map((movie) => {
+                      const poster       = getPoster(movie);
+                      const isSelected   = selectedMovieIds.includes(movie.id_movie);
+                      const cfg          = statusCfg(movie.selection_status || "submitted");
+                      const assignedJuries = movie.Juries || [];
+
+                      return (
+                        <div
+                          key={movie.id_movie}
+                          onClick={() => toggleMovie(movie.id_movie)}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl border cursor-pointer transition-all ${
+                            isSelected
+                              ? "bg-purple-500/10 border-purple-500/30"
+                              : "bg-black/30 border-white/8 hover:bg-white/[0.04] hover:border-white/15"
+                          }`}
+                        >
+                          {/* Checkbox */}
+                          <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition ${
+                            isSelected ? "bg-purple-500 border-purple-500" : "border-white/20"
                           }`}>
                             {isSelected && (
-                              <svg className="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
                               </svg>
                             )}
                           </div>
-                        </div>
 
-                        {/* Mini poster */}
-                        <div className="w-8 h-8 bg-gradient-to-br from-gray-800 to-gray-900 rounded-md overflow-hidden flex-shrink-0">
-                          {poster ? (
-                            <img
-                              src={poster}
-                              alt={movie.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                              <svg className="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                              </svg>
-                            </div>
-                          )}
-                        </div>
+                          {/* Affiche */}
+                          <div className="w-8 h-8 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
+                            {poster ? (
+                              <img src={poster} alt={movie.title} className="w-full h-full object-cover" />
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center text-gray-600 text-lg">🎬</div>
+                            )}
+                          </div>
 
-                        {/* Title */}
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm text-white font-medium truncate">{movie.title}</p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            {/* Categories */}
-                            <div className="flex flex-wrap gap-1">
-                              {(movie.Categories || []).slice(0, 2).map((cat) => (
-                                <span
-                                  key={cat.id_categorie}
-                                  className="px-1.5 py-0.5 bg-purple-500/10 border border-purple-500/20 rounded-full text-[8px] text-purple-300"
-                                >
-                                  {cat.name}
+                          {/* Titre */}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-white truncate">{movie.title}</p>
+                            <div className="flex flex-wrap gap-1 mt-0.5">
+                              {(movie.Categories || []).slice(0, 2).map((c) => (
+                                <span key={c.id_categorie} className="text-[8px] text-purple-300 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.5 rounded-full">
+                                  {c.name}
                                 </span>
                               ))}
-                              {(movie.Categories || []).length > 2 && (
-                                <span className="px-1.5 py-0.5 bg-white/5 border border-white/10 rounded-full text-[8px] text-white/40">
-                                  +{(movie.Categories || []).length - 2}
-                                </span>
-                              )}
                             </div>
                           </div>
-                        </div>
 
-                        {/* Juries count */}
-                        <div className="flex items-center gap-1 px-2 py-1 bg-black/40 rounded-md border border-white/10">
-                          <svg className="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                          </svg>
-                          <span className="text-[10px] text-white/60">{assignedJuries.length}</span>
-                        </div>
+                          {/* Jurys assignés (avatars) */}
+                          <div className="flex items-center gap-1">
+                            {assignedJuries.length === 0 ? (
+                              <span className="text-[10px] text-white/20 italic">Aucun jury</span>
+                            ) : (
+                              <div className="flex -space-x-1">
+                                {assignedJuries.slice(0, 3).map((j) => (
+                                  <div key={j.id_user}
+                                    title={`${j.first_name} ${j.last_name}`}
+                                    className="w-5 h-5 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 border border-black flex items-center justify-center text-[8px] text-white font-bold">
+                                    {j.first_name?.[0]}
+                                  </div>
+                                ))}
+                                {assignedJuries.length > 3 && (
+                                  <div className="w-5 h-5 rounded-full bg-white/10 border border-black flex items-center justify-center text-[8px] text-white/60">
+                                    +{assignedJuries.length - 3}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
 
-                        {/* Status badge */}
-                        <div className={`px-2 py-1 rounded-md text-[8px] font-medium border ${
-                          movie.selection_status === 'selected' 
-                            ? 'bg-green-500/10 text-green-300 border-green-500/30' 
-                            : movie.selection_status === 'refused'
-                              ? 'bg-red-500/10 text-red-300 border-red-500/30'
-                              : 'bg-yellow-500/10 text-yellow-300 border-yellow-500/30'
-                        }`}>
-                          {movie.selection_status === 'selected' ? 'Sélectionné' : 
-                           movie.selection_status === 'refused' ? 'Refusé' : 'En attente'}
+                          {/* Statut */}
+                          <span className={`text-[9px] px-2 py-1 rounded-full border flex-shrink-0 ${cfg.color}`}>
+                            {cfg.label}
+                          </span>
                         </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* MODAL 1 - Assignation (simple) - MODERN STYLE */}
-      {showAssignModal && modalJury && (
+      {/* ════════════════════════════════════════════════════
+          MODALE ASSIGNATION
+      ════════════════════════════════════════════════════ */}
+      {modalMode === "assign" && activeJury && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-[#1a1c20] to-[#0f1114] border border-white/10 rounded-xl w-full max-w-sm shadow-xl shadow-black/50">
-            
-            <div className="p-5">
-              {/* Header with close button */}
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                    {modalJury.first_name?.[0]}{modalJury.last_name?.[0]}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-white">
-                      {modalJury.first_name} {modalJury.last_name}
-                    </h3>
-                    <p className="text-[9px] text-white/40">{modalJury.email}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowAssignModal(false)}
-                  className="p-1 hover:bg-white/10 rounded-md transition-colors"
-                >
-                  <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+          <div className="bg-[#111318] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl p-6">
+            {/* Jury */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                {activeJury.first_name?.[0]}{activeJury.last_name?.[0]}
               </div>
+              <div>
+                <p className="text-sm font-semibold text-white">
+                  {activeJury.first_name} {activeJury.last_name}
+                </p>
+                <p className="text-[10px] text-white/40">{activeJury.email}</p>
+              </div>
+            </div>
 
-              {/* Info */}
-              <div className="mb-5 text-center">
-                <p className="text-white/60 text-xs mb-1">
-                  Vous allez assigner
-                </p>
-                <p className="text-2xl font-bold text-purple-400">
-                  {selectedMovies.length}
-                </p>
-                <p className="text-white/60 text-[10px] mt-1">
-                  film{selectedMovies.length !== 1 ? 's' : ''} à ce jury
-                </p>
-              </div>
+            <p className="text-white/70 text-sm mb-1">
+              Assigner <span className="text-purple-400 font-bold">{selectedMovieIds.length}</span> film(s) à ce membre du jury.
+            </p>
+            <p className="text-white/40 text-[11px] mb-5">
+              Les films au statut "Soumis" passeront automatiquement en "En évaluation".
+            </p>
 
-              {/* Actions */}
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={handleAssignConfirm}
-                  className="w-full px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-700 transition-colors font-medium"
-                >
-                  Assigner
-                </button>
-                <button
-                  onClick={() => setShowAssignModal(false)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white/80 text-xs rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  Annuler
-                </button>
-              </div>
+            {/* Liste des films sélectionnés */}
+            <div className="space-y-1 max-h-40 overflow-y-auto mb-5">
+              {selectedMovieIds.map((id) => {
+                const m = allMovies.find((x) => x.id_movie === id);
+                return m ? (
+                  <div key={id} className="flex items-center gap-2 text-xs text-white/70">
+                    <span className="text-purple-400">▸</span>
+                    <span className="truncate">{m.title}</span>
+                  </div>
+                ) : null;
+              })}
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => { setModalMode(null); setActiveJury(null); }}
+                className="flex-1 px-3 py-2 bg-white/5 border border-white/10 text-white/70 text-xs rounded-lg hover:bg-white/10 transition">
+                Annuler
+              </button>
+              <button
+                onClick={() => assignMutation.mutate({ jury: activeJury, movieIds: selectedMovieIds })}
+                disabled={assignMutation.isPending}
+                className="flex-1 px-3 py-2 bg-purple-600 text-white text-xs rounded-lg hover:bg-purple-500 transition font-semibold disabled:opacity-50">
+                {assignMutation.isPending ? "En cours…" : "✓ Assigner"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL 2 - Retrait (liste des films assignés) - MODERN STYLE */}
-      {showUnassignModal && modalJury && (
+      {/* ════════════════════════════════════════════════════
+          MODALE VOIR / RETIRER FILMS D'UN JURY
+      ════════════════════════════════════════════════════ */}
+      {modalMode === "unassign" && activeJury && !confirmUnassign && (
         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-[#1a1c20] to-[#0f1114] border border-white/10 rounded-xl w-full max-w-md shadow-xl shadow-black/50">
-            
-            <div className="p-4">
-              {/* Header with close button */}
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-semibold text-xs flex-shrink-0">
-                    {modalJury.first_name?.[0]}{modalJury.last_name?.[0]}
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-semibold text-white">
-                      {modalJury.first_name} {modalJury.last_name}
-                    </h3>
-                    <p className="text-[9px] text-white/40">Films assignés</p>
-                  </div>
+          <div className="bg-[#111318] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center text-white font-bold text-xs flex-shrink-0">
+                  {activeJury.first_name?.[0]}{activeJury.last_name?.[0]}
                 </div>
-                <button
-                  onClick={() => setShowUnassignModal(false)}
-                  className="p-1 hover:bg-white/10 rounded-md transition-colors"
-                >
-                  <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
+                <div>
+                  <p className="text-sm font-semibold text-white">
+                    {activeJury.first_name} {activeJury.last_name}
+                  </p>
+                  <p className="text-[10px] text-white/40">
+                    {juryFilms.length} film(s) assigné(s)
+                  </p>
+                </div>
               </div>
+              <button onClick={() => { setModalMode(null); setActiveJury(null); }}
+                className="text-white/40 hover:text-white text-xl">✕</button>
+            </div>
 
-              {/* Liste des films assignés */}
-              {videos.filter(m => (m.Juries || []).some(j => j.id_user === modalJury.id_user)).length === 0 ? (
-                <div className="text-center py-8">
-                  <div className="mx-auto w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mb-3">
-                    <svg className="w-6 h-6 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
-                    </svg>
-                  </div>
-                  <p className="text-xs text-white/40">Aucun film assigné à ce jury</p>
-                </div>
+            <div className="p-5">
+              {juryFilms.length === 0 ? (
+                <p className="text-sm text-white/30 text-center py-8">
+                  Aucun film assigné à ce membre du jury.
+                </p>
               ) : (
                 <>
                   <div className="flex items-center justify-between mb-2">
-                    <p className="text-[10px] text-white/60">
-                      {selectedToUnassign.length} sélectionné{selectedToUnassign.length !== 1 ? 's' : ''}
+                    <p className="text-[10px] text-white/40">
+                      Sélectionner des films pour les retirer
                     </p>
                     <button
                       onClick={() => {
-                        const assignedMovies = videos.filter(m => 
-                          (m.Juries || []).some(j => j.id_user === modalJury.id_user)
-                        );
-                        if (selectedToUnassign.length === assignedMovies.length) {
+                        if (selectedToUnassign.length === juryFilms.length) {
                           setSelectedToUnassign([]);
                         } else {
-                          setSelectedToUnassign(assignedMovies.map((m) => m.id_movie));
+                          setSelectedToUnassign(juryFilms.map((m) => m.id_movie));
                         }
                       }}
-                      className="text-[9px] text-purple-400 hover:text-purple-300 transition-colors"
-                    >
-                      {selectedToUnassign.length === videos.filter(m => (m.Juries || []).some(j => j.id_user === modalJury.id_user)).length 
-                        ? "Tout désélectionner" 
-                        : "Tout sélectionner"}
+                      className="text-[10px] text-purple-400 hover:text-purple-300 transition">
+                      {selectedToUnassign.length === juryFilms.length ? "Désélectionner tout" : "Tout sélectionner"}
                     </button>
                   </div>
 
-                  <div className="space-y-1 max-h-60 overflow-y-auto scrollbar-thin-dark mb-4">
-                    {videos
-                      .filter(m => (m.Juries || []).some(j => j.id_user === modalJury.id_user))
-                      .map((movie) => {
-                        const poster = getPoster(movie);
-                        const isSelected = selectedToUnassign.includes(movie.id_movie);
-                        
-                        return (
-                          <div
-                            key={movie.id_movie}
-                            onClick={() => toggleToUnassign(movie.id_movie)}
-                            className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'bg-purple-500/10 border-purple-500/30' 
-                                : 'bg-black/40 border-white/10 hover:bg-white/5 hover:border-white/20'
-                            }`}
-                          >
-                            {/* Custom checkbox */}
-                            <div className={`w-4 h-4 rounded-md border flex items-center justify-center transition-colors ${
-                              isSelected 
-                                ? 'bg-purple-500 border-purple-500' 
-                                : 'border-white/20 bg-transparent'
-                            }`}>
-                              {isSelected && (
-                                <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </div>
-                            
-                            {/* Mini poster */}
-                            <div className="w-6 h-6 bg-gradient-to-br from-gray-800 to-gray-900 rounded overflow-hidden flex-shrink-0">
-                              {poster ? (
-                                <img
-                                  src={poster}
-                                  alt={movie.title}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <svg className="w-3 h-3 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                  </svg>
-                                </div>
-                              )}
-                            </div>
-                            
-                            {/* Title */}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs text-white font-medium truncate">{movie.title}</p>
-                              <div className="flex items-center gap-1 mt-0.5">
-                                {(movie.Categories || []).slice(0, 1).map((cat) => (
-                                  <span
-                                    key={cat.id_categorie}
-                                    className="text-[7px] text-purple-300"
-                                  >
-                                    {cat.name}
-                                  </span>
-                                ))}
-                              </div>
-                            </div>
+                  <div className="space-y-1.5 max-h-56 overflow-y-auto mb-4">
+                    {juryFilms.map((movie) => {
+                      const poster     = getPoster(movie);
+                      const isSel      = selectedToUnassign.includes(movie.id_movie);
+                      const cfg        = statusCfg(movie.selection_status || "submitted");
+                      return (
+                        <div key={movie.id_movie}
+                          onClick={() => setSelectedToUnassign((prev) =>
+                            prev.includes(movie.id_movie)
+                              ? prev.filter((x) => x !== movie.id_movie)
+                              : [...prev, movie.id_movie]
+                          )}
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border cursor-pointer transition ${
+                            isSel ? "bg-red-500/10 border-red-500/30" : "bg-white/5 border-white/10 hover:bg-white/[0.08]"
+                          }`}>
+                          <div className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center ${
+                            isSel ? "bg-red-500 border-red-500" : "border-white/20"
+                          }`}>
+                            {isSel && (
+                              <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
                           </div>
-                        );
-                      })}
+                          {poster && (
+                            <img src={poster} alt={movie.title} className="w-7 h-7 rounded object-cover flex-shrink-0" />
+                          )}
+                          <span className="flex-1 text-xs text-white truncate">{movie.title}</span>
+                          <span className={`text-[8px] px-1.5 py-0.5 rounded-full border ${cfg.color}`}>
+                            {cfg.label}
+                          </span>
+                        </div>
+                      );
+                    })}
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-col gap-2">
-                    <button
-                      onClick={handleUnassignConfirm}
-                      disabled={selectedToUnassign.length === 0}
-                      className="w-full px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      Retirer {selectedToUnassign.length} film{selectedToUnassign.length !== 1 ? 's' : ''}
+                  <div className="flex gap-2">
+                    <button onClick={() => { setModalMode(null); setActiveJury(null); setSelectedToUnassign([]); }}
+                      className="flex-1 px-3 py-2 bg-white/5 border border-white/10 text-white/70 text-xs rounded-lg hover:bg-white/10 transition">
+                      Fermer
                     </button>
                     <button
-                      onClick={() => setShowUnassignModal(false)}
-                      className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white/80 text-xs rounded-lg hover:bg-white/10 transition-colors"
-                    >
-                      Annuler
+                      disabled={selectedToUnassign.length === 0}
+                      onClick={() => setConfirmUnassign(true)}
+                      className="flex-1 px-3 py-2 bg-red-600/80 text-white text-xs rounded-lg hover:bg-red-600 transition font-semibold disabled:opacity-30 disabled:cursor-not-allowed">
+                      Retirer {selectedToUnassign.length > 0 ? `(${selectedToUnassign.length})` : ""}
                     </button>
                   </div>
                 </>
@@ -642,38 +682,34 @@ export default function JuryManagement() {
         </div>
       )}
 
-      {/* MODAL 3 - Confirmation de retrait */}
-      {showConfirmModal && (
+      {/* ════════════════════════════════════════════════════
+          MODALE CONFIRMATION RETRAIT
+      ════════════════════════════════════════════════════ */}
+      {confirmUnassign && activeJury && (
         <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-gradient-to-br from-[#1a1c20] to-[#0f1114] border border-white/10 rounded-xl w-full max-w-sm shadow-xl shadow-black/50">
-            
-            <div className="p-5">
-              <div className="text-center mb-4">
-                <div className="mx-auto w-10 h-10 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center mb-3">
-                  <svg className="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.142 16.5c-.77.833.192 2.5 1.732 2.5z" />
-                  </svg>
-                </div>
-                <h3 className="text-sm font-semibold text-white mb-1">Confirmer le retrait</h3>
-                <p className="text-xs text-white/60">
-                  Retirer {selectedToUnassign.length} film{selectedToUnassign.length !== 1 ? 's' : ''} de {modalJury?.first_name} ?
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={handleUnassignFinal}
-                  className="w-full px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-700 transition-colors font-medium"
-                >
-                  Oui, retirer
-                </button>
-                <button
-                  onClick={() => setShowConfirmModal(false)}
-                  className="w-full px-3 py-2 bg-white/5 border border-white/10 text-white/80 text-xs rounded-lg hover:bg-white/10 transition-colors"
-                >
-                  Annuler
-                </button>
-              </div>
+          <div className="bg-[#111318] border border-white/10 rounded-2xl w-full max-w-sm shadow-2xl p-6 text-center">
+            <div className="w-12 h-12 rounded-full bg-red-500/20 border border-red-500/30 flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L4.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-sm font-semibold text-white mb-2">Confirmer le retrait</h3>
+            <p className="text-xs text-white/60 mb-5">
+              Retirer <span className="text-white font-semibold">{selectedToUnassign.length}</span> film(s)
+              de <span className="text-white font-semibold">{activeJury.first_name} {activeJury.last_name}</span> ?
+            </p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmUnassign(false)}
+                className="flex-1 px-3 py-2 bg-white/5 border border-white/10 text-white/70 text-xs rounded-lg hover:bg-white/10 transition">
+                Annuler
+              </button>
+              <button
+                onClick={() => unassignMutation.mutate({ jury: activeJury, movieIds: selectedToUnassign })}
+                disabled={unassignMutation.isPending}
+                className="flex-1 px-3 py-2 bg-red-600 text-white text-xs rounded-lg hover:bg-red-500 transition font-semibold disabled:opacity-50">
+                {unassignMutation.isPending ? "En cours…" : "Oui, retirer"}
+              </button>
             </div>
           </div>
         </div>
