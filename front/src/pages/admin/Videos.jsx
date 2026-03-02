@@ -13,12 +13,16 @@ import { zodResolver } from "@hookform/resolvers/zod";
  */
 import {
   getVideos,
+  updateMovieStatus,
   updateMovie,
   deleteMovie
 } from "../../api/videos";
+import { getVotes } from "../../api/votes";
+import { getAwards, createAward, deleteAward } from "../../api/awards";
 
 import GlassTableBody from "../../components/admin/GlassTableBody.jsx";
 import Pagination from "../../components/admin/Pagination.jsx";
+import { VideoPreview } from "../../components/VideoPreview.jsx";
 
 function Videos() {
 
@@ -46,6 +50,9 @@ function Videos() {
     const [message, setMessage] = useState("");
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(10);
+    const [statusTarget, setStatusTarget] = useState("submitted");
+    const [awardName, setAwardName] = useState("");
+    const uploadBase = "http://localhost:3000/uploads";
 
     // Fetch movies
     const { data, refetch } = useQuery({
@@ -53,9 +60,27 @@ function Videos() {
       queryFn: getVideos,
     });
 
+    const { data: votesData } = useQuery({
+      queryKey: ["votes"],
+      queryFn: getVotes,
+    });
+
+    const { data: awardsData } = useQuery({
+      queryKey: ["awards"],
+      queryFn: getAwards,
+    });
+
     useEffect(() => {
       if (data?.data) setMovies(data.data);
     }, [data]);
+
+    useEffect(() => {
+      if (!showEditModal || !editingMovie || !data?.data) return;
+      const refreshed = data.data.find((movie) => movie.id_movie === editingMovie.id_movie);
+      if (refreshed) {
+        setEditingMovie(refreshed);
+      }
+    }, [data, showEditModal, editingMovie]);
 
     // Filtrage
     const filteredMovies = useMemo(() => {
@@ -74,6 +99,37 @@ function Videos() {
       return Math.max(1, Math.ceil(filteredMovies.length / itemsPerPage));
     }, [filteredMovies.length, itemsPerPage]);
 
+    const voteStatsByMovie = useMemo(() => {
+      const votes = votesData?.data || [];
+      const stats = {};
+
+      votes.forEach((vote) => {
+        if (!stats[vote.id_movie]) {
+          stats[vote.id_movie] = { count: 0, sum: 0, average: 0 };
+        }
+
+        const numeric = parseFloat(vote.note);
+        if (!Number.isNaN(numeric)) {
+          stats[vote.id_movie].count += 1;
+          stats[vote.id_movie].sum += numeric;
+          stats[vote.id_movie].average = stats[vote.id_movie].sum / stats[vote.id_movie].count;
+        }
+      });
+
+      return stats;
+    }, [votesData]);
+
+    const awardsByMovie = useMemo(() => {
+      const awards = awardsData?.data || [];
+      return awards.reduce((acc, award) => {
+        if (!acc[award.id_movie]) {
+          acc[award.id_movie] = [];
+        }
+        acc[award.id_movie].push(award);
+        return acc;
+      }, {});
+    }, [awardsData]);
+
     // Formulaires
     const createForm = useForm({
       resolver: zodResolver(createMovieSchema),
@@ -90,12 +146,43 @@ function Videos() {
       mutationFn: async ({ id, movieData }) => updateMovie(id, movieData),
       onSuccess: () => {
         setMessage("Film modifié avec succès");
-        setShowEditModal(false);
-        editForm.reset();
-        setEditingMovie(null);
-        refetch();
+        queryClient.invalidateQueries({ queryKey: ["movies"] });
+        queryClient.invalidateQueries({ queryKey: ["listVideos"] });
       },
       onError: () => setMessage("Erreur lors de la modification du film"),
+    });
+
+    const updateStatusMutation = useMutation({
+      mutationFn: async ({ id, selection_status }) => updateMovieStatus(id, selection_status),
+      onSuccess: () => {
+        setMessage("Statut de votation mis à jour");
+        queryClient.invalidateQueries({ queryKey: ["movies"] });
+        queryClient.invalidateQueries({ queryKey: ["listVideos"] });
+      },
+      onError: () => setMessage("Erreur lors du changement de statut"),
+    });
+
+    const createAwardMutation = useMutation({
+      mutationFn: async ({ id_movie, name }) => createAward(id_movie, name),
+      onSuccess: () => {
+        setMessage("Prix attribué avec succès");
+        setAwardName("");
+        queryClient.invalidateQueries({ queryKey: ["awards"] });
+        queryClient.invalidateQueries({ queryKey: ["movies"] });
+        queryClient.invalidateQueries({ queryKey: ["listVideos"] });
+      },
+      onError: () => setMessage("Erreur lors de l'attribution du prix"),
+    });
+
+    const deleteAwardMutation = useMutation({
+      mutationFn: async (id_award) => deleteAward(id_award),
+      onSuccess: () => {
+        setMessage("Prix supprimé avec succès");
+        queryClient.invalidateQueries({ queryKey: ["awards"] });
+        queryClient.invalidateQueries({ queryKey: ["movies"] });
+        queryClient.invalidateQueries({ queryKey: ["listVideos"] });
+      },
+      onError: () => setMessage("Erreur lors de la suppression du prix"),
     });
 
     const deleteMutation = useMutation({
@@ -104,7 +191,8 @@ function Videos() {
         setMessage("Film supprimé avec succès");
         setShowDeleteConfirm(false);
         setMovieToDelete(null);
-        refetch();
+        queryClient.invalidateQueries({ queryKey: ["movies"] });
+        queryClient.invalidateQueries({ queryKey: ["listVideos"] });
       },
       onError: () => setMessage("Erreur lors de la suppression du film"),
     });
@@ -117,6 +205,8 @@ function Videos() {
         synopsis: movie.synopsis || "",
         url: movie.url,
       });
+      setStatusTarget(movie.selection_status || "submitted");
+      setAwardName("");
       setShowEditModal(true);
     }
 
@@ -129,10 +219,41 @@ function Videos() {
       if (movieToDelete) deleteMutation.mutate(movieToDelete.id_movie);
     }
 
+    function getPoster(movie) {
+      if (!movie) return null;
+      return movie.thumbnail || movie.display_picture || movie.picture1 || movie.picture2 || movie.picture3 || null;
+    }
+
+    function getTrailer(movie) {
+      if (!movie) return null;
+      return movie.trailer || movie.trailer_video || movie.trailerVideo || movie.filmFile || movie.video || null;
+    }
+
     function cancelDelete() {
       setShowDeleteConfirm(false);
       setMovieToDelete(null);
     }
+
+    function handleChangeStatus() {
+      if (!editingMovie) return;
+      updateStatusMutation.mutate({ id: editingMovie.id_movie, selection_status: statusTarget });
+    }
+
+    function handleAddAward() {
+      if (!editingMovie || !awardName.trim()) return;
+      createAwardMutation.mutate({ id_movie: editingMovie.id_movie, name: awardName.trim() });
+    }
+
+    const movieVotes = useMemo(() => {
+      if (!editingMovie) return [];
+      const votes = votesData?.data || [];
+      return votes.filter((vote) => vote.id_movie === editingMovie.id_movie);
+    }, [votesData, editingMovie]);
+
+    const movieAwards = useMemo(() => {
+      if (!editingMovie) return [];
+      return awardsByMovie[editingMovie.id_movie] || [];
+    }, [awardsByMovie, editingMovie]);
 
     // Table columns for GlassTableBody
     const columns = [
@@ -217,41 +338,219 @@ function Videos() {
         />
         {/* Edit Modal */}
         {showEditModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded shadow-lg w-full max-w-md">
-              <h2 className="text-xl font-bold mb-4">Modifier le film</h2>
-              <form onSubmit={editForm.handleSubmit((data) => updateMutation.mutate({ id: editingMovie.id_movie, movieData: data }))} className="space-y-3">
-                <div>
-                  <label className="block mb-1">Titre</label>
-                  <input {...editForm.register("title")} className="border px-2 py-1 rounded w-full" />
-                  {editForm.formState.errors.title && <span className="text-red-500 text-xs">{editForm.formState.errors.title.message}</span>}
+          <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+            <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-6xl max-h-[92vh] overflow-hidden p-5">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-bold text-white">Modifier le film</h2>
+                <button
+                  type="button"
+                  onClick={() => setShowEditModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="mt-4 grid grid-cols-12 gap-3 text-[12px]">
+                <div className="col-span-12 xl:col-span-7 space-y-3">
+                  <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-3">
+                    <h4 className="text-xs uppercase text-gray-400 mb-2">Prévisualisation</h4>
+                    {(getTrailer(editingMovie) || editingMovie?.youtube_link) ? (
+                      <div className="aspect-video h-[210px]">
+                        {getTrailer(editingMovie) ? (
+                          <VideoPreview
+                            title={editingMovie?.title}
+                            src={`${uploadBase}/${getTrailer(editingMovie)}`}
+                            poster={getPoster(editingMovie) ? `${uploadBase}/${getPoster(editingMovie)}` : undefined}
+                            openMode="fullscreen"
+                          />
+                        ) : (
+                          <a
+                            className="text-[#AD46FF] hover:text-[#F6339A] font-semibold"
+                            href={editingMovie?.youtube_link}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Ouvrir la vidéo YouTube
+                          </a>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="text-gray-500">Aucune vidéo disponible.</p>
+                    )}
+                  </div>
+
+                  <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-3">
+                    <h4 className="text-xs uppercase text-gray-400 mb-2">Statut de votation</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div className="bg-gray-950 border border-gray-800 rounded-lg p-2">
+                        <p className="text-[11px] text-gray-400">Votes</p>
+                        <p className="text-white font-semibold">{voteStatsByMovie[editingMovie?.id_movie]?.count || 0}</p>
+                      </div>
+                      <div className="bg-gray-950 border border-gray-800 rounded-lg p-2">
+                        <p className="text-[11px] text-gray-400">Moyenne</p>
+                        <p className="text-white font-semibold">
+                          {voteStatsByMovie[editingMovie?.id_movie]?.count > 0
+                            ? voteStatsByMovie[editingMovie.id_movie].average.toFixed(2)
+                            : "-"}
+                        </p>
+                      </div>
+                      <div className="bg-gray-950 border border-gray-800 rounded-lg p-2">
+                        <p className="text-[11px] text-gray-400">Sélection</p>
+                        <p className="text-white font-semibold">{editingMovie?.selection_status || "submitted"}</p>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex flex-col sm:flex-row gap-2">
+                      <select
+                        value={statusTarget}
+                        onChange={(e) => setStatusTarget(e.target.value)}
+                        className="bg-gray-950 border border-gray-700 text-white px-3 py-2 rounded w-full"
+                      >
+                        <option value="submitted">submitted</option>
+                        <option value="assigned">assigned</option>
+                        <option value="to_discuss">to_discuss</option>
+                        <option value="candidate">candidate</option>
+                        <option value="selected">selected</option>
+                        <option value="finalist">finalist</option>
+                        <option value="awarded">awarded</option>
+                        <option value="refused">refused</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={handleChangeStatus}
+                        disabled={updateStatusMutation.isPending}
+                        className="px-4 py-2 bg-[#AD46FF] text-white rounded hover:bg-[#9536e6] disabled:opacity-50"
+                      >
+                        Mettre à jour
+                      </button>
+                    </div>
+
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setStatusTarget("candidate")}
+                        className="px-3 py-2 bg-blue-600/80 text-white rounded hover:bg-blue-600"
+                      >
+                        Candidater
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setStatusTarget("awarded")}
+                        className="px-3 py-2 bg-green-600/80 text-white rounded hover:bg-green-600"
+                      >
+                        Marquer primé
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-3">
+                    <h4 className="text-xs uppercase text-gray-400 mb-2">Votations effectuées</h4>
+                    {movieVotes.length === 0 ? (
+                      <p className="text-gray-500">Aucun vote pour ce film.</p>
+                    ) : (
+                      <div className="space-y-2 max-h-56 overflow-auto pr-1">
+                        {movieVotes.map((vote) => (
+                          <div key={vote.id_vote} className="bg-gray-950 border border-gray-800 rounded-lg p-2">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-gray-300">
+                                {vote.User ? `${vote.User.first_name || ""} ${vote.User.last_name || ""}`.trim() : `Jury #${vote.id_user}`}
+                              </span>
+                              <span className="text-white font-semibold">Note: {vote.note}</span>
+                            </div>
+                            {vote.comments && <p className="text-[11px] text-gray-400 mt-1 line-clamp-2">{vote.comments}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-3">
+                    <h4 className="text-xs uppercase text-gray-400 mb-2">Prix & candidature</h4>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={awardName}
+                        onChange={(e) => setAwardName(e.target.value)}
+                        placeholder="Nom du prix"
+                        className="bg-gray-950 border border-gray-700 text-white px-3 py-2 rounded w-full"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddAward}
+                        disabled={!awardName.trim() || createAwardMutation.isPending}
+                        className="px-4 py-2 bg-yellow-600/80 text-white rounded hover:bg-yellow-600 disabled:opacity-50"
+                      >
+                        Ajouter
+                      </button>
+                    </div>
+
+                    <div className="mt-2 space-y-2">
+                      {movieAwards.length === 0 ? (
+                        <p className="text-gray-500">Aucun prix attribué.</p>
+                      ) : (
+                        movieAwards.map((award) => (
+                          <div key={award.id_award} className="bg-gray-950 border border-gray-800 rounded-lg p-2 flex items-center justify-between">
+                            <span className="text-yellow-200 text-xs">🏆 {award.award_name}</span>
+                            <button
+                              type="button"
+                              onClick={() => deleteAwardMutation.mutate(award.id_award)}
+                              className="px-2 py-1 text-xs bg-red-600/80 text-white rounded hover:bg-red-600"
+                            >
+                              Supprimer
+                            </button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block mb-1">Synopsis</label>
-                  <textarea {...editForm.register("synopsis")} className="border px-2 py-1 rounded w-full" />
+
+                <div className="col-span-12 xl:col-span-5">
+                  <form onSubmit={editForm.handleSubmit((formData) => updateMutation.mutate({ id: editingMovie.id_movie, movieData: formData }))} className="bg-gray-900/60 border border-gray-800 rounded-lg p-3 space-y-3">
+                    <div>
+                      <label className="block mb-1 text-gray-300">Titre</label>
+                      <input {...editForm.register("title")} className="bg-gray-950 border border-gray-700 text-white px-3 py-2 rounded w-full" />
+                      {editForm.formState.errors.title && <span className="text-red-400 text-xs">{editForm.formState.errors.title.message}</span>}
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-gray-300">Synopsis</label>
+                      <textarea {...editForm.register("synopsis")} rows={4} className="bg-gray-950 border border-gray-700 text-white px-3 py-2 rounded w-full" />
+                    </div>
+                    <div>
+                      <label className="block mb-1 text-gray-300">URL</label>
+                      <input {...editForm.register("url")} className="bg-gray-950 border border-gray-700 text-white px-3 py-2 rounded w-full" />
+                      {editForm.formState.errors.url && <span className="text-red-400 text-xs">{editForm.formState.errors.url.message}</span>}
+                    </div>
+                    <div className="flex justify-end gap-2 pt-1">
+                      <button
+                        type="button"
+                        className="px-4 py-2 bg-gray-800 text-gray-200 rounded hover:bg-gray-700"
+                        onClick={() => {
+                          setShowEditModal(false);
+                          editForm.reset();
+                          setEditingMovie(null);
+                        }}
+                      >
+                        Fermer
+                      </button>
+                      <button type="submit" className="px-4 py-2 bg-[#AD46FF] text-white rounded hover:bg-[#9536e6]">Enregistrer</button>
+                    </div>
+                  </form>
                 </div>
-                <div>
-                  <label className="block mb-1">URL</label>
-                  <input {...editForm.register("url")} className="border px-2 py-1 rounded w-full" />
-                  {editForm.formState.errors.url && <span className="text-red-500 text-xs">{editForm.formState.errors.url.message}</span>}
-                </div>
-                <div className="flex justify-end gap-2">
-                  <button type="button" className="px-4 py-2 bg-gray-300 rounded" onClick={() => setShowEditModal(false)}>Annuler</button>
-                  <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded">Enregistrer</button>
-                </div>
-              </form>
+              </div>
             </div>
           </div>
         )}
         {/* Delete Confirm Modal */}
         {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded shadow-lg w-full max-w-sm">
-              <h2 className="text-xl font-bold mb-4">Confirmer la suppression</h2>
-              <p>Voulez-vous vraiment supprimer le film \"{movieToDelete?.title}\" ?</p>
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4">
+            <div className="bg-gray-950 border border-gray-800 p-6 rounded-2xl shadow-lg w-full max-w-sm">
+              <h2 className="text-xl font-bold mb-3 text-white">Confirmer la suppression</h2>
+              <p className="text-gray-300 text-sm">Voulez-vous vraiment supprimer le film "{movieToDelete?.title}" ?</p>
               <div className="flex justify-end gap-2 mt-4">
-                <button className="px-4 py-2 bg-gray-300 rounded" onClick={cancelDelete}>Annuler</button>
-                <button className="px-4 py-2 bg-red-600 text-white rounded" onClick={confirmDelete}>Supprimer</button>
+                <button className="px-4 py-2 bg-gray-800 text-gray-200 rounded hover:bg-gray-700" onClick={cancelDelete}>Annuler</button>
+                <button className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-500" onClick={confirmDelete}>Supprimer</button>
               </div>
             </div>
           </div>
