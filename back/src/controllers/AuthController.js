@@ -6,6 +6,9 @@ import { comparePassword } from "../utils/password.js";
 import { hashPassword } from "../utils/password.js";
 import UserController from "./UserController.js";
 import jwt from "jsonwebtoken";
+import { isMailerConfigured, sendEmail, sendTemplateEmail } from "../utils/mailer.js";
+
+const NewsletterSubscriber = db.NewsletterSubscriber;
 
 /**
  * Fonction de connexion (Login)
@@ -238,10 +241,60 @@ async function registerWithFilm(req, res) {
 
     await transaction.commit();
 
+    let mailNotification = "Email non envoyé (Brevo non configuré)";
+    try {
+      const [subscriber, created] = await NewsletterSubscriber.findOrCreate({
+        where: { email: newUser.email },
+        defaults: {
+          email: newUser.email,
+          first_name: newUser.first_name,
+          last_name: newUser.last_name,
+          source: "FILM_CANDIDACY",
+          is_active: true
+        }
+      });
+
+      if (!created) {
+        subscriber.first_name = newUser.first_name || subscriber.first_name;
+        subscriber.last_name = newUser.last_name || subscriber.last_name;
+        subscriber.source = "FILM_CANDIDACY";
+        subscriber.is_active = true;
+        await subscriber.save();
+      }
+
+      if (isMailerConfigured()) {
+        const candidacyTemplateId = process.env.BREVO_TEMPLATE_FILM_CANDIDACY_CONFIRMATION;
+        if (candidacyTemplateId) {
+          await sendTemplateEmail({
+            to: newUser.email,
+            templateId: candidacyTemplateId,
+            params: {
+              first_name: newUser.first_name,
+              last_name: newUser.last_name,
+              movie_title: newMovie.title,
+              email: newUser.email,
+            },
+          });
+        } else {
+          await sendEmail({
+            to: newUser.email,
+            subject: "Confirmation de candidature - MarsAI Festival",
+            text: `Bonjour ${newUser.first_name}, votre candidature (${newMovie.title}) a bien été reçue.`,
+            html: `<p>Bonjour <strong>${newUser.first_name}</strong>,</p><p>Votre candidature pour le film <strong>${newMovie.title}</strong> a bien été reçue.</p><p>Merci pour votre participation au MarsAI Festival.</p>`
+          });
+        }
+        mailNotification = "Email de confirmation envoyé";
+      }
+    } catch (emailError) {
+      console.warn("registerWithFilm email/newsletter error:", emailError.message);
+      mailNotification = "Candidature créée, mais email de confirmation non envoyé";
+    }
+
     return res.status(201).json({
       message: "Candidature créée avec succès",
       user: { id_user: newUser.id_user, email: newUser.email },
-      movie: { id_movie: newMovie.id_movie, title: newMovie.title }
+      movie: { id_movie: newMovie.id_movie, title: newMovie.title },
+      notification: mailNotification
     });
   } catch (error) {
     console.error("registerWithFilm error:", error);

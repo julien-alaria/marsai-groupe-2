@@ -77,4 +77,39 @@ async function updateCurrentUser(updatedUser) {
   return await instance.put("users/me", updatedUser);
 }
 
-export { getUsers, createUser, updateUser, deleteUser, getUserById, getCurrentUser, updateCurrentUser };
+/**
+ * Inscription publique à la newsletter
+ * Endpoint: POST /newsletter/subscribe
+ */
+async function subscribeNewsletter(payload) {
+  return await instance.post("newsletter/subscribe", payload);
+}
+
+/**
+ * Liste des abonnés newsletter (ADMIN)
+ * Endpoint: GET /newsletter/subscribers
+ */
+async function getNewsletterSubscribers() {
+  return await instance.get("newsletter/subscribers");
+}
+
+/**
+ * Envoi d'une newsletter (ADMIN)
+ * Endpoint: POST /newsletter/send
+ */
+async function sendNewsletter(payload) {
+  return await instance.post("newsletter/send", payload);
+}
+
+export {
+  getUsers,
+  createUser,
+  updateUser,
+  deleteUser,
+  getUserById,
+  getCurrentUser,
+  updateCurrentUser,
+  subscribeNewsletter,
+  getNewsletterSubscribers,
+  sendNewsletter
+};
