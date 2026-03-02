@@ -434,8 +434,9 @@ export default function AdminLayout() {
             >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
               <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.257 3.099c.766-1.36 2.72-1.36 3.486 0l6.518 11.589c.75 1.334-.213 2.99-1.742 2.99H3.48c-1.53 0-2.493-1.656-1.742-2.99L8.257 3.1z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v3m0 3h.01" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.31 1.84-2.25 3.273-2.25 1.917 0 3.5 1.47 3.5 3.281 0 1.332-.798 2.48-1.945 2.98-.746.326-1.305.933-1.305 1.739V15" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
           </div>
