@@ -99,7 +99,35 @@ export default function ProducerHome() {
     control: movieControl,
     formState: { errors: movieErrors }
   } = useForm({
-    resolver: zodResolver(movieSchema)
+    resolver: zodResolver(movieSchema),
+    defaultValues: {
+      filmTitleOriginal: "Film sans titre",
+      durationSeconds: "60",
+      filmLanguage: "Français",
+      releaseYear: "2026",
+      nationality: "France",
+      translation: "Film without title",
+      youtubeLink: "",
+      synopsisOriginal: "Cette vidéo raconte l'histoire de...",
+      synopsisEnglish: "This video tells the story of...",
+      aiClassification: "",
+      aiStack: "NanoBanana, RunwayML, ElevenLabs",
+      aiMethodology: "1",
+      categoryId: "1",
+      knownByMarsAi: "1",
+      collaborators: [
+        {
+          first_name: "John",
+          last_name: "Doe",
+          email: "john.doe@example.com",
+          job: "Actor",
+        },
+      ],
+      filmFile: null,
+      thumbnails: [],
+      subtitlesSrt: null,
+      acceptTerms: true,
+    },
   });
 
   // Watch form fields for validation

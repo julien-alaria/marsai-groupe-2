@@ -45,7 +45,7 @@ async function uploadFile(filePath) {
     Body: fileStream,
   });
   await s3Client.send(uploadCommand);
-  console.log("File uploaded successfully!", fileName);
+  console.log("✓ S3 File uploaded successfully", fileName);
 }
 
 // Télécharger un fichier depuis le dossier "grp3"

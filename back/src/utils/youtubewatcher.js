@@ -4,6 +4,7 @@ import path from "path";
 import youtubeController from "../controllers/YoutubeController.js";
 import { uploadFile } from "./s3.js";
 
+// défini le chemin absolu du dossier ou les fichiers vidéo sont placés avant d'être traités
 const uploadFolder = path.join(process.cwd(), "uploads");
 const uploadedFolder = path.join(uploadFolder, "uploaded");
 const allowedExtensions = [".mp4", ".avi", ".m4v", ".mov", ".mpg", ".mpeg", ".wmv"];
@@ -29,14 +30,19 @@ async function uploadWithRetry(filePath, filename, retries = 3) {
         "unlisted"
       );
     } catch (err) {
+      // Déterminer si l'erreur est "retryable" (réexécuter l'opération après erreur)
       const retryable =
+        // si coupure de connexion
         err.code === "ECONNRESET" ||
+        // si err de délai d'attente
         err.code === "ETIMEDOUT" ||
+        // si err côté serveur
         err.response?.status >= 500;
-
+      // si err === false ou nd de retries atteint on lance l'erreur
       if (!retryable || attempt === retries) throw err;
-
+      // affiche un avertissement en console à chaque nouvelle tentative de upload
       console.warn(`Retry ${attempt} pour ${filename}...`);
+      // introduit un délai avec temps d'attente qui progresse de façon exponentielle à chaque tentative
       await new Promise(res => setTimeout(res, 2000 * attempt));
     }
   }
@@ -55,7 +61,7 @@ async function processQueue() {
 
     const data = await uploadWithRetry(filePath, filename);
 
-    console.log(`Upload terminé : ${data.id}`);
+    console.log(`✓ Upload terminé : ${data.id}`);
     console.log(`Content licensed : ${data.licensedContent}`);
     console.log(`URL YouTube : https://www.youtube.com/watch?v=${data.id}`);
 
