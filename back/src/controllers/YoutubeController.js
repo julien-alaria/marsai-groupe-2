@@ -40,6 +40,15 @@ function getOAuth2Client() {
   return oauth2Client;
 }
 
+// Verification que GoogleAuth est actif
+function isGoogleAuthActive() {
+  if (oauth2Client) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 //Upload vidéo
 async function uploadVideo(filePath, title, description, privacyStatus = "unlisted") {
   if (!fs.existsSync(filePath)) throw new Error("Fichier introuvable");
@@ -84,5 +93,6 @@ async function uploadVideo(filePath, title, description, privacyStatus = "unlist
 export default {
   initYoutubeAuth,
   getOAuth2Client,
+  isGoogleAuthActive,
   uploadVideo,
 };
