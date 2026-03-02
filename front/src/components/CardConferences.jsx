@@ -16,10 +16,10 @@ export default function ScheduleCard({
         bg-[rgba(255,255,255,0.05)]
         rounded-2xl
         border ${borderColor}
-        px-6 py-5
+        px-4 py-4 md:px-6 md:py-5
         flex
         items-start
-        gap-6
+        gap-4 md:gap-6
         transition
         ${hoverShadow}
       `}
@@ -27,7 +27,7 @@ export default function ScheduleCard({
 
       {/* LEFT COLUMN — TIME */}
       <div
-        className="text-2xl font-bold whitespace-nowrap"
+        className="text-lg md:text-2xl font-bold whitespace-nowrap"
         style={{ color: accentColor }}
       >
         {time}
@@ -36,13 +36,13 @@ export default function ScheduleCard({
       {/* RIGHT COLUMN — CATEGORY + TITLE */}
       <div className="flex flex-col">
         <div
-          className="text-2xl font-semibold tracking-wide uppercase"
+          className="text-lg md:text-2xl font-semibold tracking-wide uppercase"
           style={{ color: accentColor }}
         >
           {category}
         </div>
 
-        <div className="text-white text-lg font-semibold mt-1 leading-snug">
+        <div className="text-white text-base md:text-lg font-semibold mt-1 leading-snug">
           {title}
         </div>
       </div>

@@ -58,7 +58,7 @@ export default function JuryPublic() {
     <p className="mb-8">{t("pages.juryPublic.membersSubtitle")}</p>
     </div>
     
-    <section className="text-[#2B7FFF] px-70">
+    <section className="text-[#2B7FFF] px-4 sm:px-20 lg:px-70">
 
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
     <div className="bg-[url(../src/assets/images/jury/tina-baz-le-gal_monteuse.jpg)] h-80 w-80 bg-cover justify-center hover:shadow-[0_0_20px_rgba(2,183,255,0.8)] transition-shadow duration-200">
@@ -86,7 +86,7 @@ export default function JuryPublic() {
   
   </section>
 
-<section className="text-[#2B7FFF] px-70 py-5">
+<section className="text-[#2B7FFF] px-4 sm:px-20 lg:px-70 py-5">
 
   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
 

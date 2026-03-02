@@ -25,7 +25,6 @@ export default function Partenaires() {
           {t("pages.sponsors.title")}{" "} <span className="text-[#F6339A]">{t("pages.sponsors.categories.techniques")}</span>
         </h2>
         <PartenaireGrid items={data.techniques} />
-15
         {/* TITRE DIVERS */}
         <h2 className="text-4xl md:text-6xl font-bold text-white uppercase text-center pt-6 pb-15">
           {t("pages.sponsors.title")}{" "} <span className="text-[#F6339A]">{t("pages.sponsors.categories.divers")}</span>
