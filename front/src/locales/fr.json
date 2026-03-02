@@ -20,6 +20,8 @@
       }
     },
     "register": {
+      "title": "Créer mon profil Producteur",
+      "subtitle1": "Complétez votre profil producteur. Vous pourrez ensuite déposer votre film dans votre espace producteur.",
       "pageTitle": "Déposer un film",
       "subtitle": "Transmettez les éléments techniques, l'usage de l'IA et la composition de votre équipe. Tous les champs marqués d'une étoile (*) sont obligatoires.",
       "sections": {
@@ -327,8 +329,112 @@
         "theySupportFuture": "ILS SOUTIENNENT",
         "theySupportFutureAccent": "le futur"
       }
+    },
+
+    "programPublic": {
+      "title": "Programme du festival",
+      "platform": {
+     "title": "La plateforme",
+     "description": "L'épicentre de la révolution créative marseillaise. 4000m² dédiés à l'image et au futur."
+       },
+     "conferencesTitle": "Programme des conférences & des workshops",
+
+     "day1": {
+     "date": "12 juin 2026",
+     "city": "Marseille",
+     "opening": { "category": "OUVERTURE DU FESTIVAL", "title": "Présentation du Festival, des partenaires et des sélections" },
+     "workshop": { "category": "WORKSHOP", "title": "Les outils IA récents dédiés à la post-production" },
+     "break": { "category": "Pause" },
+     "roundtable": { "category": "TABLE RONDE", "title": "Débat sur l’impact actuel de l’IA générative sur les industries créatives" },
+     "screening": { "category": "DIFFUSION HORS-COMPÉTITION", "title": "Projection de courts-métrages réalisés avec l’aide de l’IA générative" },
+     "carteBlanche": { "category": "CARTE BLANCHE", "title": "Réalisateur·ice utilisant l’IA" }
+     },
+
+    "day2": {
+    "date": "13 juin 2026",
+    "city": "Marseille",
+    "roundtable": { "category": "TABLE RONDE", "title": "Créateurs utilisant l’IA dans leurs processus d’écriture et réalisation" },
+    "fireside": { "category": "FIRESIDE CHAT", "title": "Avec les membres du Jury" },
+    "break": { "category": "Pause" },
+    "selected": { "category": "PRÉSENTATION DES PROJETS SÉLECTIONNÉS", "title": "Projection de courts-métrages réalisés avec l’aide de l’IA générative" },
+    "keynote": { "category": "KEYNOTE", "title": "Entreprises développant de nouveaux outils IA" },
+    "awards": { "category": "REMISE DES PRIX", "title": "Cérémonie de clôture et remise des prix" },
+    "closing": { "category": "SOIRÉE DE CLÔTURE", "title": "DJ set, buffet et networking" }
     }
   },
+
+  "juryPublic": {
+  "presidentTitle": "Président",
+  "presidentRole": "Réalisateur et scénariste",
+  "presidentBio": "Pierre Schoeller est diplômé de l’École Louis Lumière. Après des années de travail comme scénariste, il réalise sa première fiction pour Arte Zero Défaut. Puis un premier long métrage Versailles...",
+  "membersTitle1": "Membres du",
+  "membersTitle2": "Jury",
+  "membersSubtitle": "Experts IA, cinéastes et visionnaires réunis pour délibérer sur la sélection officielle.",
+  "members": {
+    "tina": { "name": "TINA BAZ LE GAL", "role": "Monteuse" },
+    "jerome": { "name": "JEROME GENEVRAY", "role": "Réalisateur et scénariste" },
+    "eve": { "name": "EVE MACHUEL", "role": "Productrice" },
+    "anne": { "name": "ANNE SOPHIE NOVEL", "role": "Journaliste, auteure et réalisatrice" },
+    "vipulan": { "name": "VIPULAN PUVANESSWARAN", "role": "Militant écologiste" },
+    "barbara": { "name": "BARBARA SCHULZ", "role": "Comédienne" }
+  },
+  "charter": {
+    "title1": "La charte",
+    "title2": "De notation"
+  },
+  "criteria": {
+    "ai": {
+      "title": "Originalité I.A",
+      "description": "La pertinence et l'audace de l'usage des outils génératifs."
+    },
+    "aesthetic": {
+      "title": "Esthétique visuelle",
+      "description": "La cohérence et la beauté du rendu global."
+    },
+    "story": {
+      "title": "Qualité narrative",
+      "description": "La force de l'histoire racontée en seulement 60 secondes."
+    },
+    "emotion": {
+      "title": "Émotion & impact",
+      "description": "La capacité du film à toucher le spectateur."
+    }
+  }
+},
+
+"sponsors": {
+  "title": "PARTENAIRES",
+  "categories": {
+    "officiels": "OFFICIELS",
+    "medias": "Médias",
+    "techniques": "Techniques",
+    "divers": "Divers"
+  }
+},
+
+"infos": {
+  "title": "INFOS",
+  "subtitle": "PRATIQUES",
+  "access": "Accès",
+  "publicTransport": {
+    "title": "Transports en commun",
+    "line1": "Accès Tram T2/T3 Arrêt Arenc Le Silo",
+    "line2": "Métro M2 arrêt René Cassin Sud",
+    "line3": "Bus 29 Arrêt Lycée Le Chatelier"
+  },
+  "car": {
+    "title": "Voiture",
+    "line1": "Autoroute A55 - Sortie 2.",
+    "line2": "Parking Indigo Quai du Lazaret à 200m."
+  },
+  "address": {
+    "title": "Adresse",
+    "line1": "155 rue Peyssonnel, 13002 Marseille",
+    "line2": "Anciennement Docks des Suds"
+  }
+}
+
+},
 
 
 

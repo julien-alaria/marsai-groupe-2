@@ -19,7 +19,7 @@ export default function ProgramPublic() {
                 </svg>
               }
               iconcolor="#AD46FF"
-              title="Programme du festival"
+              title={t("pages.programPublic.title")}
             />
           </div>
 
@@ -31,9 +31,9 @@ export default function ProgramPublic() {
                 <circle cx="12" cy="9" fill="currentColor" r="1"/>
               </svg>
             }
-            title="la plateforme"
+            title={t("pages.programPublic.platform.title")}
             width="w-full md:w-300"
-            description="L'épicentre de la révolution créative marseillaise. 4000m² dédiés à l'image et au futur."
+            description={t("pages.programPublic.platform.description")}
             accentColor="#2B7FFF"
             borderColor="border-[rgba(43,127,255,0.40)]"
             hoverBorderColor="hover:border-[#2B7FFF]"
@@ -48,16 +48,16 @@ export default function ProgramPublic() {
                 </svg>
               }
               iconcolor="#F6339A"
-              title="Programme des conférences & des workshops"
+              title={t("pages.programPublic.conferencesTitle")}
             />
           </div>
 
           <h2 className="text-4xl md:text-6xl font-bold text-white uppercase pl-5 pb-6">
-            12 juin 2026
+            {t("pages.programPublic.day1.date")}
           </h2>
 
           <h3 className="text-3xl md:text-5xl text-[#F6339A] uppercase pl-5 pb-15">
-            marseille
+            {t("pages.programPublic.day1.city")}
           </h3>
 
           {/* --- JOUR 1 --- */}
@@ -65,8 +65,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="10:00"
-              category="OUVERTURE DU FESTIVAL"
-              title="Présentation du Festival, des partenaires et des sélections"
+              category={t("pages.programPublic.day1.opening.category")}
+              title={t("pages.programPublic.day1.opening.title")}
               accentColor="#00D492"
               borderColor="border-[rgba(0,212,146,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(0,212,146,0.7)]"
@@ -76,8 +76,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="11:30"
-              category="WORKSHOP"
-              title="Les outils IA récent dédié à la Post-production"
+              category={t("pages.programPublic.day1.workshop.category")}
+              title={t("pages.programPublic.day1.workshop.title")}
               accentColor="#C27AFF"
               borderColor="border-[rgba(194,122,255,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(173,70,255,0.7)]"
@@ -87,7 +87,7 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="13:00"
-              category="pause"
+              category={t("pages.programPublic.day1.break.category")}
               title=""
               accentColor="#D9D9D9"
               borderColor="border-[rgba(217,217,217,0.40)]"
@@ -98,8 +98,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="14:00"
-              category="TABLE RONDE"
-              title="Débat impact actuel de l’IA générative sur les industries créatives (100% human, touche pas à ma VF, réalisateur connu utilisant IA…)"
+              category={t("pages.programPublic.day1.roundtable.category")}
+              title={t("pages.programPublic.day1.roundtable.title")}
               accentColor="#FB64B6"
               borderColor="border-[rgba(251,100,182,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(251,100,182,0.7)]"
@@ -109,8 +109,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="16:00"
-              category="DIFFUSION DES OEUVRES HORS-COMPÉTITION"
-              title="Projection de courts-métrages réalisés avec l’aide de l’IA générative"
+              category={t("pages.programPublic.day1.screening.category")}
+              title={t("pages.programPublic.day1.screening.title")}
               accentColor="#2B7FFF"
               borderColor="border-[rgba(43,127,255,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(43,127,255,0.7)]"
@@ -120,8 +120,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="17:00"
-              category="CARTE BLANCHE"
-              title="réalisateur.ice utilisant l’IA"
+              category={t("pages.programPublic.day1.carteBlanche.category")}
+              title={t("pages.programPublic.day1.carteBlanche.title")}
               accentColor="#F5D000"
               borderColor="border-[rgba(245,208,0,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(245,208,0,0.7)]"
@@ -131,18 +131,18 @@ export default function ProgramPublic() {
           {/* --- JOUR 2 --- */}
 
           <h2 className="text-4xl md:text-6xl font-bold text-white uppercase pt-10 pl-5 pb-6">
-            13 juin 2026
+            {t("pages.programPublic.day2.date")}
           </h2>
 
           <h3 className="text-3xl md:text-5xl text-[#F6339A] uppercase pl-5 pb-15">
-            marseille
+             {t("pages.programPublic.day2.city")}
           </h3>
 
           <div className="w-full flex pb-10">
             <CardConferences
               time="10:00"
-              category="TABLE RONDE"
-              title="Créateurs ayant adopté les outils IA dans les processus d’écriture et de réalisation de films"
+              category={t("pages.programPublic.day2.roundtable.category")}
+              title={t("pages.programPublic.day2.roundtable.title")}
               accentColor="#FB64B6"
               borderColor="border-[rgba(251,100,182,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(251,100,182,0.7)]"
@@ -152,8 +152,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="11:30"
-              category="FIRESIDE CHAT"
-              title="Avec les membres du Jury"
+              category={t("pages.programPublic.day2.fireside.category")}
+              title={t("pages.programPublic.day2.fireside.title")}
               accentColor="#F5D000"
               borderColor="border-[rgba(245,208,0,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(245,208,0,0.7)]"
@@ -163,7 +163,7 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="13:00"
-              category="pause"
+              category={t("pages.programPublic.day2.break.category")}
               title=""
               accentColor="#D9D9D9"
               borderColor="border-[rgba(217,217,217,0.40)]"
@@ -174,8 +174,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="14:00"
-              category="PRÉSENTATION DES PROJETS SÉLECTIONNÉS"
-              title="Projection de courts-métrages réalisés avec l’aide de l’IA générative"
+              category={t("pages.programPublic.day2.selected.category")}
+              title={t("pages.programPublic.day2.selected.title")}
               accentColor="#2B7FFF"
               borderColor="border-[rgba(43,127,255,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(43,127,255,0.7)]"
@@ -185,8 +185,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="16:00"
-              category="KEYNOTE"
-              title="Avec les entreprises développants de nouveaux outils IA (Conférence dédiée au Partenaire ou Partenaire Principal)"
+              category={t("pages.programPublic.day2.keynote.category")}
+              title={t("pages.programPublic.day2.keynote.title")}
               accentColor="#C27AFF"
               borderColor="border-[rgba(194,122,255,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(173,70,255,0.7)]"
@@ -196,8 +196,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="18:00"
-              category="REMISE DES PRIX"
-              title="Cérémonie de clôture avec la remise des prix aux lauréats des différentes catégories"
+              category={t("pages.programPublic.day2.awards.category")}
+              title={t("pages.programPublic.day2.awards.title")}
               accentColor="#F5D000"
               borderColor="border-[rgba(245,208,0,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(245,208,0,0.7)]"
@@ -207,8 +207,8 @@ export default function ProgramPublic() {
           <div className="w-full flex pb-10">
             <CardConferences
               time="19:00"
-              category="SOIRÉE DE CLÔTURE"
-              title="dj set, buffet et networking pour célébrer la fin du festival et les lauréats"
+              category={t("pages.programPublic.day2.closing.category")}
+              title={t("pages.programPublic.day2.closing.title")}
               accentColor="#00D492"
               borderColor="border-[rgba(0,212,146,0.40)]"
               hoverShadow="hover:shadow-[0_0_40px_rgba(0,212,146,0.7)]"

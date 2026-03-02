@@ -137,9 +137,9 @@ export function Register() {
       <div className="min-h-screen bg-black text-white font-light pt-32 pb-6 px-3 md:pt-36">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-4">
-            <h1 className="text-3xl font-bold mt-1">Créer mon profil Producteur</h1>
+            <h1 className="text-3xl font-bold mt-1">{t('forms.register.title')}</h1>
             <p className="text-gray-400 text-xs mt-1">
-              Complétez votre profil producteur. Vous pourrez ensuite déposer votre film dans votre espace producteur.
+              {t('forms.register.subtitle1')}
             </p>
           </div>
 
@@ -322,7 +322,7 @@ export function Register() {
                     <input
                       id="password"
                       type="password"
-                      placeholder={t('forms.register.placeholders.password')}
+                      placeholder={t('forms.register.labels.password')}
                       {...register("password")}
                       className="bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg focus:outline-none focus:border-[#AD46FF] transition"
                     />

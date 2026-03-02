@@ -1,6 +1,9 @@
 import "./Home.css";
+import { useTranslation } from "react-i18next";
 
 export default function InfosPublic() {
+  const { t } = useTranslation();
+
   return (
     <>
       <div className="pt-40 pb-12 w-full flex justify-center">
@@ -8,7 +11,7 @@ export default function InfosPublic() {
 
           {/* TITRE */}
           <h2 className="text-4xl md:text-6xl font-bold text-white uppercase text-center pb-6">
-            INFOS <span className="text-[#F6339A]">PRATIQUES</span>
+            {t("pages.infos.title")}{" "} <span className="text-[#F6339A]">{t("pages.infos.subtitle")}</span>
           </h2>
 
           {/* ACCÈS */}
@@ -20,7 +23,7 @@ export default function InfosPublic() {
                 <path d="M34.033 12.844L12.39 20.947a.874.874 0 0 0 .04 1.648l9.397 3.013a.9.9 0 0 1 .263.145l12.776-12.776a.87.87 0 0 0-.833-.133" fill="#fff"/>
               </g>
             </svg>
-            accès
+            {t("pages.infos.access")}
           </h3>
 
           {/* TRANSPORTS */}
@@ -43,11 +46,11 @@ export default function InfosPublic() {
               </div>
 
               <div className="pt-2">
-                <h4 className="text-[#00D492] text-3xl font-bold">Transports en commun</h4>
+                <h4 className="text-[#00D492] text-3xl font-bold"> {t("pages.infos.publicTransport.title")}</h4>
                 <p className="text-white text-base uppercase pt-4">
-                  Accès Tram T2/T3 Arrêt Arenc Le Silo<br/>
-                  Métro M2 arrêt René Cassin Sud<br/>
-                  Bus 29 Arrêt Lycée Le Chatelier
+                  {t("pages.infos.publicTransport.line1")}<br/>
+                  {t("pages.infos.publicTransport.line2")}<br/>
+                  {t("pages.infos.publicTransport.line3")}
                 </p>
               </div>
             </div>
@@ -74,10 +77,10 @@ export default function InfosPublic() {
               </div>
 
               <div className="pt-2">
-                <h4 className="text-[#FB64B6] text-3xl font-bold">Voiture</h4>
+                <h4 className="text-[#FB64B6] text-3xl font-bold">{t("pages.infos.car.title")}</h4>
                 <p className="text-white text-base uppercase pt-4">
-                  Autoroute A55 - Sortie 2.<br/>
-                  Parking Indigo Quai du Lazaret à 200m.
+                  {t("pages.infos.car.line1")}<br/>
+                  {t("pages.infos.car.line2")}
                 </p>
               </div>
             </div>
@@ -107,10 +110,10 @@ export default function InfosPublic() {
               </div>
 
               <div className="pt-2">
-                <h4 className="text-[#C27AFF] text-3xl font-bold">Adresse</h4>
+                <h4 className="text-[#C27AFF] text-3xl font-bold">{t("pages.infos.address.title")}</h4>
                 <p className="text-white text-base uppercase pt-4">
-                  155 rue Peyssonnel, 13002 Marseille<br/>
-                  Anciennement Docks des Suds
+                  {t("pages.infos.address.line1")}<br/>
+                  {t("pages.infos.address.line2")}
                 </p>
               </div>
             </div>

@@ -20,6 +20,8 @@
       }
     },
     "register": {
+      "title": "Create my Producer profile",
+      "subtitle1": "Complete your producer profile. You will then be able to submit your film from your producer dashboard.",
       "pageTitle": "Submit a film",
       "subtitle": "Submit the technical elements, AI usage and your team composition. All fields marked with an asterisk (*) are required.",
       "sections": {
@@ -242,6 +244,8 @@
       "required": "You must accept the terms"
     }
   },
+
+
   "pages": {
     "home": {
       "hero": {
@@ -329,7 +333,147 @@
         "theySupportFuture": "THEY SUPPORT",
         "theySupportFutureAccent": "the future"
       }
+    },
+
+    "programPublic": {
+    "title": "Festival Program",
+    "platform": {
+    "title": "The Platform",
+    "description": "The epicenter of Marseille’s creative revolution. 4000m² dedicated to image and the future."
+     },
+    "conferencesTitle": "Conference & Workshop Program",
+
+    "day1": {
+    "date": "June 12, 2026",
+    "city": "Marseille",
+    "opening": {
+      "category": "FESTIVAL OPENING",
+      "title": "Presentation of the Festival, partners and official selections"
+       },
+    "workshop": {
+      "category": "WORKSHOP",
+      "title": "Recent AI tools dedicated to post-production"
+      },
+    "break": {
+      "category": "Break"
+      },
+    "roundtable": {
+      "category": "ROUNDTABLE",
+      "title": "Debate on the current impact of generative AI on creative industries"
+      },
+    "screening": {
+      "category": "OUT-OF-COMPETITION SCREENING",
+      "title": "Screening of short films created with the help of generative AI"
+      },
+    "carteBlanche": {
+      "category": "CARTE BLANCHE",
+      "title": "Filmmaker using AI"
+      }
+  },
+
+  "day2": {
+    "date": "June 13, 2026",
+    "city": "Marseille",
+    "roundtable": {
+      "category": "ROUNDTABLE",
+      "title": "Creators using AI in their writing and filmmaking processes"
+    },
+    "fireside": {
+      "category": "FIRESIDE CHAT",
+      "title": "With the Jury Members"
+    },
+    "break": {
+      "category": "Break"
+    },
+    "selected": {
+      "category": "SELECTED PROJECT PRESENTATION",
+      "title": "Screening of short films created with the help of generative AI"
+    },
+    "keynote": {
+      "category": "KEYNOTE",
+      "title": "Companies developing new AI tools"
+    },
+    "awards": {
+      "category": "AWARD CEREMONY",
+      "title": "Closing ceremony and award presentation"
+    },
+    "closing": {
+      "category": "CLOSING PARTY",
+      "title": "DJ set, buffet and networking"
     }
+   }
+  },
+
+  "juryPublic": {
+  "presidentTitle": "President",
+  "presidentRole": "Director and Screenwriter",
+  "presidentBio": "Pierre Schoeller graduated from Louis Lumière School. After years working as a screenwriter, he directed his first fiction film for Arte...",
+  "membersTitle1": "Members of the",
+  "membersTitle2": "Jury",
+  "membersSubtitle": "AI experts, filmmakers and visionaries gathered to deliberate on the official selection.",
+  "members": {
+    "tina": { "name": "TINA BAZ LE GAL", "role": "Film Editor" },
+    "jerome": { "name": "JEROME GENEVRAY", "role": "Director and Screenwriter" },
+    "eve": { "name": "EVE MACHUEL", "role": "Producer" },
+    "anne": { "name": "ANNE SOPHIE NOVEL", "role": "Journalist, Author and Director" },
+    "vipulan": { "name": "VIPULAN PUVANESSWARAN", "role": "Environmental Activist" },
+    "barbara": { "name": "BARBARA SCHULZ", "role": "Actress" }
+  },
+  "charter": {
+    "title1": "The Charter",
+    "title2": "Scoring Guidelines"
+  },
+  "criteria": {
+    "ai": {
+      "title": "AI Originality",
+      "description": "The relevance and boldness of generative tool usage."
+    },
+    "aesthetic": {
+      "title": "Visual Aesthetic",
+      "description": "The coherence and beauty of the overall rendering."
+    },
+    "story": {
+      "title": "Story Quality",
+      "description": "The strength of storytelling within 60 seconds."
+    },
+    "emotion": {
+      "title": "Emotion & Impact",
+      "description": "The film’s ability to emotionally engage the audience."
+    }
+  }
+},
+
+"sponsors": {
+  "title": "SPONSORS",
+  "categories": {
+    "officiels": "OFFICIAL",
+    "medias": "Media",
+    "techniques": "Technical",
+    "divers": "Other"
+  }
+},
+
+"infos": {
+  "title": "PRACTICAL",
+  "subtitle": "INFORMATION",
+  "access": "Access",
+  "publicTransport": {
+    "title": "Public Transport",
+    "line1": "Tram T2/T3 – Arenc Le Silo stop",
+    "line2": "Metro M2 – René Cassin Sud stop",
+    "line3": "Bus 29 – Lycée Le Chatelier stop"
+  },
+  "car": {
+    "title": "By Car",
+    "line1": "A55 Highway – Exit 2.",
+    "line2": "Indigo Quai du Lazaret parking 200m away."
+  },
+  "address": {
+    "title": "Address",
+    "line1": "155 rue Peyssonnel, 13002 Marseille",
+    "line2": "Formerly Docks des Suds"
+  }
+}
   },
 
 

@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { useTranslation } from "react-i18next";
+import Navbar from "../../components/Navbar.jsx";
+
 
 /**
  * Schéma de validation pour le formulaire de connexion
@@ -107,6 +109,8 @@ export function Login() {
     return loginMutation.mutate(data);
   }
   return (
+       <>
+          <Navbar />
     <div className="min-h-screen bg-black text-white font-light pt-40 pb-20 px-4 md:pt-48">
       <div className="max-w-xl mx-auto">
         <div className="text-center mb-10">
@@ -173,5 +177,6 @@ export function Login() {
         </div>
       </div>
     </div>
+    </>
   );
 }
