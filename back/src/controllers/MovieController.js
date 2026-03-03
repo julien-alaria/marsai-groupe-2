@@ -2,6 +2,7 @@ import db from "../models/index.js";
 import path from "path";
 import ffmpeg from "fluent-ffmpeg";
 import { Op } from "sequelize";
+import EmailController from "./EmailController.js";
 
 const {
   Movie,
@@ -455,10 +456,20 @@ async function updateMovieStatus(req, res) {
       return res.status(400).json({ error: "Statut invalide" });
     }
 
-    const movie = await Movie.findByPk(id);
+    const movie = await Movie.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: "Producer",
+          attributes: ["email", "first_name"],
+        },
+      ],
+    });
     if (!movie) {
       return res.status(404).json({ error: "Film non trouvé" });
     }
+
+    const previousStatus = movie.selection_status;
 
     movie.selection_status = selection_status;
     if (typeof jury_comment === "string" && jury_comment.trim()) {
@@ -466,7 +477,27 @@ async function updateMovieStatus(req, res) {
     }
     await movie.save();
 
-    res.json({ message: "Statut mis à jour", movie });
+    let rejectEmail = null;
+    if (
+      previousStatus !== "refused"
+      && selection_status === "refused"
+      && movie?.Producer?.email
+    ) {
+      try {
+        await EmailController.sendVideoRejectedEmail({
+          to: movie.Producer.email,
+          firstName: movie.Producer.first_name,
+          movieTitle: movie.title,
+          juryComment: movie.jury_comment,
+        });
+        rejectEmail = "sent";
+      } catch (emailError) {
+        console.warn("Reject email error:", emailError.message);
+        rejectEmail = "failed";
+      }
+    }
+
+    res.json({ message: "Statut mis à jour", movie, rejectEmail });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

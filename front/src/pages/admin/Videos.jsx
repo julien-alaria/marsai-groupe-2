@@ -15,6 +15,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import {
   getVideos,
   updateMovieStatus,
+  sendRejectEmailForMovie,
   updateMovie,
   deleteMovie
 } from "../../api/videos";
@@ -161,6 +162,14 @@ function Videos() {
         queryClient.invalidateQueries({ queryKey: ["listVideos"] });
       },
       onError: () => setMessage("Erreur lors du changement de statut"),
+    });
+
+    const sendRejectEmailMutation = useMutation({
+      mutationFn: async (id_movie) => sendRejectEmailForMovie(id_movie),
+      onSuccess: () => {
+        setMessage("Email de refus envoyé au réalisateur");
+      },
+      onError: () => setMessage("Erreur lors de l'envoi de l'email de refus"),
     });
 
     const createAwardMutation = useMutation({
@@ -445,6 +454,21 @@ function Videos() {
                         Marquer primé
                       </button>
                     </div>
+
+                    {editingMovie?.selection_status === "refused" && (
+                      <div className="mt-2">
+                        <button
+                          type="button"
+                          onClick={() => sendRejectEmailMutation.mutate(editingMovie.id_movie)}
+                          disabled={sendRejectEmailMutation.isPending}
+                          className="w-full px-3 py-2 bg-red-600/80 text-white rounded hover:bg-red-600 disabled:opacity-50"
+                        >
+                          {sendRejectEmailMutation.isPending
+                            ? "Envoi en cours..."
+                            : "Envoyer email de refus"}
+                        </button>
+                      </div>
+                    )}
                   </div>
 
                   <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-3">
