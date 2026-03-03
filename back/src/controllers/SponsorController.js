@@ -1,4 +1,6 @@
 import db from "../models/index.js";
+import fs from "fs";
+import path from "path";
 
 const Sponsor = db.Sponsor;
 
@@ -151,6 +153,8 @@ export const updateSponsor = async (req, res) => {
 /**
  //******************************************************* DELETE
  */
+
+
 export const deleteSponsor = async (req, res) => {
   try {
     const { id } = req.params;
@@ -163,15 +167,30 @@ export const deleteSponsor = async (req, res) => {
       });
     }
 
+    //  Supprimer le fichier image s'il existe
+    if (sponsor.logo) {
+      const filePath = path.join(process.cwd(), sponsor.logo);
+
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    //  Supprimer le sponsor en base
     await sponsor.destroy();
 
     return res.status(200).json({
-      message: "Sponsor deleted successfully"
+      message: "Sponsor and logo deleted successfully"
     });
+
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
-}
+};
+
+
+
+
 
 
 export default {
