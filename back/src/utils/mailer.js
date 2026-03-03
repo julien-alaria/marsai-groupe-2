@@ -1,21 +1,39 @@
-import * as brevo from "@getbrevo/brevo";
+import nodemailer from "nodemailer";
 
-let apiInstance;
+let transporter;
 
-function isMailerConfigured() {
-  return Boolean(process.env.BREVO_API_KEY && process.env.BREVO_SENDER_EMAIL);
+function getSenderName() {
+  return process.env.MAIL_FROM_NAME || process.env.BREVO_SENDER_NAME || "MarsAI Festival";
 }
 
-function getApiInstance() {
-  if (apiInstance) return apiInstance;
+function getSenderEmail() {
+  return process.env.MAIL_FROM_EMAIL || process.env.BREVO_SENDER_EMAIL;
+}
 
-  apiInstance = new brevo.TransactionalEmailsApi();
-  apiInstance.setApiKey(
-    brevo.TransactionalEmailsApiApiKeys.apiKey,
-    process.env.BREVO_API_KEY
+function isMailerConfigured() {
+  return Boolean(
+    process.env.SMTP_HOST
+      && process.env.SMTP_PORT
+      && process.env.SMTP_USER
+      && process.env.SMTP_PASS
+      && getSenderEmail()
   );
+}
 
-  return apiInstance;
+function getTransporter() {
+  if (transporter) return transporter;
+
+  transporter = nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    secure: process.env.SMTP_SECURE === "true" || Number(process.env.SMTP_PORT) === 465,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+  });
+
+  return transporter;
 }
 
 function normalizeToRecipients(to) {
@@ -34,52 +52,43 @@ function normalizeToRecipients(to) {
 
 async function sendEmail({ to, subject, html, text }) {
   if (!isMailerConfigured()) {
-    throw new Error("Mailer non configuré (Brevo API)");
+    throw new Error("Mailer non configuré (SMTP)");
   }
 
-  const senderName = process.env.BREVO_SENDER_NAME || "MarsAI Festival";
-  const senderEmail = process.env.BREVO_SENDER_EMAIL;
+  const senderName = getSenderName();
+  const senderEmail = getSenderEmail();
   const recipients = normalizeToRecipients(to);
 
   if (!recipients.length) {
     throw new Error("Destinataire email manquant");
   }
 
-  const message = new brevo.SendSmtpEmail();
-  message.sender = { name: senderName, email: senderEmail };
-  message.to = recipients;
-  message.subject = subject;
-  message.htmlContent = html;
-  if (text) {
-    message.textContent = text;
-  }
-
-  return await getApiInstance().sendTransacEmail(message);
+  return await getTransporter().sendMail({
+    from: `${senderName} <${senderEmail}>`,
+    to: recipients.map((recipient) => recipient.email).join(", "),
+    subject,
+    html,
+    text,
+  });
 }
 
 async function sendTemplateEmail({ to, templateId, params = {}, subject }) {
-  if (!isMailerConfigured()) {
-    throw new Error("Mailer non configuré (Brevo API)");
-  }
+  const paramsText = Object.entries(params)
+    .map(([key, value]) => `${key}: ${value ?? ""}`)
+    .join("\n");
 
-  const senderName = process.env.BREVO_SENDER_NAME || "MarsAI Festival";
-  const senderEmail = process.env.BREVO_SENDER_EMAIL;
-  const recipients = normalizeToRecipients(to);
+  const paramsHtml = Object.entries(params)
+    .map(([key, value]) => `<li><strong>${key}</strong>: ${value ?? ""}</li>`)
+    .join("");
 
-  if (!recipients.length) {
-    throw new Error("Destinataire email manquant");
-  }
-
-  const message = new brevo.SendSmtpEmail();
-  message.sender = { name: senderName, email: senderEmail };
-  message.to = recipients;
-  message.templateId = Number(templateId);
-  message.params = params;
-  if (subject) {
-    message.subject = subject;
-  }
-
-  return await getApiInstance().sendTransacEmail(message);
+  return await sendEmail({
+    to,
+    subject: subject || `Notification MarsAI (template ${templateId})`,
+    text: paramsText || `Template ${templateId}`,
+    html: paramsHtml
+      ? `<p>Template: <strong>${templateId}</strong></p><ul>${paramsHtml}</ul>`
+      : `<p>Template: <strong>${templateId}</strong></p>`,
+  });
 }
 
 export { isMailerConfigured, sendEmail, sendTemplateEmail };

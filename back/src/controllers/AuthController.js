@@ -241,7 +241,7 @@ async function registerWithFilm(req, res) {
 
     await transaction.commit();
 
-    let mailNotification = "Email non envoyé (Brevo non configuré)";
+    let mailNotification = "Email non envoyé (SMTP non configuré)";
     try {
       const [subscriber, created] = await NewsletterSubscriber.findOrCreate({
         where: { email: newUser.email },

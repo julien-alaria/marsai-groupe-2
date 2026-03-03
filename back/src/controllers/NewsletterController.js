@@ -107,7 +107,7 @@ async function sendNewsletter(req, res) {
 
     if (!isMailerConfigured()) {
       return res.status(400).json({
-        error: "Brevo SMTP non configuré (vérifiez les variables .env)",
+        error: "SMTP non configuré (vérifiez les variables .env)",
       });
     }
 
@@ -154,4 +154,40 @@ async function sendNewsletter(req, res) {
   }
 }
 
-export default { subscribe, listSubscribers, sendNewsletter };
+async function sendTestEmail(req, res) {
+  try {
+    const { to, subject, text, html } = req.body;
+    const fallbackTo = req.user?.email || null;
+    const target = String(to || fallbackTo || "").trim().toLowerCase();
+
+    if (!isMailerConfigured()) {
+      return res.status(400).json({
+        error: "SMTP non configuré (vérifiez les variables .env)",
+      });
+    }
+
+    if (!isValidEmail(target)) {
+      return res.status(400).json({
+        error: "Email destinataire invalide. Fournissez body.to",
+      });
+    }
+
+    await sendEmail({
+      to: target,
+      subject: subject || "Test email SMTP - MarsAI",
+      text: text || "Email de test SMTP envoyé avec succès.",
+      html:
+        html
+        || "<p><strong>MarsAI</strong> : email de test SMTP envoyé avec succès.</p>",
+    });
+
+    return res.status(200).json({
+      message: "Email de test envoyé",
+      to: target,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: error.message });
+  }
+}
+
+export default { subscribe, listSubscribers, sendNewsletter, sendTestEmail };

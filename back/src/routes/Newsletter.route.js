@@ -15,5 +15,10 @@ newsletterRouter.post(
   AuthMiddleware(["ADMIN"]),
   NewsletterController.sendNewsletter
 );
+newsletterRouter.post(
+  "/test-email",
+  AuthMiddleware(["ADMIN"]),
+  NewsletterController.sendTestEmail
+);
 
 export default newsletterRouter;
