@@ -14,7 +14,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { getCurrentUser } from "../../api/users";
-import { getAssignedMovies, updateMovieStatus } from "../../api/videos";
+import { getAssignedMovies, promoteMovieToCandidateByJury } from "../../api/videos";
 import { getMyVotes, submitMyVote } from "../../api/votes";
 import { VideoPreview } from "../../components/VideoPreview.jsx";
 import { UPLOAD_BASE } from "../../utils/constants.js";
@@ -135,7 +135,9 @@ export default function JuryHome() {
   /* ── Mutation — promouvoir en candidat ── */
   const promoteMutation = useMutation({
     mutationFn: ({ id, comment }) =>
-      updateMovieStatus(id, "candidate", { jury_comment: comment }),
+      // FIX: was updateMovieStatus (ADMIN-only route -> always 401 for jury).
+      // Now calls the correct JURY-protected endpoint.
+      promoteMovieToCandidateByJury(id, comment),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["assignedMovies"] });
       setShowPromoteModal(false);
@@ -204,12 +206,12 @@ export default function JuryHome() {
   );
 
   // 2ème Votation : films to_discuss (qu'ils aient été votés en P1 ou non)
-  const secondVoteMovies = assignedMovies.filter((movie) => {
-    if (movie.selection_status !== "to_discuss") return false;
-    const vote = getVote(movie);
-    // Pas encore re-voté en 2ème votation
-    return !vote || (vote.modification_count || 0) === 0;
-  });
+  // FIX: Simplified — shows all to_discuss films.
+  // Previous filter checked modification_count === 0, but that counter was
+  // only incremented during 'selected' phase, never 'to_discuss'.
+  const secondVoteMovies = assignedMovies.filter((movie) =>
+    movie.selection_status === "to_discuss"
+  );
 
   // FIX "Votes enregistrés" : TOUS les films ayant au moins un vote
   const votedMovies = assignedMovies.filter((movie) => Boolean(getVote(movie)));
@@ -226,10 +228,9 @@ export default function JuryHome() {
     selectedMovie
       ? (getTrailer(selectedMovie) ? hasWatched : confirmedWatched) && canEditVote
       : false;
-  const canPromote =
-    isSecondVoteOpen &&
-    selectedVote &&
-    (selectedVote.modification_count || 0) > 0;
+  // FIX: Previously required modification_count > 0, which was only set
+  // on 'selected' films (not 'to_discuss'), making button permanently invisible.
+  const canPromote = isSecondVoteOpen && selectedVote != null;
 
   /* ── Statistiques de progression ── */
   const totalAssigned = assignedMovies.length;

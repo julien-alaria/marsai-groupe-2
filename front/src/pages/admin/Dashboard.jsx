@@ -218,7 +218,8 @@ function GoogleAuthWidget() {
   const active = data?.active === true;
 
   function handleConnect() {
-    window.open("http://127.0.0.1:3000/google/auth", "_blank");
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+    window.open(`${apiBase}/google/auth`, "_blank");
     // Re-check status after the user completes the OAuth flow
     setTimeout(() => refetch(), 5000);
     setTimeout(() => refetch(), 12000);

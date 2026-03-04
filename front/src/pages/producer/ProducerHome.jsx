@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { VideoPreview } from "../../components/VideoPreview.jsx";
-import Navbar from "../../components/Navbar.jsx";
+// NOTE: Navbar is rendered by ProducerLayout — no import needed here.
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
@@ -397,7 +397,6 @@ export default function ProducerHome() {
   ════════════════════════════════════════════════════════ */
   return (
     <>
-      <Navbar />
       <div className="min-h-screen bg-[#070709] text-white pt-28 pb-20 px-4 md:pt-32">
         <style>{`
           .field-input {
@@ -1482,8 +1481,7 @@ function Modal({ title, onClose, maxW = "max-w-4xl", children }) {
   );
 }
 
-const inputCls = (error) =>
-  `w-full bg-gray-800 border ${error ? "border-red-500 bg-red-950/20" : "border-gray-700"} text-white px-2 py-1.5 rounded-lg text-sm focus:outline-none focus:border-[#AD46FF] transition`;
+// inputCls removed — was never called; form uses inline .field-input CSS class.
 
 function Fld({ label, hint, error, children, className = "" }) {
   return (

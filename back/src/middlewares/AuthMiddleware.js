@@ -3,7 +3,7 @@ import db from "../models/index.js";
 const User = db.User;
 
 export default function AuthMiddleware(roles = []) {
-  
+
   return async function(req, res, next) {
 
     const authHeader = req.header("Authorization");
@@ -28,13 +28,19 @@ export default function AuthMiddleware(roles = []) {
         where: { id_user: decoded.id },
       });
 
-      if (!user || (roles.length && !roles.includes(user.role))) {
-        return res.status(401).json({
+      if (!user) {
+        return res.status(401).json({ error: "User not found" });
+      }
+
+      // FIX: Return 403 (Forbidden) when authenticated but missing required role,
+      // instead of 401 (Unauthenticated). This allows the frontend to distinguish
+      // "not logged in" from "logged in but not allowed".
+      if (roles.length && !roles.includes(user.role)) {
+        return res.status(403).json({
           error: "Permission denied, you are not authorized to access this resource",
         });
       }
 
-      // Fixed: was assigned twice (dead object literal then overwritten)
       req.user = user;
       return next();
 

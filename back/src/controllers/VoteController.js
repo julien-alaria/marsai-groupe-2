@@ -4,7 +4,6 @@ const { Vote, VoteHistory, MovieJury, User, Movie } = db;
 
 /**
  * GET /votes — Récupère tous les votes (ADMIN)
- * Inclut les infos utilisateur, film et l'historique de modifications.
  */
 async function getVote(req, res) {
     try {
@@ -22,12 +21,9 @@ async function getVote(req, res) {
     }
 }
 
-
 /**
  * POST /:id_movie/:id_user — Crée un vote (ADMIN uniquement)
- * Vérifie l'absence de doublon avant la création.
  */
-
 function createVote(req, res) {
     if (!req.body) {
         return res.status(400).json({ error: "Données manquantes" });
@@ -41,7 +37,7 @@ function createVote(req, res) {
             if (existingVote) {
                 return res.status(409).json({ message: "Vote déjà existant", existingVote });
             }
-           return Vote.create({ note, comments, id_movie, id_user });
+            return Vote.create({ note, comments, id_movie, id_user });
         })
         .then(newVote => {
             if (newVote) res.status(201).json({ message: "Vote créé", newVote });
@@ -51,9 +47,7 @@ function createVote(req, res) {
 
 /**
  * GET /votes/mine — Récupère les votes du jury connecté
- * Inclut le film associé et l'historique de chaque vote.
  */
-
 async function getMyVotes(req, res) {
     try {
         const id_user = req.user.id_user;
@@ -99,10 +93,9 @@ async function createOrUpdateMyVote(req, res) {
         const { id_movie } = req.params;
         const { note, comments } = req.body || {};
 
-        // Validate note is a valid ENUM value
-if (!['YES', 'NO', 'TO DISCUSS'].includes(note)) {
-  return res.status(400).json({ error: "Note invalide (YES, NO ou TO DISCUSS attendu)" });
-}
+        if (!["YES", "NO", "TO DISCUSS"].includes(note)) {
+            return res.status(400).json({ error: "Note invalide (YES, NO ou TO DISCUSS attendu)" });
+        }
 
         if (!comments || !String(comments).trim()) {
             return res.status(400).json({ error: "Commentaire requis" });
@@ -116,19 +109,14 @@ if (!['YES', 'NO', 'TO DISCUSS'].includes(note)) {
         const existingVote = await Vote.findOne({ where: { id_movie, id_user } });
 
         if (existingVote) {
-            // Verifica se il film è stato approvato dall'admin
             const movie = await Movie.findByPk(id_movie);
-            const isApproved = movie?.selection_status === 'selected';
-            
-            // Incrementa il counter solo se il film è già approvato
-            if (isApproved) {
-                existingVote.modification_count = (existingVote.modification_count || 0) + 1;
-            }
-            
+            const status = movie?.selection_status;
+
             const normalizedComment = String(comments || "");
             const existingComment = String(existingVote.comments || "");
             const hasChanges = existingVote.note !== note || existingComment !== normalizedComment;
 
+            // Save history snapshot before updating
             if (hasChanges) {
                 await VoteHistory.create({
                     id_vote: existingVote.id_vote,
@@ -137,27 +125,38 @@ if (!['YES', 'NO', 'TO DISCUSS'].includes(note)) {
                     note: existingVote.note,
                     comments: existingVote.comments
                 });
+
+                // FIX 1: Only increment modification_count when there are actual changes.
+                // FIX 2: Increment during BOTH to_discuss (2nd round) AND selected stages,
+                //        not only when selected. This ensures canPromote in the frontend
+                //        can detect that the jury has voted in round 2.
+                const isPostFirstRound = ["to_discuss", "selected", "finalist"].includes(status);
+                if (isPostFirstRound) {
+                    existingVote.modification_count = (existingVote.modification_count || 0) + 1;
+                }
             }
 
             existingVote.note = note;
             existingVote.comments = normalizedComment;
             await existingVote.save();
-            return res.json({ 
-                message: "Vote mis à jour", 
+
+            return res.json({
+                message: "Vote mis à jour",
                 vote: existingVote,
                 isModified: existingVote.modification_count > 0,
-                isApproved
+                isApproved: movie?.selection_status === "selected"
             });
         }
 
-        const newVote = await Vote.create({ 
-            note, 
-            comments, 
-            id_movie, 
+        const newVote = await Vote.create({
+            note,
+            comments,
+            id_movie,
             id_user,
             modification_count: 0
         });
         return res.status(201).json({ message: "Vote créé", vote: newVote });
+
     } catch (err) {
         console.error("createOrUpdateMyVote error:", err);
         return res.status(500).json({ error: err.message });
@@ -190,17 +189,15 @@ function deleteVotesByMovie(req, res) {
 
 function updateVote(req, res) {
     const { id_vote } = req.params;
-    let { note, comments } = req.body;
+    const { note, comments } = req.body;
 
     Vote.findOne({ where: { id_vote } })
         .then(vote => {
             if (!vote) return res.status(404).json({ error: "Vote non trouvé" });
 
-            // if (note) vote.note = note;
-            // if (comments) vote.comments = comments;
             if (note !== undefined) {
-    if (['YES', 'NO', 'TO DISCUSS'].includes(note)) vote.note = note;
-}
+                if (["YES", "NO", "TO DISCUSS"].includes(note)) vote.note = note;
+            }
             if (comments) vote.comments = comments;
 
             return vote.save();
