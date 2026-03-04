@@ -15,7 +15,7 @@ const transporter = nodemailer.createTransport({
 
 async function sendMail(to, subject, html) {
   let info = await transporter.sendMail({
-    from: '"alaria" <julien.alaria@laplateforme.io>', // sender address
+    from: '"//YOUR NAME" <//YOUR MAIL>', // sender address, add YOUR NAME & YOUR MAIL
     to, // list of receivers
     subject, // Subject line
     html,
