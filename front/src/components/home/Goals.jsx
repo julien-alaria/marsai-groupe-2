@@ -12,7 +12,7 @@ export default function Goals() {
       </h2>
 
       <div className="pt-12 pb-12 pl-12 pr-12 w-full
-                      grid grid-cols-1 md:grid-cols-3
+                      grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3
                       place-items-center gap-10">
 
         <ThreeCards

@@ -45,7 +45,7 @@ export default function Program() {
       </div>
 
       {/* 3 CARTES */}
-      <div className="pt-12 pb-12 px-6 md:px-12 w-full grid grid-cols-1 md:grid-cols-3 place-items-center gap-10">
+      <div className="pt-12 pb-12 px-6 md:px-12 w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 place-items-center gap-10">
 
         <ThreeCards
           icon={

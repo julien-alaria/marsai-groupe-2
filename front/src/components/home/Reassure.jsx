@@ -5,7 +5,7 @@ export default function Reassure() {
   const { t } = useTranslation();
 
   return (
-    <div className="pt-12 pb-12 w-full grid grid-cols-1 md:grid-cols-4 place-items-center gap-10">
+<div className="pt-12 pb-12 w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4 place-items-center gap-10">
 
       <FourCards
         title={t("pages.home.reassure.card1.title")}

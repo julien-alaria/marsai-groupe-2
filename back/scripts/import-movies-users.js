@@ -7,8 +7,8 @@ async function importMoviesAndUsers() {
   try {
     const { Movie, User } = db;
     // Read users and movies from JSON files
-    const users = JSON.parse(fs.readFileSync('exported-users.json', 'utf-8'));
-    const movies = JSON.parse(fs.readFileSync('exported-movies.json', 'utf-8'));
+    const users = JSON.parse(fs.readFileSync('./exported-users.json', 'utf-8'));
+    const movies = JSON.parse(fs.readFileSync('./exported-movies.json', 'utf-8'));
 
     // Insert users (skip if already exists by email)
     for (const user of users) {
