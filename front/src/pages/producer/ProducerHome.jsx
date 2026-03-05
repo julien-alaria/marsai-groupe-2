@@ -42,7 +42,6 @@ const movieSchema = z.object({
   releaseYear: z.string().optional(),
   nationality: z.string().optional(),
   translation: z.string().optional(),
-  youtubeLink: z.string().optional(),
   synopsisOriginal: z.string().min(1, "Le synopsis est obligatoire"),
   synopsisEnglish: z.string().optional(),
   aiClassification: z.string().min(1, "La classification IA est obligatoire"),
@@ -134,6 +133,7 @@ export default function ProducerHome() {
   /* filmFile via ref pour éviter les problèmes de FileList RHF */
   const filmFileRef = useRef(null);
   const subtitleRef = useRef(null);
+  const formSectionRef = useRef(null); // scroll to form
   const [filmFileName, setFilmFileName] = useState("");
   const [subtitlesName, setSubtitlesName] = useState("");
 
@@ -174,6 +174,12 @@ export default function ProducerHome() {
   /* ── Mutation soumission film ── */
   const createMovieMutation = useMutation({
     mutationFn: async (data) => {
+      /* Guard: un fichier vidéo est obligatoire */
+      const filmFileCheck = filmFileRef.current?.files?.[0];
+      if (!filmFileCheck) {
+        throw new Error("Veuillez sélectionner un fichier vidéo avant de soumettre.");
+      }
+
       const fd = new FormData();
 
       /* Champs texte */
@@ -183,7 +189,6 @@ export default function ProducerHome() {
       fd.append("releaseYear", data.releaseYear || "");
       fd.append("nationality", data.nationality || "");
       fd.append("translation", data.translation || "");
-      fd.append("youtubeLink", data.youtubeLink || "");
       fd.append("synopsisOriginal", data.synopsisOriginal || "");
       fd.append("synopsisEnglish", data.synopsisEnglish || "");
       fd.append("aiClassification", data.aiClassification || "");
@@ -300,7 +305,8 @@ export default function ProducerHome() {
   const isStep2Valid = () =>
     acceptTerms === true &&
     aiClassif?.trim().length > 0 &&
-    categoryId?.toString().trim().length > 0;
+    categoryId?.toString().trim().length > 0 &&
+    Boolean(filmFileRef.current?.files?.[0]);
 
   function handleNextStep() {
     if (!isStep1Valid()) {
@@ -528,6 +534,7 @@ export default function ProducerHome() {
                   resetForm();
                   setMovieError(null);
                   setMovieSuccess(null);
+                  setTimeout(() => formSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
                 }}
                 className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-[#AD46FF] to-[#F6339A] text-white rounded-lg text-sm font-semibold hover:opacity-90 transition"
               >
@@ -607,7 +614,7 @@ export default function ProducerHome() {
 
           {/* ── Formulaire de soumission ── */}
           {showForm && (
-            <div className={`${tw.card} p-6`}>
+            <div ref={formSectionRef} className={`${tw.card} p-6`}>
               {/* Progression des étapes */}
               <div className="mb-8">
                 <div className="flex items-center justify-center gap-6">
@@ -742,15 +749,6 @@ export default function ProducerHome() {
                         type="text"
                         placeholder="English title"
                         {...reg("translation")}
-                        className={tw.fieldInput}
-                      />
-                    </Fld>
-
-                    <Fld label="Lien YouTube" className="md:col-span-1">
-                      <input
-                        type="text"
-                        placeholder="https://youtube.com/…"
-                        {...reg("youtubeLink")}
                         className={tw.fieldInput}
                       />
                     </Fld>
@@ -1014,11 +1012,13 @@ export default function ProducerHome() {
                       </button>
                       <button
                         type="submit"
-                        disabled={createMovieMutation.isPending || !acceptTerms}
+                        disabled={createMovieMutation.isPending || !acceptTerms || !filmFileName}
                         className="flex-1 py-3 bg-gradient-to-r from-[#AD46FF] to-[#F6339A] text-white rounded-xl font-semibold hover:opacity-90 transition disabled:opacity-40"
                       >
                         {createMovieMutation.isPending
                           ? "Envoi en cours…"
+                          : !filmFileName
+                          ? "Sélectionnez d'abord un fichier vidéo"
                           : "Soumettre le film"}
                       </button>
                       <button

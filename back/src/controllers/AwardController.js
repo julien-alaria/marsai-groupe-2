@@ -17,21 +17,20 @@ function createAward(req, res) {
     const { id_movie } = req.params;
 
     if (!award_name) {
-        return res.status(400).json({ error: "Tous les champs doivent être remplis" });
+        return res.status(400).json({ error: "Le nom du prix est requis" });
     }
 
-    Award.findOne({ where: { award_name } }).then(async (award) => {
-        if (award) {
-            res.json({ message: "Award déjà existant", award});
-        } else {
-            Award.create({
-                award_name: award_name,
-                id_movie: id_movie
-            }).then((newAward) => {
-                res.status(201).json({ message: "Award créé", newAward});
-            },
-        );
-        }
+    if (!id_movie) {
+        return res.status(400).json({ error: "L'identifiant du film est requis" });
+    }
+
+    Award.create({
+        award_name: award_name,
+        id_movie: id_movie
+    }).then((newAward) => {
+        res.status(201).json({ message: "Prix créé", newAward });
+    }).catch((err) => {
+        res.status(500).json({ error: err.message });
     });
 }
 

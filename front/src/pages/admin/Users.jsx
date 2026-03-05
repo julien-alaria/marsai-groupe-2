@@ -353,11 +353,23 @@ function Users() {
 
 
 return (
-    <section className="bg-gradient-to-br from-[#1a1c20]/60 to-[#0f1114]/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 sm:p-4 shadow-xl shadow-black/30 transition-all duration-300">
-    {/* <section className="bg-gradient-to-br from-[#1a1c20]/60 to-[#0f1114]/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-xl shadow-black/30 transition-all duration-300"> */}
-      <div className="mb-4">
-        <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
+  <div className="min-h-screen bg-gradient-to-br from-[#0a0c0f] to-[#0d0f12] text-white pt-6 pb-12 px-4">
+    <div className="max-w-7xl mx-auto space-y-6">
+
+      {/* ── Header ── */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-[22px] font-semibold tracking-tight text-white">
+            Gestion des Utilisateurs
+          </h1>
+          <p className="text-[9px] tracking-[0.18em] uppercase text-white/25 font-medium mt-1">
+            Gérez les comptes producteurs, jurés et administrateurs
+          </p>
+        </div>
+        <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={false} />
       </div>
+
+    <section className="bg-gradient-to-br from-[#1a1c20]/60 to-[#0f1114]/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 sm:p-4 shadow-xl shadow-black/30 transition-all duration-300">
 
       {message && (
         <div className={`mb-3 p-2 sm:p-3 rounded-lg ${
@@ -915,6 +927,8 @@ return (
         </div>
       )}
     </section>
+    </div>
+  </div>
   );
 }
 

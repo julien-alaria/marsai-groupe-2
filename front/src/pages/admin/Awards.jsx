@@ -229,24 +229,23 @@ function Awards() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#0a0c0f] to-[#0d0f12] text-white pt-8 pb-12 px-4">
       <div className="max-w-7xl mx-auto space-y-6">
-        
-        {/* Header avec titre et description */}
-        <div className="flex items-center justify-between">
+
+        {/* Header — titre à gauche, bouton aide top-right */}
+        <div className="flex items-start justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 backdrop-blur-sm border border-white/10 rounded-full mb-4">
-              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
-              <p className="text-xs uppercase tracking-wider text-white/60">Administration</p>
-            </div>
-            <h1 className="text-3xl font-light bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+            <h1 className="text-[22px] font-semibold tracking-tight text-white">
               Gestion des Prix
             </h1>
-            <p className="text-white/40 text-sm mt-2">
-              Cliquez sur un film candidat pour créer un nouveau prix
+            <p className="text-[9px] tracking-[0.18em] uppercase text-white/25 font-medium mt-1">
+              Cliquez sur un film candidat pour lui attribuer un prix
             </p>
           </div>
-          
-          {/* Boutons de test */}
-          <div className="flex gap-2">
+          <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={false} />
+        </div>
+
+        {/* Boutons d'action */}
+        {(awards.length > 0 || awardedMovies.length > 0) && (
+          <div className="flex items-center gap-2 flex-wrap">
             {awards.length > 0 && (
               <button
                 onClick={handleDeleteAllAwards}
@@ -266,13 +265,7 @@ function Awards() {
               </button>
             )}
           </div>
-        </div>
-
-        {/* Tutorial Box - liquid glass style */}
-        <div className="group relative bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-2xl border border-white/10 rounded-xl overflow-hidden">
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 pointer-events-none" />
-          <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={false} />
-        </div>
+        )}
 
         {/* Feedback */}
         {feedback && (

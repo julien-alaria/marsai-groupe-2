@@ -279,21 +279,21 @@ export default function JuryManagement() {
     <div className="min-h-screen bg-gradient-to-br from-[#0a0c0f] to-[#0d0f12] text-white pb-12 px-4">
       <div className="max-w-7xl mx-auto space-y-5 pt-6">
         {/* ── En-tête ── */}
-        <div>
-          <h1 className="text-2xl font-light text-white">
-            Distribution & Jury
-          </h1>
-          <p className="text-sm text-white/40 mt-1">
-            Assignez les films aux membres du jury pour lancer l'évaluation
-          </p>
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-[22px] font-semibold tracking-tight text-white">
+              Distribution &amp; Jury
+            </h1>
+            <p className="text-[9px] tracking-[0.18em] uppercase text-white/25 font-medium mt-1">
+              Assignez les films aux membres du jury pour lancer l'évaluation
+            </p>
+          </div>
+          <TutorialBox
+            title={tutorial.title}
+            steps={tutorial.steps}
+            defaultOpen={false}
+          />
         </div>
-
-        {/* Tutorial */}
-        <TutorialBox
-          title={tutorial.title}
-          steps={tutorial.steps}
-          defaultOpen={false}
-        />
 
         {/* Notice */}
         {notice && (

@@ -221,7 +221,7 @@ export default function Videos() {
     onSuccess: (_,v) => { inv(); setModalNotice(NOTE[v.status] || "Statut mis à jour."); },
     onError: () => setModalNotice("❌ Erreur lors de la mise à jour."),
   });
-  const commentM  = useMutation({ mutationFn: ({ id, c }) => updateMovie(id, { admin_comment: c }), onSuccess: () => { inv(); setModalNotice("Note enregistrée."); } });
+  const commentM  = useMutation({ mutationFn: ({ id, c }) => updateMovie(id, { admin_comment: c }), onSuccess: () => { inv(); setModalNotice("✓ Note enregistrée."); }, onError: () => setModalNotice("❌ Erreur lors de la sauvegarde de la note.") });
   const catM      = useMutation({ mutationFn: ({ id, cats }) => updateMovieCategories(id, cats),   onSuccess: () => { inv(); setModalNotice("Catégories mises à jour."); } });
   const deleteM   = useMutation({ mutationFn: (id) => deleteMovie(id), onSuccess: () => { inv(); setSelectedMovie(null); } });
 

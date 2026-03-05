@@ -148,13 +148,12 @@ function Categories() {
         {/* Header avec bouton d'aide */}
         <div className="flex items-center justify-between">
           <div>
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-full mb-4">
-              <div className="w-2 h-2 bg-purple-400 rounded-full animate-pulse" />
-              <p className="text-xs uppercase tracking-wider text-white/60">Administration</p>
-            </div>
-            <h1 className="text-3xl md:text-4xl font-light bg-gradient-to-r from-white to-blue-200 bg-clip-text text-transparent">
+            <h1 className="text-[22px] font-semibold tracking-tight text-white">
               Gestion des Catégories
             </h1>
+            <p className="text-[9px] tracking-[0.18em] uppercase text-white/25 font-medium mt-1">
+              {categories.length} catégorie{categories.length !== 1 ? "s" : ""}
+            </p>
           </div>
           
           {/* Bouton d'aide */}

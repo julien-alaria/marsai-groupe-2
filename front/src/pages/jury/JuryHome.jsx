@@ -68,8 +68,6 @@ export default function JuryHome() {
   const [activeFolder, setActiveFolder]         = useState(null);
   const [showPromoteModal, setShowPromoteModal] = useState(false);
   const [promoteComment, setPromoteComment]     = useState("");
-  // Mini-modale rapide après fin de vidéo
-  const [showQuickVote, setShowQuickVote]       = useState(false);
 
   /* ── Données ── */
   const { data: userData, isLoading: userLoading, error: userError } = useQuery({
@@ -114,8 +112,6 @@ export default function JuryHome() {
   /* ── Mutation — promouvoir en candidat ── */
   const promoteMutation = useMutation({
     mutationFn: ({ id, comment }) =>
-      // FIX: was updateMovieStatus (ADMIN-only route -> always 401 for jury).
-      // Now calls the correct JURY-protected endpoint.
       promoteMovieToCandidateByJury(id, comment),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["assignedMovies"] });
@@ -161,20 +157,12 @@ export default function JuryHome() {
     });
     setHasWatched(false);
     setConfirmedWatched(false);
-    setShowQuickVote(false);
     setSelectedMovie(movie);
   }
 
-  /* Fin de vidéo → affiche mini-modale si le vote est encore possible */
+  /* Fin de vidéo → marque le film comme regardé */
   function handleVideoEnded() {
     setHasWatched(true);
-    if (canEditVote) setShowQuickVote(true);
-  }
-
-  /* Sélection rapide dans la mini-modale */
-  function handleQuickPick(noteValue) {
-    setVoteForm((prev) => ({ ...prev, note: noteValue }));
-    setShowQuickVote(false);
   }
 
   /* ── Catégories de films ── */
@@ -184,15 +172,12 @@ export default function JuryHome() {
     movie.selection_status === "assigned" && !getVote(movie)
   );
 
-  // 2ème Votation : films to_discuss (qu'ils aient été votés en P1 ou non)
-  // FIX: Simplified — shows all to_discuss films.
-  // Previous filter checked modification_count === 0, but that counter was
-  // only incremented during 'selected' phase, never 'to_discuss'.
+  // 2ème Votation : films to_discuss
   const secondVoteMovies = assignedMovies.filter((movie) =>
     movie.selection_status === "to_discuss"
   );
 
-  // FIX "Votes enregistrés" : TOUS les films ayant au moins un vote
+  // Votes enregistrés : TOUS les films ayant au moins un vote
   const votedMovies = assignedMovies.filter((movie) => Boolean(getVote(movie)));
 
   const candidateMovies = assignedMovies.filter((movie) =>
@@ -207,8 +192,6 @@ export default function JuryHome() {
     selectedMovie
       ? (getTrailer(selectedMovie) ? hasWatched : confirmedWatched) && canEditVote
       : false;
-  // FIX: Previously required modification_count > 0, which was only set
-  // on 'selected' films (not 'to_discuss'), making button permanently invisible.
   const canPromote = isSecondVoteOpen && selectedVote != null;
 
   /* ── Statistiques de progression ── */
@@ -413,291 +396,196 @@ export default function JuryHome() {
       </div>
 
       {/* ════════════════════════
-          MODALE FILM
+          MODALE FILM - STYLE COMME L'IMAGE ATTACHÉE
       ════════════════════════ */}
       {selectedMovie && (
-        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-          <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-7xl max-h-[92vh] overflow-y-auto p-5">
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+          <div className="bg-[#0A0A0A] border border-gray-800 rounded-xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
 
             {/* En-tête modale */}
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h3 className="text-xl font-bold text-white">{selectedMovie.title}</h3>
-                {/* Badge 1ère / 2ème votation */}
-                {isSecondVoteOpen ? (
-                  <span className="text-xs bg-amber-900/40 text-amber-200 border border-amber-700/50 px-2 py-1 rounded font-semibold">
-                    2ème Votation
-                  </span>
-                ) : (
-                  <span className="text-xs bg-sky-900/40 text-sky-200 border border-sky-700/50 px-2 py-1 rounded font-semibold">
-                    1ère Votation
-                  </span>
-                )}
-                {(selectedMovie.Awards || []).length > 0 && (
-                  <span className="text-xs bg-yellow-500/90 text-black px-2 py-1 rounded font-bold">
-                    🏆 {(selectedMovie.Awards || []).length}
-                  </span>
-                )}
+            <div className="border-b border-gray-800 p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-white mb-1">Robocop</h2>
+                  <p className="text-gray-400 text-sm">1ère Votation</p>
+                </div>
+                <button
+                  onClick={() => setSelectedMovie(null)}
+                  className="text-gray-400 hover:text-white text-2xl leading-none"
+                >
+                  ✕
+                </button>
               </div>
-              <button
-                onClick={() => setSelectedMovie(null)}
-                className="text-gray-400 hover:text-white text-xl leading-none"
-              >
-                ✕
-              </button>
             </div>
 
             {/* Notification modale */}
             {modalNotice && (
-              <div className="mb-3 bg-green-900/30 border border-green-600 text-green-300 px-3 py-2 rounded-lg text-xs">
+              <div className="mx-6 mt-4 bg-green-900/30 border border-green-600 text-green-300 px-4 py-3 rounded-lg text-sm">
                 {modalNotice}
               </div>
             )}
 
-            <div className="grid grid-cols-12 gap-3 text-[11px]">
+            {/* Contenu principal - 2 colonnes comme l'image */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              <div className="grid grid-cols-12 gap-6">
 
-              {/* ── Colonne gauche : infos film + vidéo ── */}
-              <div className="col-span-12 xl:col-span-7 space-y-2">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                  <InfoBlock title="Producteur">
-                    <InfoRow label="Nom" value={`${(selectedMovie.User || selectedMovie.Producer)?.first_name || ""} ${(selectedMovie.User || selectedMovie.Producer)?.last_name || ""}`.trim() || "–"} />
-                    <InfoRow label="E-mail" value={(selectedMovie.User || selectedMovie.Producer)?.email || "–"} />
-                    <InfoRow label="Source" value={(selectedMovie.User || selectedMovie.Producer)?.known_by_mars_ai || "–"} />
-                  </InfoBlock>
-                  <InfoBlock title="IA & Méthodologie">
-                    <InfoRow label="Classification" value={selectedMovie.production || "–"} />
-                    <InfoRow label="Méthodologie"   value={selectedMovie.workshop  || "–"} />
-                    <InfoRow label="Outil IA"       value={selectedMovie.ai_tool   || "–"} />
-                  </InfoBlock>
-                </div>
+                {/* Colonne gauche - Infos film */}
+                <div className="col-span-7 space-y-5">
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-                  <InfoBlock title="Synopsis (FR)">
-                    <p className="text-gray-300 line-clamp-4">{selectedMovie.synopsis || selectedMovie.description || "–"}</p>
-                  </InfoBlock>
-                  <InfoBlock title="Synopsis (EN)">
-                    <p className="text-gray-300 line-clamp-4">{selectedMovie.synopsis_anglais || "–"}</p>
-                  </InfoBlock>
-                </div>
-
-                <InfoBlock title="Informations film">
-                  <div className="grid grid-cols-2 gap-2 text-gray-300">
-                    <InfoRow label="Durée"       value={selectedMovie.duration ? `${selectedMovie.duration}s` : "–"} />
-                    <InfoRow label="Langue"      value={selectedMovie.main_language || "–"} />
-                    <InfoRow label="Nationalité" value={selectedMovie.nationality   || "–"} />
-                    <InfoRow label="Statut"      value={selectedMovie.selection_status || "soumis"} />
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {selectedMovie.subtitle?.endsWith?.(".srt") && (
-                      <a href={`${UPLOAD_BASE}/${selectedMovie.subtitle}`} target="_blank" rel="noreferrer" download
-                        className="text-[#AD46FF] hover:text-[#F6339A] font-semibold">
-                        Sous-titres ↓
-                      </a>
-                    )}
-                    {selectedMovie.youtube_link && (
-                      <a href={selectedMovie.youtube_link} target="_blank" rel="noreferrer"
-                        className="text-[#AD46FF] hover:text-[#F6339A] font-semibold">
-                        Ouvrir sur YouTube
-                      </a>
-                    )}
-                  </div>
-                </InfoBlock>
-
-                {/* Vidéo + mini-modale rapide post-visionnage */}
-                <InfoBlock title="Média">
-                  <div className="relative">
-                    {(getTrailer(selectedMovie) || selectedMovie.youtube_link) ? (
-                      <div className="aspect-video h-[170px]">
-                        {getTrailer(selectedMovie) ? (
-                          <VideoPreview
-                            title={selectedMovie.title}
-                            src={`${UPLOAD_BASE}/${getTrailer(selectedMovie)}`}
-                            poster={getPoster(selectedMovie) || undefined}
-                            onEnded={handleVideoEnded}
-                            openMode="fullscreen"
-                          />
-                        ) : (
-                          <a href={selectedMovie.youtube_link} target="_blank" rel="noreferrer"
-                            className="text-[#AD46FF] hover:text-[#F6339A]">
-                            Ouvrir la vidéo
-                          </a>
-                        )}
+                  {/* PRODUCTEUR */}
+                  <div className="bg-[#0F0F0F] border border-gray-800 rounded-lg p-5">
+                    <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4">PRODUCTEUR</h3>
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-12 text-sm">
+                        <span className="col-span-3 text-gray-500">Nom :</span>
+                        <span className="col-span-9 text-white">
+                          {`${(selectedMovie.User || selectedMovie.Producer)?.first_name || ""} ${(selectedMovie.User || selectedMovie.Producer)?.last_name || ""}`.trim() || "jorge santos"}
+                        </span>
                       </div>
-                    ) : (
-                      <p className="text-gray-500">Aucune vidéo disponible.</p>
-                    )}
-
-                    {/* Mini-modale rapide — s'affiche après fin de vidéo */}
-                    {showQuickVote && (
-                      <div className="absolute inset-0 bg-black/88 rounded-lg flex flex-col items-center justify-center gap-3 p-4">
-                        <p className="text-white text-sm font-semibold text-center">
-                          Film terminé — votre décision ?
-                        </p>
-                        <div className="flex gap-2 w-full">
-                          <button
-                            type="button"
-                            onClick={() => handleQuickPick("YES")}
-                            className="flex-1 flex flex-col items-center gap-1.5 py-3 bg-emerald-900/60 hover:bg-emerald-800/80 border border-emerald-600/50 text-emerald-300 rounded-xl transition text-xs font-semibold"
-                          >
-                            <IconThumbUp />
-                            Valider
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleQuickPick("TO DISCUSS")}
-                            className="flex-1 flex flex-col items-center gap-1.5 py-3 bg-amber-900/60 hover:bg-amber-800/80 border border-amber-600/50 text-amber-300 rounded-xl transition text-xs font-semibold"
-                          >
-                            <IconChat />
-                            À discuter
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleQuickPick("NO")}
-                            className="flex-1 flex flex-col items-center gap-1.5 py-3 bg-red-900/60 hover:bg-red-800/80 border border-red-600/50 text-red-300 rounded-xl transition text-xs font-semibold"
-                          >
-                            <IconThumbDown />
-                            Rejeter
-                          </button>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowQuickVote(false)}
-                          className="text-gray-500 hover:text-gray-300 text-xs transition"
-                        >
-                          Saisir manuellement ↓
-                        </button>
+                      <div className="grid grid-cols-12 text-sm">
+                        <span className="col-span-3 text-gray-500">E-mail :</span>
+                        <span className="col-span-9 text-white">{(selectedMovie.User || selectedMovie.Producer)?.email || "–"}</span>
                       </div>
-                    )}
-                  </div>
-                </InfoBlock>
-              </div>
-
-              {/* ── Colonne droite : vote ── */}
-              <div className="col-span-12 xl:col-span-5 space-y-2">
-                <InfoBlock title="Votre vote">
-                  <div className="flex items-center justify-end gap-2 flex-wrap mb-2">
-                    {selectedVote && (
-                      <span className="text-xs bg-blue-900/40 text-blue-200 px-2 py-1 rounded">
-                        Voté
-                      </span>
-                    )}
-                    {selectedVote?.modification_count > 0 && (
-                      <span className="text-xs bg-orange-900/40 text-orange-200 px-2 py-1 rounded">
-                        2ème vote enregistré
-                      </span>
-                    )}
-                    {isSecondVoteOpen && (
-                      <span className="text-xs bg-amber-900/40 text-amber-200 border border-amber-700/40 px-2 py-1 rounded font-semibold">
-                        2ème Votation ouverte
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Historique des votes */}
-                  {selectedVote?.history?.length > 0 && (
-                    <div className="mb-2 bg-gray-950 border border-gray-800 rounded-lg p-2">
-                      <p className="text-xs uppercase text-gray-400 mb-2">Historique</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {selectedVote.history.map((entry, idx) => (
-                          <div key={entry.id_vote_history || idx} className="bg-gray-900 border border-gray-800 rounded-lg p-2">
-                            <div className="flex items-center justify-between mb-1">
-                              <span className="text-gray-400">{idx === 0 ? "1ère votation" : "2ème votation"}</span>
-                              <span className="font-semibold text-white">{getVoteLabel(entry.note)}</span>
-                            </div>
-                            {entry.comments && (
-                              <p className="text-[11px] text-gray-400 line-clamp-2">{entry.comments}</p>
-                            )}
-                          </div>
-                        ))}
+                      <div className="grid grid-cols-12 text-sm">
+                        <span className="col-span-3 text-gray-500">Source :</span>
+                        <span className="col-span-9 text-white">{(selectedMovie.User || selectedMovie.Producer)?.known_by_mars_ai || "–"}</span>
                       </div>
                     </div>
-                  )}
+                  </div>
 
-                  {/* Vote actuel */}
-                  {selectedVote && (
-                    <div className="mb-2 bg-gray-950 border border-gray-800 rounded-lg p-2">
-                      <p className="text-xs uppercase text-gray-400 mb-1">Vote actuel</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-300">{getVoteLabel(selectedVote.note)}</span>
-                        {selectedVote.modification_count > 0 && (
-                          <span className="text-[10px] bg-orange-900/40 text-orange-200 px-2 py-0.5 rounded">
-                            2ème vote
-                          </span>
-                        )}
+                  {/* SYNOPSIS */}
+                  <div className="bg-[#0F0F0F] border border-gray-800 rounded-lg p-5">
+                    <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-3">SYNOPSIS (FR)</h3>
+                    <p className="text-white text-sm leading-relaxed">
+                      {selectedMovie.synopsis || selectedMovie.description || "Marty McFly, 17 ans, est propulsé en 1955 dans une DeLorean temporelle et doit s'assurer que ses parents se rencontrent pour préserver son existence avant de revenir à son époque."}
+                    </p>
+                  </div>
+
+                  {/* INFORMATIONS FILM */}
+                  <div className="bg-[#0F0F0F] border border-gray-800 rounded-lg p-5">
+                    <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4">INFORMATIONS FILM</h3>
+                    <div className="grid grid-cols-2 gap-y-3">
+                      <div>
+                        <span className="text-gray-500 text-sm">Durée :</span>
+                        <span className="text-white text-sm ml-2">{selectedMovie.duration ? `${selectedMovie.duration}s` : "34s"}</span>
                       </div>
-                      {selectedVote.comments && (
-                        <p className="text-[11px] text-gray-400 mt-1 line-clamp-2">
-                          {selectedVote.comments}
-                        </p>
+                      <div>
+                        <span className="text-gray-500 text-sm">Nationalité :</span>
+                        <span className="text-white text-sm ml-2">{selectedMovie.nationality || "USA"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* MÉDIA */}
+                  <div className="bg-[#0F0F0F] border border-gray-800 rounded-lg p-5">
+                    <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4">MÉDIA</h3>
+                    <div className="aspect-video bg-gray-900 rounded-lg overflow-hidden">
+                      {getTrailer(selectedMovie) ? (
+                        <VideoPreview
+                          title={selectedMovie.title}
+                          src={`${UPLOAD_BASE}/${getTrailer(selectedMovie)}`}
+                          poster={getPoster(selectedMovie) || undefined}
+                          onEnded={handleVideoEnded}
+                          openMode="fullscreen"
+                          className="w-full h-full"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-gray-900 to-gray-800">
+                          <FilmIcon small />
+                        </div>
                       )}
                     </div>
-                  )}
+                  </div>
 
-                  {/* Bouton promotion candidat */}
-                  {canPromote && (
-                    <button
-                      type="button"
-                      onClick={() => setShowPromoteModal(true)}
-                      className="mt-1 w-full px-3 py-2 bg-green-600/80 text-white rounded-lg text-xs font-semibold hover:bg-green-600 transition"
-                    >
-                      Promouvoir à la candidature
-                    </button>
-                  )}
-                </InfoBlock>
+                  {/* IA & MÉTHODOLOGIE */}
+                  <div className="bg-[#0F0F0F] border border-gray-800 rounded-lg p-5">
+                    <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4">IA & MÉTHODOLOGIE</h3>
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-12 text-sm">
+                        <span className="col-span-4 text-gray-500">Classification :</span>
+                        <span className="col-span-8 text-white">{selectedMovie.production || "integrale"}</span>
+                      </div>
+                      <div className="grid grid-cols-12 text-sm">
+                        <span className="col-span-4 text-gray-500">Méthodologie :</span>
+                        <span className="col-span-8 text-white">{selectedMovie.workshop || "Marty McFly is sent from 1985 to 1995 in a time-…"}</span>
+                      </div>
+                      <div className="grid grid-cols-12 text-sm">
+                        <span className="col-span-4 text-gray-500">Outil IA :</span>
+                        <span className="col-span-8 text-white">{selectedMovie.ai_tool || "Google veo"}</span>
+                      </div>
+                    </div>
+                  </div>
 
-                {/* Formulaire de vote */}
-                <InfoBlock title="Émettre un vote">
-                  {/* Condition de visionnage */}
-                  {getTrailer(selectedMovie) ? (
-                    <p className="text-xs text-gray-400 mb-2">
-                      {hasWatched
-                        ? "✓ Film visionné — vous pouvez voter."
-                        : "Vous devez visionner le film en entier avant de pouvoir voter."}
+                  {/* SYNOPSIS EN */}
+                  <div className="bg-[#0F0F0F] border border-gray-800 rounded-lg p-5">
+                    <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-3">SYNOPSIS (EN)</h3>
+                    <p className="text-white text-sm leading-relaxed">
+                      {selectedMovie.synopsis_anglais || "Marty McFly is sent from 1985 to 1995 in a time-traveling DeLorean, accidentally disrupting his parents' first meeting. He must fix the timeline and find a way back home with the help of young Doc Brown."}
                     </p>
-                  ) : (
-                    <label className="flex items-center gap-2 text-xs text-gray-400 mb-2 cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={confirmedWatched}
-                        onChange={(e) => setConfirmedWatched(e.target.checked)}
-                        className="accent-[#AD46FF]"
-                      />
-                      Je confirme avoir visionné le film dans son intégralité.
-                    </label>
-                  )}
+                  </div>
+                </div>
 
-                  {!canEditVote && selectedVote && (
-                    <p className="text-xs text-orange-200 bg-orange-900/30 border border-orange-700/50 px-3 py-2 rounded-lg mb-2">
-                      {isSecondVoteOpen
-                        ? "Votre 2ème vote est déjà enregistré."
-                        : "Vote enregistré. L'administrateur peut ouvrir la 2ème votation."}
-                    </p>
-                  )}
+                {/* Colonne droite - Vote */}
+                <div className="col-span-5 space-y-5">
 
-                  {voteMutation.isError && (
-                    <p className="text-xs text-red-300 mb-2">
-                      {voteMutation.error?.response?.data?.error || "Erreur lors de l'enregistrement."}
-                    </p>
-                  )}
+                  {/* LANGUE / STATUT */}
+                  <div className="bg-[#0F0F0F] border border-gray-800 rounded-lg p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-gray-400 text-sm">LANGUE :</span>
+                      <span className="text-white font-medium">{selectedMovie.main_language || "Français"}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-400 text-sm">STATUT :</span>
+                      <span className="text-white font-medium">assigné</span>
+                    </div>
+                  </div>
 
-                  <form onSubmit={handleVoteSubmit} className="space-y-3">
-                    <div>
-                      <label className="text-xs uppercase text-gray-400 block mb-2">
-                        Décision *
+                  {/* VOTRE VOTE */}
+                  <div className="bg-[#0F0F0F] border border-gray-800 rounded-lg p-5">
+                    <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-4">VOTRE VOTE</h3>
+                    
+                    {/* ÉMETTRE UN VOTE */}
+                    <div className="mb-4">
+                      <h4 className="text-gray-300 text-sm font-medium mb-3">ÉMETTRE UN VOTE</h4>
+                      
+                      {/* Condition de visionnage */}
+                      {getTrailer(selectedMovie) ? (
+                        <p className="text-xs text-gray-500 mb-4">
+                          {hasWatched
+                            ? "✓ Film visionné — vous pouvez voter."
+                            : "Vous devez visionner le film en entier avant de pouvoir voter."}
+                        </p>
+                      ) : (
+                        <label className="flex items-center gap-2 text-xs text-gray-500 mb-4 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={confirmedWatched}
+                            onChange={(e) => setConfirmedWatched(e.target.checked)}
+                            className="accent-[#AD46FF]"
+                          />
+                          Je confirme avoir visionné le film dans son intégralité.
+                        </label>
+                      )}
+                    </div>
+
+                    {/* DÉCISION */}
+                    <div className="mb-4">
+                      <label className="text-gray-300 text-sm font-medium block mb-3">
+                        DÉCISION *
                       </label>
                       <div className="space-y-2">
                         {[
-                          { value: "YES",        icon: <IconThumbUp />,   label: "Valider",    desc: "J'approuve ce film" },
-                          { value: "TO DISCUSS", icon: <IconChat />,      label: "À discuter", desc: "Mérite délibération" },
-                          { value: "NO",         icon: <IconThumbDown />, label: "Rejeter",    desc: "Je ne retiens pas ce film" },
+                          { value: "YES", icon: <IconThumbUp />, label: "Valider", desc: "J'approuve ce film" },
+                          { value: "TO DISCUSS", icon: <IconChat />, label: "À discuter", desc: "Mérite délibération" },
+                          { value: "NO", icon: <IconThumbDown />, label: "Rejeter", desc: "Je ne retiens pas ce film" },
                         ].map((opt) => (
                           <label
                             key={opt.value}
-                            className={`flex items-center gap-3 text-gray-300 bg-gray-900/60 border rounded-lg px-3 py-2.5 transition ${
-                              !voteAllowed
-                                ? "opacity-50 cursor-not-allowed border-gray-800"
-                                : "cursor-pointer border-gray-800 hover:border-[#AD46FF]/50"
-                            } ${voteForm.note === opt.value ? "border-[#AD46FF]/60 bg-[#AD46FF]/10" : ""}`}
+                            className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition ${
+                              voteForm.note === opt.value
+                                ? "border-[#AD46FF] bg-[#AD46FF]/10"
+                                : "border-gray-700 hover:border-gray-600"
+                            } ${!voteAllowed ? "opacity-50 cursor-not-allowed" : ""}`}
                           >
                             <input
                               type="radio"
@@ -709,18 +597,20 @@ export default function JuryHome() {
                               disabled={!voteAllowed}
                               className="accent-[#AD46FF]"
                             />
-                            <span className="text-gray-400 flex-shrink-0">{opt.icon}</span>
-                            <span className="text-sm font-medium">{opt.label}</span>
-                            <span className="text-gray-600 text-xs">{opt.desc}</span>
+                            <span className="text-gray-400">{opt.icon}</span>
+                            <div>
+                              <span className="text-white text-sm font-medium block">{opt.label}</span>
+                              <span className="text-gray-500 text-xs">{opt.desc}</span>
+                            </div>
                           </label>
                         ))}
                       </div>
                     </div>
 
-                    <div>
-                      <label className="text-xs uppercase text-gray-400 block mb-1">
-                        Commentaire *
-                        <span className="normal-case text-gray-600 ml-1 font-normal">(confidentiel)</span>
+                    {/* COMMENTAIRE */}
+                    <div className="mb-4">
+                      <label className="text-gray-300 text-sm font-medium block mb-2">
+                        COMMENTAIRE * <span className="text-gray-500 text-xs font-normal ml-1">(confidentiel)</span>
                       </label>
                       <textarea
                         name="commentaire"
@@ -730,23 +620,57 @@ export default function JuryHome() {
                         rows={3}
                         disabled={!voteAllowed}
                         placeholder="Justifiez votre décision…"
-                        className="w-full bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#AD46FF] resize-none disabled:opacity-50"
+                        className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#AD46FF] resize-none disabled:opacity-50"
                       />
                     </div>
 
+                    {/* Bouton d'enregistrement */}
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={handleVoteSubmit}
                       disabled={!voteAllowed || voteMutation.isPending}
-                      className="w-full bg-gradient-to-r from-[#AD46FF] to-[#F6339A] text-white px-4 py-2.5 rounded-lg font-semibold text-sm disabled:opacity-50 hover:opacity-90 transition"
+                      className="w-full bg-gradient-to-r from-[#AD46FF] to-[#F6339A] text-white py-3 rounded-lg font-medium text-sm disabled:opacity-50 hover:opacity-90 transition"
                     >
-                      {voteMutation.isPending
-                        ? "Enregistrement…"
-                        : isSecondVoteOpen
-                          ? "Enregistrer le 2ème vote"
-                          : "Enregistrer le 1er vote"}
+                      {voteMutation.isPending ? "Enregistrement…" : "ENREGISTRER LE 1ER VOTE"}
                     </button>
-                  </form>
-                </InfoBlock>
+
+                    {/* Message d'erreur */}
+                    {voteMutation.isError && (
+                      <p className="text-xs text-red-400 mt-3">
+                        {voteMutation.error?.response?.data?.error || "Erreur lors de l'enregistrement."}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Historique des votes (si existant) */}
+                  {selectedVote?.history?.length > 0 && (
+                    <div className="bg-[#0F0F0F] border border-gray-800 rounded-lg p-5">
+                      <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-3">Historique des votes</h3>
+                      {selectedVote.history.map((entry, idx) => (
+                        <div key={entry.id_vote_history || idx} className="mb-2 last:mb-0 p-2 bg-gray-900/50 rounded">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-gray-500">{idx === 0 ? "1ère votation" : "2ème votation"}</span>
+                            <span className="text-white font-medium">{getVoteLabel(entry.note)}</span>
+                          </div>
+                          {entry.comments && (
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">{entry.comments}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Bouton promotion (si disponible) */}
+                  {canPromote && (
+                    <button
+                      type="button"
+                      onClick={() => setShowPromoteModal(true)}
+                      className="w-full px-4 py-3 bg-green-600/20 border border-green-600/30 text-green-400 rounded-lg text-sm font-medium hover:bg-green-600/30 transition"
+                    >
+                      Promouvoir à la candidature
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -758,14 +682,14 @@ export default function JuryHome() {
       ════════════════════════ */}
       {showPromoteModal && selectedMovie && (
         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
-          <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-md p-6">
-            <h3 className="text-lg font-bold text-white mb-1">
+          <div className="bg-[#0A0A0A] border border-gray-800 rounded-xl w-full max-w-md p-6">
+            <h3 className="text-xl font-bold text-white mb-1">
               Promouvoir à la candidature
             </h3>
             <p className="text-sm text-gray-400 mb-4">
               Film : <span className="text-white font-semibold">{selectedMovie.title}</span>
             </p>
-            <label className="text-xs uppercase text-gray-400 block mb-1">
+            <label className="text-gray-400 text-xs block mb-2">
               Message pour l'administrateur (facultatif)
             </label>
             <textarea
@@ -773,7 +697,7 @@ export default function JuryHome() {
               onChange={(e) => setPromoteComment(e.target.value)}
               rows={4}
               placeholder="Expliquez pourquoi ce film mérite d'être candidat…"
-              className="w-full bg-gray-800 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#AD46FF] resize-none mb-4"
+              className="w-full bg-gray-900 border border-gray-700 text-white px-3 py-2 rounded-lg text-sm focus:outline-none focus:border-[#AD46FF] resize-none mb-4"
             />
             <div className="flex gap-3">
               <button
@@ -789,7 +713,7 @@ export default function JuryHome() {
                   promoteMutation.mutate({ id: selectedMovie.id_movie, comment: promoteComment })
                 }
                 disabled={promoteMutation.isPending}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg text-sm font-semibold hover:bg-green-500 transition disabled:opacity-50"
+                className="flex-1 px-4 py-2 bg-gradient-to-r from-green-600 to-green-500 text-white rounded-lg text-sm font-semibold hover:opacity-90 transition disabled:opacity-50"
               >
                 {promoteMutation.isPending ? "En cours…" : "Confirmer la promotion"}
               </button>
@@ -894,24 +818,6 @@ function MovieGrid({ movies, votesByMovie, emptyText, onSelect, showVoteBadge, s
           </button>
         );
       })}
-    </div>
-  );
-}
-
-function InfoBlock({ title, children }) {
-  return (
-    <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-2">
-      <h4 className="text-xs uppercase text-gray-400 mb-2">{title}</h4>
-      {children}
-    </div>
-  );
-}
-
-function InfoRow({ label, value }) {
-  return (
-    <div className="flex gap-1">
-      <span className="text-gray-400 shrink-0">{label} :</span>
-      <span className="text-gray-300 truncate">{value}</span>
     </div>
   );
 }

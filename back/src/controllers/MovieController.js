@@ -1,5 +1,6 @@
 import db from "../models/index.js";
 import path from "path";
+import fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
 import { Op } from "sequelize";
 
@@ -402,13 +403,23 @@ async function deleteMovie(req, res) {
       return res.status(404).json({ error: "Film non trouvé" });
     }
 
+    // Delete associated files from disk
+    const fileFields = ["trailer", "display_picture", "picture1", "picture2", "picture3", "thumbnail", "subtitle"];
+    for (const field of fileFields) {
+      const filename = movie[field];
+      if (filename) {
+        const filePath = path.join(uploadDir, filename);
+        fs.unlink(filePath, (err) => {
+          if (err && err.code !== "ENOENT") {
+            console.error(`Failed to delete file ${filePath}:`, err.message);
+          }
+        });
+      }
+    }
+
     await movie.destroy();
 
-    res.status(200).json({
-      message: "Film supprimé"
-    });
-    //correction du status 204 (pas de JSON avec 204)
-    //return res.status(204).send(); 
+    res.status(200).json({ message: "Film supprimé" });
 
   } catch (error) {
     res.status(500).json({ error: error.message });
