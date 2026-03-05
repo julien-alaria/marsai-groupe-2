@@ -7,7 +7,7 @@
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../../api/users";
-import { getAssignedMovies, updateMovieStatus } from "../../api/videos";
+import { getAssignedMovies, promoteMovieToCandidateByJury } from "../../api/videos";
 import { getMyVotes, submitMyVote } from "../../api/votes";
 import { VideoPreview } from "../../components/VideoPreview.jsx";
 
@@ -201,9 +201,7 @@ export default function JuryHome() {
     if (!selectedMovie) return;
     try {
       const message = window.prompt("Message pour l'admin (optionnel):", "");
-      await updateMovieStatus(selectedMovie.id_movie, "candidate", {
-        jury_comment: message || ""
-      });
+      await promoteMovieToCandidateByJury(selectedMovie.id_movie, message || "");
       setModalNotice("Film promu à la candidature.");
       await refreshAssignedMovies();
       // Aggiorna anche la lista dei film candidati

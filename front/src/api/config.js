@@ -41,9 +41,13 @@ instance.interceptors.response.use(
   async (error) => {
     if (error.response && error.response.status === 401) {
       localStorage.removeItem("token");
+      localStorage.removeItem("email");
+      localStorage.removeItem("firstName");
+      localStorage.removeItem("lastName");
+      localStorage.removeItem("role");
       alert("Sessione scaduta o non autorizzato. Effettua di nuovo il login.");
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      if (window.location.pathname !== "/auth/login") {
+        window.location.href = "/auth/login";
       }
     }
     return Promise.reject(error);

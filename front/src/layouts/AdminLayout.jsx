@@ -1,5 +1,7 @@
-import { Outlet, NavLink, useNavigate } from "react-router";
+import { Outlet, NavLink, useLocation, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
+import TutorialBox from "../components/TutorialBox.jsx";
+import { loadTutorialSteps } from "../utils/tutorialLoader.js";
 
 /**
  * AdminLayout - Professional admin dashboard layout
@@ -9,7 +11,10 @@ import { useState, useEffect } from "react";
 export default function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [showTutorialModal, setShowTutorialModal] = useState(false);
+  const [tutorial, setTutorial] = useState({ title: "Tutoriel", steps: [] });
   const navigate = useNavigate();
+  const location = useLocation();
 
   const firstName = localStorage.getItem("firstName") || "Admin";
   const role = localStorage.getItem("role") || "ADMIN";
@@ -35,6 +40,49 @@ export default function AdminLayout() {
     mediaQuery.addEventListener("change", handler);
     return () => mediaQuery.removeEventListener("change", handler);
   }, []);
+
+  useEffect(() => {
+    const tutorialMap = {
+      "/admin": {
+        title: "Tutoriel — Dashboard",
+        steps: [
+          "Consultez les statistiques globales: utilisateurs, films, votes et prix.",
+          "Utilisez les actions rapides pour accéder directement à la gestion Films, Catégories et Prix.",
+          "Surveillez les films récents pour repérer les statuts en attente, approuvés ou refusés.",
+          "Commencez chaque session admin ici pour prioriser les tâches urgentes."
+        ]
+      },
+      "/admin/movies": "/src/pages/admin/TutorialFilms.fr.md",
+      "/admin/users": "/src/pages/admin/TutorialUsers.fr.md",
+      "/admin/jury": "/src/pages/admin/TutorialJury.fr.md",
+      "/admin/awards": "/src/pages/admin/TutorialAwards.fr.md",
+      "/admin/results": "/src/pages/admin/TutorialVoting.fr.md",
+      "/admin/leaderboard": "/src/pages/admin/TutorialVoting.fr.md"
+    };
+
+    const tutorialSource = tutorialMap[location.pathname];
+
+    if (!tutorialSource) {
+      setTutorial({ title: "Tutoriel", steps: ["Aucun tutoriel disponible pour cette page."] });
+      return;
+    }
+
+    if (typeof tutorialSource === "object") {
+      setTutorial(tutorialSource);
+      return;
+    }
+
+    async function loadRouteTutorial() {
+      try {
+        const tutorialData = await loadTutorialSteps(tutorialSource);
+        setTutorial(tutorialData);
+      } catch (error) {
+        setTutorial({ title: "Tutoriel", steps: ["Impossible de charger le tutoriel."] });
+      }
+    }
+
+    loadRouteTutorial();
+  }, [location.pathname]);
 
   const isSidebarExpanded = !isMobile && isSidebarOpen;
 
@@ -344,51 +392,30 @@ export default function AdminLayout() {
 
           {/* Right header */}
           <div className="flex items-center space-x-3">
-            {/* Search */}
-            <div className="relative group/search hidden md:block">
-              <input
-                type="text"
-                placeholder="Rechercher..."
-                className="
-                  w-72 bg-white/5 backdrop-blur-sm 
-                  border border-white/10 
-                  text-sm text-white
-                  placeholder-white/30
-                  rounded-lg
-                  px-4 py-2
-                  pl-10
-                  shadow-md shadow-black/20
-                  focus:outline-none 
-                  focus:ring-2 
-                  focus:ring-blue-500/30
-                  focus:border-transparent
-                  transition-all duration-200
-                "
-              />
-              <svg className="absolute left-3 top-2.5 w-4 h-4 text-white/30" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-
             {/* Icons */}
-            <button className="group relative w-9 h-9 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 flex items-center justify-center overflow-hidden">
+            <button
+              type="button"
+              onClick={() => navigate("/")}
+              title="Retour à l'accueil"
+              className="group relative w-11 h-11 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 transition-all duration-200 flex items-center justify-center overflow-hidden shadow-lg shadow-black/20"
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
               </svg>
             </button>
 
-            <button className="group relative w-9 h-9 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 flex items-center justify-center overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setShowTutorialModal(true)}
+              className="group relative w-11 h-11 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 transition-all duration-200 flex items-center justify-center overflow-hidden shadow-lg shadow-black/20"
+              title="Ouvrir le tutoriel"
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-              </svg>
-            </button>
-
-            <button className="group relative w-9 h-9 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-all duration-200 flex items-center justify-center overflow-hidden">
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              <svg className="w-4 h-4 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+              <svg className="w-5 h-5 text-white/90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.31 1.84-2.25 3.273-2.25 1.917 0 3.5 1.47 3.5 3.281 0 1.332-.798 2.48-1.945 2.98-.746.326-1.305.933-1.305 1.739V15" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 18h.01" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </button>
           </div>
@@ -398,6 +425,24 @@ export default function AdminLayout() {
         <div className="flex-1 overflow-y-auto bg-gradient-to-b from-[#0a0c0f] via-[#0c0e11] to-[#0d0f12] p-6 scrollbar-thin-dark">
           <Outlet />
         </div>
+
+        {showTutorialModal && (
+          <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+            <div className="w-full max-w-2xl bg-gray-950 border border-gray-800 rounded-2xl p-5 max-h-[88vh] overflow-auto">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-white text-lg font-semibold">Instructions</h3>
+                <button
+                  type="button"
+                  onClick={() => setShowTutorialModal(false)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+              <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );

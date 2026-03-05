@@ -38,11 +38,25 @@ async function updateMovieStatus(id, selection_status, payload = {}) {
 }
 
 /**
+ * Envoie l'email de refus pour un film (ADMIN)
+ * Endpoint: POST /newsletter/movie/:id/send-reject-email
+ */
+async function sendRejectEmailForMovie(id) {
+  return await instance.post(`newsletter/movie/${id}/send-reject-email`);
+}
+
+/**
  * Met à jour un film (ADMIN)
  * Endpoint: PUT /movies/:id
  */
 async function updateMovie(id, payload) {
-  return await instance.put(`movies/${id}`, payload);
+  if (payload instanceof FormData) {
+    return await instance.put(`movies/${id}`, payload, {
+      headers: { "Content-Type": "multipart/form-data" }
+    });
+  } else {
+    return await instance.put(`movies/${id}`, payload);
+  }
 }
 
 /**
@@ -106,6 +120,7 @@ export {
   getAssignedMovies,
   promoteMovieToCandidateByJury,
   updateMovieStatus,
+  sendRejectEmailForMovie,
   updateMovie,
   updateMovieCategories,
   updateMovieJuries,

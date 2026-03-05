@@ -3,24 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import { getVideos } from "../../api/videos.js";
 import { getVotes } from "../../api/votes.js";
 import { getAwards } from "../../api/awards.js";
-import TutorialBox from "../../components/TutorialBox.jsx";
-import { useEffect, useState } from "react";
-import { loadTutorialSteps } from "../../utils/tutorialLoader.js";
 
 export default function Results() {
-    const [tutorial, setTutorial] = useState({ title: "Tutoriel", steps: [] });
-
-    useEffect(() => {
-      async function fetchTutorial() {
-        try {
-          const tutorialData = await loadTutorialSteps("/src/pages/admin/TutorialVoting.fr.md");
-          setTutorial(tutorialData);
-        } catch (err) {
-          setTutorial({ title: "Tutoriel", steps: ["Impossible de charger le tutoriel."] });
-        }
-      }
-      fetchTutorial();
-    }, []);
   const { data: moviesData, isPending: moviesLoading } = useQuery({
     queryKey: ["listVideos"],
     queryFn: getVideos,
@@ -138,8 +122,6 @@ export default function Results() {
         </h1>
         <p className="text-gray-400 mt-1">Films les plus votés, primés, moyenne des votes et statuts acceptés/refusés.</p>
       </div>
-
-      <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gray-900 border border-gray-800 rounded-xl p-4">

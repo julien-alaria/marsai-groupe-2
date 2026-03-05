@@ -45,6 +45,7 @@ import Categories from "./pages/admin/Categories.jsx";
 import Awards from "./pages/admin/Awards.jsx";
 import JuryManagement from "./pages/admin/JuryManagement.jsx";
 import Results from "./pages/admin/Results.jsx";
+import Leaderboard from "./pages/admin/Leaderboard.jsx";
 /**
  * Configuration de TanStack Query
  * staleTime: Infinity signifie que les données en cache ne deviennent jamais obsolètes automatiquement
@@ -121,6 +122,7 @@ createRoot(document.getElementById("root")).render(
 
             {/* Résultats */}
             <Route path="results" element={<Results />} />
+            <Route path="leaderboard" element={<Leaderboard />} />
           </Route>
 
           {/* ========================================

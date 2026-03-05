@@ -3,25 +3,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getUsers } from "../../api/users.js";
 import { getVideos, updateMovieJuries } from "../../api/videos.js";
 import { getCategories } from "../../api/videos.js";
-import TutorialBox from "../../components/TutorialBox.jsx";
-import { useEffect as useEffectReact, useState as useStateReact } from "react";
-import { loadTutorialSteps } from "../../utils/tutorialLoader.js";
 
 export default function JuryManagement() {
-    const [tutorial, setTutorial] = useStateReact({ title: "Tutoriel", steps: [] });
-
-    useEffectReact(() => {
-      async function fetchTutorial() {
-        try {
-          // Use relative path for fetch
-          const tutorialData = await loadTutorialSteps("/src/pages/admin/TutorialJury.fr.md");
-          setTutorial(tutorialData);
-        } catch (err) {
-          setTutorial({ title: "Tutoriel", steps: ["Impossible de charger le tutoriel."] });
-        }
-      }
-      fetchTutorial();
-    }, []);
   const queryClient = useQueryClient();
   const [selectedJury, setSelectedJury] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -78,8 +61,11 @@ export default function JuryManagement() {
   });
 
   const filteredMovies = useMemo(() => {
-    if (selectedCategory === "all") return videos;
-    return videos.filter((movie) =>
+    const votingStatuses = ["assigned", "to_discuss", "candidate", "selected", "finalist"];
+    const eligibleMovies = videos.filter((movie) => votingStatuses.includes(movie.selection_status));
+
+    if (selectedCategory === "all") return eligibleMovies;
+    return eligibleMovies.filter((movie) =>
       (movie.Categories || []).some((cat) => cat.id_categorie === parseInt(selectedCategory))
     );
   }, [videos, selectedCategory]);
@@ -163,8 +149,6 @@ export default function JuryManagement() {
         </h1>
         <p className="text-gray-400 mt-2">Assignez les films aux jurys pour la votation</p>
       </div>
-
-      <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
 
       {notice && (
         <div className="bg-gradient-to-r from-[#AD46FF]/20 to-[#F6339A]/20 border border-[#AD46FF] text-white px-4 py-3 rounded-lg">

@@ -13,8 +13,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Pagination from "../../components/admin/Pagination.jsx"; 
-import TutorialBox from "../../components/TutorialBox.jsx";
-import { loadTutorialSteps } from "../../utils/tutorialLoader.js";
 
 
 /**
@@ -51,19 +49,6 @@ const updateUserSchema = z.object({
  * @returns {JSX.Element} La page de gestion des utilisateurs
  */
 function Users() {
-    const [tutorial, setTutorial] = useState({ title: "Tutoriel", steps: [] });
-
-    useEffect(() => {
-      async function fetchTutorial() {
-        try {
-          const tutorialData = await loadTutorialSteps("/src/pages/admin/TutorialUsers.fr.md");
-          setTutorial(tutorialData);
-        } catch (err) {
-          setTutorial({ title: "Tutoriel", steps: ["Impossible de charger le tutoriel."] });
-        }
-      }
-      fetchTutorial();
-    }, []);
   // État pour stocker la liste des utilisateurs
   const [users, setUsers] = useState([]);
   // État pour afficher/masquer la modale de création
@@ -327,10 +312,6 @@ function Users() {
 
 return (
     <section className="bg-gradient-to-br from-[#1a1c20]/60 to-[#0f1114]/60 backdrop-blur-xl border border-white/10 rounded-xl p-4 shadow-xl shadow-black/30 transition-all duration-300">
-      <div className="mb-4">
-        <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
-      </div>
-
       {message && (
         <div className={`mb-3 p-3 rounded-lg ${
           message.includes("succès") 
