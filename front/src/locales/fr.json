@@ -187,6 +187,7 @@
     },
     "buttons": {
       "submit": "Soumettre le film",
+      "submitting": "Soumission en cours...",
       "save": "Enregistrer",
       "edit": "Modifier",
       "cancel": "Annuler",
