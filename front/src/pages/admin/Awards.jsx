@@ -1,36 +1,30 @@
-/**
- * Composant Awards (Gestion des Prix)
- * Page administrateur pour créer, modifier et gérer les prix du festival
- * @returns {JSX.Element} La page de gestion des prix
- */
 import { useState, useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAwards, createAward, deleteAward } from "../../api/awards.js";
 import { getVideos, updateMovieStatus } from "../../api/videos.js";
-import TutorialBox from "../../components/TutorialBox.jsx";
-import { useEffect as useEffectReact, useState as useStateReact } from "react";
-import { loadTutorialSteps } from "../../utils/tutorialLoader.js";
+import { UPLOAD_BASE } from "../../utils/constants.js";
+
+const TUTORIAL_STEPS = [
+  "Toutes les récompenses disponibles sont affichées.",
+  "Vous pouvez voir quels films sont candidats pour chaque récompense.",
+  "Les administrateurs peuvent attribuer des récompenses aux films sélectionnés.",
+  "Chaque récompense a des critères spécifiques et peut être attribuée manuellement.",
+  "Une fois les récompenses attribuées, vous pouvez publier les résultats.",
+  "Les films primés seront visibles sur la page publique.",
+  "Vous pouvez modifier ou révoquer des récompenses en cas d'erreur.",
+  "Vérifiez les critères d'attribution avant de récompenser un film.",
+  "Communiquez les résultats aux participants.",
+];
 
 function Awards() {
-    const [tutorial, setTutorial] = useStateReact({ title: "Tutoriel", steps: [] });
-
-    useEffectReact(() => {
-      async function fetchTutorial() {
-        try {
-          const tutorialData = await loadTutorialSteps("/src/pages/admin/TutorialAwards.fr.md");
-          setTutorial(tutorialData);
-        } catch (err) {
-          setTutorial({ title: "Tutoriel", steps: ["Impossible de charger le tutoriel."] });
-        }
-      }
-      fetchTutorial();
-    }, []);
+  const [showTutorial, setShowTutorial] = useState(false);
   const queryClient = useQueryClient();
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [awardName, setAwardName] = useState("");
   const [feedback, setFeedback] = useState(null);
-  const [activeTab, setActiveTab] = useState("create"); // "create" ou "awarded"
+  const [activeTab, setActiveTab] = useState("create");
+  const [confirmModal, setConfirmModal] = useState(null);
 
   const { data: awardsData, isPending: awardsLoading, isError: awardsError } = useQuery({
     queryKey: ["awards"],
@@ -169,39 +163,60 @@ function Awards() {
   };
 
   const handleAwardMovie = (movieId) => {
-    if (window.confirm("Marquer ce film comme primé et le retirer de la votation ?")) {
-      markAsAwardedMutation.mutate(movieId);
-    }
+    setConfirmModal({
+      title: "Passer en film primé",
+      message: "Marquer ce film comme primé et le retirer de la votation ?",
+      onConfirm: () => {
+        markAsAwardedMutation.mutate(movieId);
+        setConfirmModal(null);
+      },
+    });
   };
 
   const handleResetAwardedMovies = () => {
-    if (window.confirm(`Réinitialiser ${awardedMovies.length} films primés en candidats pour les tests ?`)) {
-      resetAwardedMoviesMutation.mutate();
-    }
+    setConfirmModal({
+      title: "Réinitialiser les films primés",
+      message: `Réinitialiser ${awardedMovies.length} film(s) primé(s) en candidats ?`,
+      onConfirm: () => {
+        resetAwardedMoviesMutation.mutate();
+        setConfirmModal(null);
+      },
+    });
   };
 
   const handleDeleteAllAwards = () => {
-    if (window.confirm(`Supprimer définitivement tous les ${awards.length} prix existants ?`)) {
-      deleteAllAwardsMutation.mutate();
-    }
+    setConfirmModal({
+      title: "Supprimer tous les prix",
+      message: `Supprimer définitivement tous les ${awards.length} prix existants ? Cette action est irréversible.`,
+      onConfirm: () => {
+        deleteAllAwardsMutation.mutate();
+        setConfirmModal(null);
+      },
+      danger: true,
+    });
   };
 
   const handleDeleteAward = (award) => {
     const movie = movies.find((m) => m.id_movie === award.id_movie);
     const movieTitle = movie ? movie.title : `Film #${award.id_movie}`;
-    if (window.confirm(`Supprimer le prix "${award.award_name}" pour "${movieTitle}" ?`)) {
-      deleteAwardMutation.mutate(award.id_award);
-    }
+    setConfirmModal({
+      title: "Supprimer le prix",
+      message: `Supprimer le prix "${award.award_name}" pour "${movieTitle}" ?`,
+      onConfirm: () => {
+        deleteAwardMutation.mutate(award.id_award);
+        setConfirmModal(null);
+      },
+      danger: true,
+    });
   };
 
   const getPoster = (movie) => {
-    const uploadBase = "http://localhost:3000/uploads";
     return movie.thumbnail
-      ? `${uploadBase}/${movie.thumbnail}`
+      ? `${UPLOAD_BASE}/${movie.thumbnail}`
       : movie.display_picture
-        ? `${uploadBase}/${movie.display_picture}`
+        ? `${UPLOAD_BASE}/${movie.display_picture}`
         : movie.picture1
-          ? `${uploadBase}/${movie.picture1}`
+          ? `${UPLOAD_BASE}/${movie.picture1}`
           : null;
   };
 
@@ -240,8 +255,47 @@ function Awards() {
               Cliquez sur un film candidat pour lui attribuer un prix
             </p>
           </div>
-          <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={false} />
+          <button
+            onClick={() => setShowTutorial(!showTutorial)}
+            className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors"
+            title="Afficher l'aide"
+          >
+            <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
         </div>
+
+        {showTutorial && (
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-white/90 mb-2">Tutoriel : Système de Récompenses</h3>
+                <ul className="space-y-1.5 text-xs text-white/60">
+                  {TUTORIAL_STEPS.map((step, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-purple-400 mt-px flex-shrink-0">•</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button
+                onClick={() => setShowTutorial(false)}
+                className="p-1 hover:bg-white/10 rounded transition-colors"
+              >
+                <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Boutons d'action */}
         {(awards.length > 0 || awardedMovies.length > 0) && (
@@ -605,6 +659,33 @@ function Awards() {
             
             <div className="absolute top-0 right-0 w-32 h-32 overflow-hidden opacity-5 pointer-events-none">
               <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-purple-500/30 to-pink-500/30 rounded-full blur-3xl" />
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Modal de confirmation générique */}
+      {confirmModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4" onClick={() => setConfirmModal(null)}>
+          <div className="bg-gradient-to-br from-[#1a1c20] to-[#0f1114] border border-white/10 rounded-xl w-full max-w-md shadow-2xl shadow-black/50" onClick={(e) => e.stopPropagation()}>
+            <div className="p-6 text-center">
+              <div className={`mx-auto w-12 h-12 rounded-full flex items-center justify-center mb-4 ${confirmModal.danger ? "bg-red-500/20 border border-red-500/30" : "bg-yellow-500/20 border border-yellow-500/30"}`}>
+                <svg className={`w-6 h-6 ${confirmModal.danger ? "text-red-400" : "text-yellow-400"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.142 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                </svg>
+              </div>
+              <h2 className="text-lg font-semibold text-white mb-2">{confirmModal.title}</h2>
+              <p className="text-sm text-white/60 mb-6">{confirmModal.message}</p>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirmModal(null)} className="flex-1 px-3 py-1.5 bg-white/5 border border-white/10 text-white/80 text-xs rounded-lg hover:bg-white/10 transition-colors">
+                  Annuler
+                </button>
+                <button
+                  onClick={confirmModal.onConfirm}
+                  className={`flex-1 px-3 py-1.5 text-xs rounded-lg transition-colors ${confirmModal.danger ? "bg-red-500/10 border border-red-500/30 text-red-300 hover:bg-red-500/20" : "bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/20"}`}
+                >
+                  Confirmer
+                </button>
+              </div>
             </div>
           </div>
         </div>

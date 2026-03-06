@@ -1,7 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router";
 import { getAdminStats } from "../../api/dashboard";
-import instance from "../../api/config";
 
 import DashboardHero from "../../components/admin/DashboardHero.jsx";
 import StatsGrid from "../../components/admin/StatsGrid.jsx";
@@ -115,7 +114,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <div className="space-y-6 sm:space-y-6">
       {/* En-tête */}
       <DashboardHero />
 
@@ -123,7 +122,7 @@ export default function Dashboard() {
       <StatsGrid stats={stats} />
 
       {/* Graphiques */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-4">
         <div>
           <VotesChart votesData={stats?.votes} />
         </div>
@@ -148,7 +147,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4 gap-3 sm:gap-4">
           {QUICK_ACTIONS.map((action) => (
             <button
               key={action.path}
@@ -188,9 +187,6 @@ export default function Dashboard() {
         </div>
       </section>
 
-      {/* Intégration YouTube */}
-      <GoogleAuthWidget />
-
       {/* Pipeline des films */}
       {stats?.movies?.pipeline && (
         <section className="space-y-4">
@@ -201,96 +197,6 @@ export default function Dashboard() {
         </section>
       )}
     </div>
-  );
-}
-
-/* ─── Google / YouTube Auth Widget ───────────────────── */
-function GoogleAuthWidget() {
-  const { data, isLoading, refetch } = useQuery({
-    queryKey: ["googleAuthStatus"],
-    queryFn: () => instance.get("google/status").then((r) => r.data),
-    refetchInterval: 15_000,
-    retry: false,
-    // Don't crash the whole dashboard if this endpoint is unreachable
-    throwOnError: false,
-  });
-
-  const active = data?.active === true;
-
-  function handleConnect() {
-    const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
-    window.open(`${apiBase}/google/auth`, "_blank");
-    // Re-check status after the user completes the OAuth flow
-    setTimeout(() => refetch(), 5000);
-    setTimeout(() => refetch(), 12000);
-  }
-
-  return (
-    <section className="space-y-4">
-      <div>
-        <h2 className="text-base sm:text-lg font-semibold text-white">
-          Intégrations
-        </h2>
-        <p className="text-xs text-white/40 mt-0.5">
-          Connexions aux services externes
-        </p>
-      </div>
-
-      <div className="bg-white/[0.04] border border-white/10 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex items-center gap-4 max-w-sm">
-        {/* YouTube icon */}
-        <div className="w-10 h-10 flex-shrink-0 flex items-center justify-center bg-white/[0.06] rounded-xl">
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-            <path
-              className={active ? "text-red-500" : "text-white/25"}
-              style={{ color: active ? "#ef4444" : "rgba(255,255,255,0.25)" }}
-              d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"
-            />
-          </svg>
-        </div>
-
-        {/* Status text */}
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-white"> Auth YouTube</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            {isLoading ? (
-              <span className="text-xs text-white/30">Vérification…</span>
-            ) : active ? (
-              <>
-                <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0 animate-pulse" />
-                <span className="text-xs text-green-400 font-medium">Connecté</span>
-              </>
-            ) : (
-              <>
-                <span className="w-2 h-2 rounded-full bg-red-500/60 flex-shrink-0" />
-                <span className="text-xs text-white/40">Non connecté</span>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Action button */}
-        {!isLoading && (
-          active ? (
-            <button
-              onClick={() => refetch()}
-              title="Actualiser le statut"
-              className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 transition"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-            </button>
-          ) : (
-            <button
-              onClick={handleConnect}
-              className="flex-shrink-0 px-3 py-1.5 text-xs font-semibold bg-red-600 hover:bg-red-500 text-white rounded-lg transition"
-            >
-              Connecter
-            </button>
-          )
-        )}
-      </div>
-    </section>
   );
 }
 

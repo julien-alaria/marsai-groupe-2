@@ -310,9 +310,11 @@ export default function ProducerHome() {
 
   function handleNextStep() {
     if (!isStep1Valid()) {
-      alert("Remplissez le titre, la durée (≤120s) et le synopsis.");
+      setMovieError("Veuillez remplir le titre, la durée (≤ 120 s) et le synopsis.");
+      setTimeout(() => setMovieError(null), 4000);
       return;
     }
+    setMovieError(null);
     setFormStep(2);
   }
 

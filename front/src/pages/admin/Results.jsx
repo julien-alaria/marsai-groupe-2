@@ -3,11 +3,20 @@ import { useQuery } from "@tanstack/react-query";
 import { getVideos } from "../../api/videos.js";
 import { getVotes } from "../../api/votes.js";
 import { getAwards } from "../../api/awards.js";
-import TutorialBox from "../../components/TutorialBox.jsx";
-import { useEffect } from "react";
-import { loadTutorialSteps } from "../../utils/tutorialLoader.js";
 
 const ENUM_TO_SCORE = { YES: 1, NO: 0, "TO DISCUSS": 0.5 };
+
+const TUTORIAL_STEPS = [
+  "Tous les votes sont affichés avec les détails sur le film, le votant et le score.",
+  "Vous pouvez filtrer et trier les votes par onglet.",
+  "Les membres du jury peuvent attribuer des votes aux films.",
+  "Chaque vote comprend un score et un commentaire.",
+  "Les résultats sont calculés automatiquement en fonction des votes.",
+  "Vous pouvez voir les classements et les films primés.",
+  "Les administrateurs peuvent réviser et corriger les votes erronés.",
+  "Assurez-vous que tous les votes sont corrects avant de publier les résultats.",
+  "Utilisez les graphiques pour analyser les tendances des votes.",
+];
 
 const STATUS_CONFIG = {
   submitted:  { label: "Soumis",        color: "bg-gray-500/20 text-gray-300 border-gray-500/30" },
@@ -29,14 +38,8 @@ const TABS = [
 ];
 
 export default function Results() {
-  const [tutorial, setTutorial] = useState({ title: "Tutoriel", steps: [] });
+  const [showTutorial, setShowTutorial] = useState(false);
   const [activeTab, setActiveTab] = useState("all");
-
-  useEffect(() => {
-    loadTutorialSteps("/src/pages/admin/TutorialVoting.fr.md")
-      .then(setTutorial)
-      .catch(() => setTutorial({ title: "Aide", steps: ["Consultez les résultats des votes par catégorie."] }));
-  }, []);
 
   const { data: moviesData, isPending: moviesLoading } = useQuery({ queryKey: ["listVideos"], queryFn: getVideos });
   const { data: votesData,  isPending: votesLoading  } = useQuery({ queryKey: ["votes"],      queryFn: getVotes  });
@@ -113,8 +116,44 @@ export default function Results() {
               {movies.length} film{movies.length !== 1 ? "s" : ""} · {votes.length} vote{votes.length !== 1 ? "s" : ""}
             </p>
           </div>
-          <TutorialBox title={tutorial.title} steps={tutorial.steps} />
+          <button
+            onClick={() => setShowTutorial(!showTutorial)}
+            className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors"
+            title="Afficher l'aide"
+          >
+            <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
         </div>
+
+        {showTutorial && (
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-white/90 mb-2">Tutoriel : Système de Vote</h3>
+                <ul className="space-y-1.5 text-xs text-white/60">
+                  {TUTORIAL_STEPS.map((step, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-purple-400 mt-px flex-shrink-0">•</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button onClick={() => setShowTutorial(false)} className="p-1 hover:bg-white/10 rounded transition-colors">
+                <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* ── Stats summary cards ── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

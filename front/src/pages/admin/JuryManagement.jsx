@@ -31,9 +31,20 @@ import {
   updateMovieStatus,
 } from "../../api/videos.js";
 import { getCategories } from "../../api/videos.js";
-import TutorialBox from "../../components/TutorialBox.jsx";
-import { loadTutorialSteps } from "../../utils/tutorialLoader.js";
 import { UPLOAD_BASE } from "../../utils/constants.js";
+
+const TUTORIAL_STEPS = [
+  "Tous les membres du jury sont affichés à gauche.",
+  "Vous pouvez voir les détails de chaque membre : nom, rôle, contact.",
+  "Les administrateurs peuvent attribuer des membres du jury aux films.",
+  "Chaque membre peut être associé à un ou plusieurs films.",
+  "Vous pouvez modifier les permissions des membres du jury.",
+  "Les permissions déterminent quels films ils peuvent voter.",
+  "Vous pouvez supprimer ou modifier les membres du jury.",
+  "Toutes les modifications sont tracées.",
+  "Attribuez les membres en fonction des compétences.",
+  "Maintenez à jour la liste du jury.",
+];
 
 /* ─── Statuts ─────────────────────────────────────────── */
 const STATUS_CONFIG = {
@@ -88,18 +99,7 @@ const getPoster = (movie) =>
 ════════════════════════════════════════════════════════ */
 export default function JuryManagement() {
   const queryClient = useQueryClient();
-
-  const [tutorial, setTutorial] = useState({ title: "Tutoriel", steps: [] });
-  useEffect(() => {
-    loadTutorialSteps("/src/pages/admin/TutorialJury.fr.md")
-      .then(setTutorial)
-      .catch(() =>
-        setTutorial({
-          title: "Tutoriel",
-          steps: ["Impossible de charger le tutoriel."],
-        }),
-      );
-  }, []);
+  const [showTutorial, setShowTutorial] = useState(false);
 
   /* ── États ── */
   const [selectedMovieIds, setSelectedMovieIds] = useState([]);
@@ -288,12 +288,44 @@ export default function JuryManagement() {
               Assignez les films aux membres du jury pour lancer l'évaluation
             </p>
           </div>
-          <TutorialBox
-            title={tutorial.title}
-            steps={tutorial.steps}
-            defaultOpen={false}
-          />
+          <button
+            onClick={() => setShowTutorial(!showTutorial)}
+            className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors"
+            title="Afficher l'aide"
+          >
+            <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
         </div>
+
+        {showTutorial && (
+          <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+                <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-white/90 mb-2">Tutoriel : Attribution et Gestion du Jury</h3>
+                <ul className="space-y-1.5 text-xs text-white/60">
+                  {TUTORIAL_STEPS.map((step, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <span className="text-purple-400 mt-px flex-shrink-0">•</span>
+                      <span>{step}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <button onClick={() => setShowTutorial(false)} className="p-1 hover:bg-white/10 rounded transition-colors">
+                <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Notice */}
         {notice && (

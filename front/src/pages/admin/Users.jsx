@@ -1,11 +1,3 @@
-/**
- * Composant Users (Gestion des Utilisateurs Admin)
- * Page administrateur pour gérer les utilisateurs du système
- * Fonctionnalités CRUD complètes: Créer, Lire, Mettre à jour, Supprimer
- * Utilise react-hook-form avec validation Zod
- * Utilise TanStack Query (useMutation) pour les opérations CRUD
- * @returns {JSX.Element} La page de gestion des utilisateurs avec tableau et modales
- */
 import { useEffect, useState, useMemo } from "react";
 import { deleteUser, getUsers, updateUser, createUser } from "../../api/users.js";
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -13,16 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import Pagination from "../../components/admin/Pagination.jsx";
-import TutorialBox from "../../components/TutorialBox.jsx";
-import { loadTutorialSteps } from "../../utils/tutorialLoader.js";
 import SearchBar from "../../components/admin/Searchbar.jsx";
 
-
-/**
- * Schéma de validation pour la création d'un utilisateur
- * Champs requis: prénom, nom, email (valide), mot de passe (min 6 caractères)
- * Rôle par défaut: PRODUCER
- */
 const createUserSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
@@ -31,10 +15,6 @@ const createUserSchema = z.object({
   role: z.enum(["ADMIN", "JURY", "PRODUCER"]).default("PRODUCER"),
 });
 
-/**
- * Schéma de validation pour la modification d'un utilisateur
- * Mot de passe optionnel pour permettre les modifications sans changer le mot de passe
- */
 const updateUserSchema = z.object({
   firstName: z.string().min(1, "Le prénom est requis"),
   lastName: z.string().min(1, "Le nom est requis"),
@@ -43,71 +23,42 @@ const updateUserSchema = z.object({
   role: z.enum(["ADMIN", "JURY", "PRODUCER"]),
 });
 
-/**
- * Fonction Users
- * Gère l'affichage et la manipulation des utilisateurs
- * - Affiche une liste de tous les utilisateurs dans un tableau
- * - Permet de créer, modifier et supprimer des utilisateurs
- * - Utilise des modales pour les formulaires de création et modification
- * @returns {JSX.Element} La page de gestion des utilisateurs
- */
+const TUTORIAL_STEPS = [
+  "Tous les utilisateurs sont affichés dans un tableau.",
+  "Vous pouvez filtrer, trier et rechercher les utilisateurs grâce aux contrôles en haut.",
+  "Cliquez sur l'icône stylo pour ouvrir la fiche détaillée et modifier l'utilisateur.",
+  "Modifiez le nom, l'email, le rôle, le statut, puis enregistrez.",
+  "Vous pouvez attribuer des rôles : Admin, Jury, Producteur.",
+  "Les rôles déterminent les permissions et les fonctionnalités disponibles.",
+  "Vous pouvez activer ou désactiver des utilisateurs.",
+  "Les utilisateurs désactivés ne peuvent pas accéder au système.",
+  "Attribuez les rôles avec attention pour garantir la sécurité.",
+];
+
 function Users() {
-    const [tutorial, setTutorial] = useState({ title: "Tutoriel", steps: [] });
-
-    useEffect(() => {
-      async function fetchTutorial() {
-        try {
-          const tutorialData = await loadTutorialSteps("/src/pages/admin/TutorialUsers.fr.md");
-          setTutorial(tutorialData);
-        } catch (err) {
-          setTutorial({ title: "Tutoriel", steps: ["Impossible de charger le tutoriel."] });
-        }
-      }
-      fetchTutorial();
-    }, []);
-  // État pour stocker la liste des utilisateurs
+  const [showTutorial, setShowTutorial] = useState(false);
   const [users, setUsers] = useState([]);
-  // État pour afficher/masquer la modale de création
   const [showCreateModal, setShowCreateModal] = useState(false);
-  // État pour afficher/masquer la modale de modification
   const [showEditModal, setShowEditModal] = useState(false);
-  // État pour afficher/masquer la modale de confirmation de suppression
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  // État pour stocker l'utilisateur en cours de modification
   const [editingUser, setEditingUser] = useState(null);
-  // État pour stocker l'utilisateur à supprimer
   const [userToDelete, setUserToDelete] = useState(null);
-  // État pour afficher les messages de succès/erreur
   const [message, setMessage] = useState("");
-
-  // État pour la pagination
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-
-  // État pour la recherche
   const [searchQuery, setSearchQuery] = useState("");
 
-  /**
-   * Gère le changement de recherche et remet la pagination à la page 1
-   */
   const handleSearchChange = (value) => {
     setSearchQuery(value);
     setCurrentPage(1);
   };
 
-  /**
-   * Effect - Charge la liste des utilisateurs au montage du composant
-   */
   useEffect(() => {
     getUsers().then((data) => {
       setUsers(data.data);
     });
   }, []);
 
-  /**
-   * Filtrage des utilisateurs selon la recherche (prénom, nom, email, rôle)
-   * Remet la pagination à la page 1 quand la recherche change
-   */
   const filteredUsers = useMemo(() => {
     if (!searchQuery.trim()) return users;
     const q = searchQuery.toLowerCase().trim();
@@ -119,95 +70,41 @@ function Users() {
     );
   }, [users, searchQuery]);
 
-  /**
-   * Calcul des données paginées — sur les résultats filtrés
-   */
   const paginatedUsers = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = startIndex + itemsPerPage;
-    return filteredUsers.slice(startIndex, endIndex);
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredUsers, currentPage, itemsPerPage]);
 
-  /**
-   * Calcul du nombre total de pages
-   */
-  const totalPages = useMemo(() => {
-    return Math.ceil(filteredUsers.length / itemsPerPage);
-  }, [filteredUsers.length, itemsPerPage]);
+  const totalPages = useMemo(() => Math.ceil(filteredUsers.length / itemsPerPage), [filteredUsers.length, itemsPerPage]);
 
-  /**
-   * Calcul des informations d'affichage
-   */
   const displayInfo = useMemo(() => {
-    const totalUsers = filteredUsers.length;
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(currentPage * itemsPerPage, totalUsers);
-    
-    return {
-      start: totalUsers > 0 ? startIndex + 1 : 0,
-      end: endIndex,
-      total: totalUsers
-    };
+    const total = filteredUsers.length;
+    const start = (currentPage - 1) * itemsPerPage;
+    return { start: total > 0 ? start + 1 : 0, end: Math.min(currentPage * itemsPerPage, total), total };
   }, [users.length, currentPage, itemsPerPage]);
 
-  /**
-   * Gère le changement de page
-   */
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
+  const handlePageChange = (page) => setCurrentPage(page);
 
-  /**
-   * Gère le changement du nombre d'éléments par page
-   */
-  const handleItemsPerPageChange = (newItemsPerPage) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1); // Retour à la première page
-  };
+  const handleItemsPerPageChange = (n) => { setItemsPerPage(n); setCurrentPage(1); };
 
-  /**
-   * Formulaire React Hook Form pour la création d'utilisateur
-   * Applique la validation du schéma createUserSchema avec Zod
-   */
   const createForm = useForm({
     resolver: zodResolver(createUserSchema),
-    defaultValues: { 
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      role: "PRODUCER" 
-    },
+    defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "PRODUCER" },
   });
 
-  /**
-   * Formulaire React Hook Form pour la modification d'utilisateur
-   * Applique la validation du schéma updateUserSchema avec Zod
-   */
   const editForm = useForm({
     resolver: zodResolver(updateUserSchema),
-    defaultValues: { 
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      role: "PRODUCER" 
-    },
+    defaultValues: { firstName: "", lastName: "", email: "", password: "", role: "PRODUCER" },
   });
 
-  /**
-   * Mutation TanStack Query pour créer un utilisateur
-   * Appelle createUser de l'API, réinitialise le formulaire et rafraîchit la liste
-   */
   const createMutation = useMutation({
     mutationFn: async (newUser) => {
       return await createUser(newUser);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       setMessage("Utilisateur créé avec succès");
       setShowCreateModal(false);
       createForm.reset();
-      // Rafraîchit la liste des utilisateurs
       getUsers().then((data) => setUsers(data.data));
       setTimeout(() => setMessage(""), 3000);
     },
@@ -217,20 +114,15 @@ function Users() {
     },
   });
 
-  /**
-   * Mutation TanStack Query pour modifier un utilisateur
-   * Appelle updateUser de l'API, réinitialise le formulaire et rafraîchit la liste
-   */
   const updateMutation = useMutation({
     mutationFn: async ({ id, userData }) => {
       return await updateUser(id, userData);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       setMessage("Utilisateur mis à jour avec succès");
       setShowEditModal(false);
       setEditingUser(null);
       editForm.reset();
-      // Rafraîchit la liste des utilisateurs
       getUsers().then((data) => setUsers(data.data));
       setTimeout(() => setMessage(""), 3000);
     },
@@ -240,10 +132,6 @@ function Users() {
     },
   });
 
-  /**
-   * Mutation TanStack Query pour supprimer un utilisateur
-   * Appelle deleteUser de l'API et rafraîchit la liste
-   */
   const deleteMutation = useMutation({
     mutationFn: async (id) => {
       return await deleteUser(id);
@@ -252,7 +140,6 @@ function Users() {
       setMessage("Utilisateur supprimé avec succès");
       setShowDeleteConfirm(false);
       setUserToDelete(null);
-      // Rafraîchit la liste des utilisateurs
       getUsers().then((data) => setUsers(data.data));
       setTimeout(() => setMessage(""), 3000);
     },
@@ -264,42 +151,20 @@ function Users() {
     },
   });
 
-  /**
-   * Fonction handleDelete
-   * Ouvre la modale de confirmation avant de supprimer un utilisateur
-   * @param {number} id - L'ID de l'utilisateur à supprimer
-   * @param {string} name - Le nom de l'utilisateur à supprimer
-   */
   function handleDelete(id, name) {
     setUserToDelete({ id, name });
     setShowDeleteConfirm(true);
   }
 
-  /**
-   * Fonction confirmDelete
-   * Confirme la suppression de l'utilisateur
-   */
   function confirmDelete() {
-    if (userToDelete) {
-      deleteMutation.mutate(userToDelete.id);
-    }
+    if (userToDelete) deleteMutation.mutate(userToDelete.id);
   }
 
-  /**
-   * Fonction cancelDelete
-   * Annule la suppression de l'utilisateur
-   */
   function cancelDelete() {
     setShowDeleteConfirm(false);
     setUserToDelete(null);
   }
 
-  /**
-   * Fonction handleEdit
-   * Prépare le formulaire pour la modification d'un utilisateur
-   * Définit les valeurs actuelles du formulaire à partir de l'utilisateur sélectionné
-   * @param {Object} user - L'utilisateur à modifier
-   */
   function handleEdit(user) {
     setEditingUser(user);
     editForm.setValue("firstName", user.first_name);
@@ -310,45 +175,25 @@ function Users() {
     setShowEditModal(true);
   }
 
-  /**
-   * Fonction onCreateSubmit
-   * Appelée lors de la soumission du formulaire de création
-   * Transmet les données au createMutation
-   * @param {Object} data - Les données du formulaire validées
-   */
   function onCreateSubmit(data) {
-    // Converti i dati in snake_case per il backend
-    const snakeData = {
+    createMutation.mutate({
       first_name: data.firstName,
       last_name: data.lastName,
       email: data.email,
       password: data.password,
-      role: data.role
-    };
-    createMutation.mutate(snakeData);
+      role: data.role,
+    });
   }
 
-  /**
-   * Fonction onUpdateSubmit
-   * Appelée lors de la soumission du formulaire de modification
-   * Supprime le champ password si vide pour ne pas le modifier
-   * @param {Object} data - Les données du formulaire validées
-   */
   function onUpdateSubmit(data) {
-    // Converti i dati in snake_case per il backend
     const userData = {
       first_name: data.firstName,
       last_name: data.lastName,
       email: data.email,
-      role: data.role
+      role: data.role,
     };
-    if (data.password) {
-      userData.password = data.password;
-    }
-    updateMutation.mutate({
-      id: editingUser.id_user,
-      userData
-    });
+    if (data.password) userData.password = data.password;
+    updateMutation.mutate({ id: editingUser.id_user, userData });
   }
 
 
@@ -366,8 +211,44 @@ return (
             Gérez les comptes producteurs, jurés et administrateurs
           </p>
         </div>
-        <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={false} />
+        <button
+          onClick={() => setShowTutorial(!showTutorial)}
+          className="p-2 bg-white/5 border border-white/10 rounded-lg hover:bg-white/10 transition-colors"
+          title="Afficher l'aide"
+        >
+          <svg className="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
       </div>
+
+      {showTutorial && (
+        <div className="bg-white/5 border border-white/10 rounded-xl p-4">
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-sm font-medium text-white/90 mb-2">Tutoriel : Gestion des Utilisateurs</h3>
+              <ul className="space-y-1.5 text-xs text-white/60">
+                {TUTORIAL_STEPS.map((step, i) => (
+                  <li key={i} className="flex items-start gap-2">
+                    <span className="text-purple-400 mt-px flex-shrink-0">•</span>
+                    <span>{step}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <button onClick={() => setShowTutorial(false)} className="p-1 hover:bg-white/10 rounded transition-colors">
+              <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
 
     <section className="bg-gradient-to-br from-[#1a1c20]/60 to-[#0f1114]/60 backdrop-blur-xl border border-white/10 rounded-xl p-3 sm:p-4 shadow-xl shadow-black/30 transition-all duration-300">
 

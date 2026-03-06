@@ -355,9 +355,9 @@ export default function AdminLayout() {
               title={isSidebarOpen ? "Réduire le menu" : "Afficher le menu"}
             >
               <span
-                className={`inline-block transition-all duration-500 text-2xl hover:scale-110`}
+                className={`inline-block transition-all duration-500 text-2xl hover:scale-120 ${isSidebarOpen ? "rotate-90" : ""}`}
               >
-                {isSidebarOpen ? "☰" : "☰"}
+                {isSidebarOpen ? "✕" : "☰"}
               </span>
             </button>
             <div className="flex items-center">
