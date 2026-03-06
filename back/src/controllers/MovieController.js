@@ -413,11 +413,18 @@ async function updateMovie(req, res) {
 async function deleteMovie(req, res) {
   try {
     const { id } = req.params;
+    const userId = req.userId; // Dall'AuthMiddleware
+    const userRole = req.user?.role;
 
     const movie = await Movie.findByPk(id);
 
     if (!movie) {
       return res.status(404).json({ error: "Film non trouvé" });
+    }
+
+    // Se l'utente è PRODUCER, verifica che sia il proprietario del film
+    if (userRole === "PRODUCER" && movie.id_producer !== userId) {
+      return res.status(403).json({ error: "Vous n'êtes pas autorisé à supprimer ce film" });
     }
 
     await movie.destroy();

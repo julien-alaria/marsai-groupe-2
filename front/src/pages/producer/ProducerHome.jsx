@@ -18,7 +18,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
 import { getCurrentUser, updateCurrentUser } from "../../api/users";
-import { createMovie, getMyMovies, updateMovieCollaborators } from "../../api/movies";
+import { createMovie, getMyMovies, updateMovieCollaborators, deleteMovie } from "../../api/movies";
 import { getCategories } from "../../api/videos.js";
 
 const movieSchema = z.object({
@@ -254,6 +254,28 @@ export default function ProducerHome() {
     },
     onError: () => {
       setMovieError("Erreur lors de la mise à jour des collaborateurs.");
+    }
+  });
+
+  const deleteMovieMutation = useMutation({
+    mutationFn: (id) => deleteMovie(id),
+    onSuccess: async () => {
+      setMovieSuccess("Film supprimé avec succès.");
+      setMovieError(null);
+      try {
+        const moviesRes = await getMyMovies();
+        setMovies(moviesRes.data || []);
+      } catch {
+        // ignore refresh error
+      }
+    },
+    onError: (err) => {
+      setMovieError(
+        err?.response?.data?.error
+        || err?.message
+        || "Erreur lors de la suppression du film."
+      );
+      setMovieSuccess(null);
     }
   });
 
@@ -532,17 +554,31 @@ export default function ProducerHome() {
                         )}
                         {/* Bouton Modifier le film (admin ou producteur) */}
                         {(user?.role === "admin" || user?.role === "producer") && (
-                          <button
-                            type="button"
-                            className="mt-4 w-full bg-[#AD46FF] text-white font-bold py-2 rounded-lg hover:bg-[#F6339A] transition"
-                            onClick={e => {
-                              e.stopPropagation();
-                              setSelectedMovie(movie);
-                              setShowEditMovieModal(true);
-                            }}
-                          >
-                            Modifier le film
-                          </button>
+                          <>
+                            <button
+                              type="button"
+                              className="mt-4 w-full bg-[#AD46FF] text-white font-bold py-2 rounded-lg hover:bg-[#F6339A] transition"
+                              onClick={e => {
+                                e.stopPropagation();
+                                setSelectedMovie(movie);
+                                setShowEditMovieModal(true);
+                              }}
+                            >
+                              Modifier le film
+                            </button>
+                            <button
+                              type="button"
+                              className="mt-2 w-full bg-red-600 text-white font-bold py-2 rounded-lg hover:bg-red-700 transition"
+                              onClick={e => {
+                                e.stopPropagation();
+                                if (window.confirm("Êtes-vous sûr de vouloir supprimer ce film ? Cette action est irréversible.")) {
+                                  deleteMovieMutation.mutate(movie.id_movie);
+                                }
+                              }}
+                            >
+                              ✕ Supprimer le film
+                            </button>
+                          </>
                         )}
                       </div>
                     </div>
@@ -854,6 +890,15 @@ export default function ProducerHome() {
                           {...registerMovie(`collaborators.${index}.job`)}
                           className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg text-sm"
                         />
+                        <div className="md:col-span-4 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={() => removeCollaborator(index)}
+                            className="text-red-400 hover:text-red-300 text-sm"
+                          >
+                            ✕ Supprimer
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
