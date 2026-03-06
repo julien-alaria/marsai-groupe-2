@@ -56,7 +56,12 @@ const movieSchema = z.object({
       })
     )
     .optional(),
-  filmFile: z.any().optional(),
+  filmFile: z.custom((val) => {
+    if (!val || (val instanceof FileList && val.length === 0)) {
+      return false;
+    }
+    return true;
+  }, { message: "Le fichier du film est obligatoire" }),
   thumbnails: z.array(z.any()).optional(),
   subtitlesSrt: z.any().optional(),
   acceptTerms: z.boolean().refine(val => val === true, {
@@ -147,6 +152,7 @@ export default function ProducerHome() {
   const durationSeconds = useWatch({ control: movieControl, name: "durationSeconds" });
   const synopsisOriginal = useWatch({ control: movieControl, name: "synopsisOriginal" });
   const synopsisEnglish = useWatch({ control: movieControl, name: "synopsisEnglish" });
+  const filmFile = useWatch({ control: movieControl, name: "filmFile" });
   const acceptRules = useWatch({ control: movieControl, name: "acceptRules" });
   const aiClassification = useWatch({ control: movieControl, name: "aiClassification" });
   const categoryId = useWatch({ control: movieControl, name: "categoryId" });
@@ -274,7 +280,9 @@ export default function ProducerHome() {
       synopsisOriginal && 
       synopsisOriginal.trim().length > 0 &&
       synopsisEnglish &&
-      synopsisEnglish.trim().length > 0
+      synopsisEnglish.trim().length > 0 &&
+      filmFile && 
+      filmFile.length > 0
     );
   };
 
@@ -859,6 +867,9 @@ export default function ProducerHome() {
                     </label>
                     <span className="text-gray-400 text-sm truncate">{filmFileName}</span>
                   </div>
+                  {movieErrors.filmFile && (
+                    <p className="text-red-400 text-sm mt-1">{movieErrors.filmFile.message}</p>
+                  )}
                 </div>
 
 

@@ -218,6 +218,9 @@
     "filmTitleOriginal": {
       "required": "Le titre du film est requis"
     },
+    "filmFile": {
+      "required": "Le fichier du film est obligatoire"
+    },
     "durationSeconds": {
       "required": "La durée est obligatoire",
       "integer": "La durée doit être un nombre entier",
