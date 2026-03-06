@@ -98,7 +98,6 @@ export default function ProducerHome() {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [formStep, setFormStep] = useState(1);
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
-  const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
 
   // Stato per il successo upload vignette
@@ -132,14 +131,7 @@ export default function ProducerHome() {
       aiMethodology: "1",
       categoryId: "1",
       knownByMarsAi: "1",
-      collaborators: [
-        {
-          first_name: "John",
-          last_name: "Doe",
-          email: "john.doe@example.com",
-          job: "Actor",
-        },
-      ],
+      collaborators: [],
       filmFile: null,
       thumbnails: [null],
       subtitlesSrt: null,
@@ -280,9 +272,7 @@ export default function ProducerHome() {
       synopsisOriginal && 
       synopsisOriginal.trim().length > 0 &&
       synopsisEnglish &&
-      synopsisEnglish.trim().length > 0 &&
-      filmFile && 
-      filmFile.length > 0
+      synopsisEnglish.trim().length > 0
     );
   };
 
@@ -831,11 +821,42 @@ export default function ProducerHome() {
                   </label>
                   <button
                     type="button"
-                    onClick={() => setShowCollaboratorsModal(true)}
+                    onClick={() => appendCollaborator({ first_name: "", last_name: "", email: "", job: "" })}
                     className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg hover:bg-gray-700 transition text-sm text-left"
                   >
-                    {collaboratorFields.length === 0 ? "Gérer les collaborateurs" : `${collaboratorFields.length} collaborateur(s) ajouté(s) - Cliquez pour modifier`}
+                    + Ajouter un nouveau collaborateur
                   </button>
+
+                  <div className="space-y-2 mt-2">
+                    {collaboratorFields.map((field, index) => (
+                      <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-2 bg-gray-800/40 border border-gray-700 rounded-lg p-2">
+                        <input
+                          type="text"
+                          placeholder="Prénom"
+                          {...registerMovie(`collaborators.${index}.first_name`)}
+                          className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Nom"
+                          {...registerMovie(`collaborators.${index}.last_name`)}
+                          className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg text-sm"
+                        />
+                        <input
+                          type="email"
+                          placeholder="email@example.com"
+                          {...registerMovie(`collaborators.${index}.email`)}
+                          className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg text-sm"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Rôle"
+                          {...registerMovie(`collaborators.${index}.job`)}
+                          className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg text-sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </section>
@@ -1061,163 +1082,6 @@ export default function ProducerHome() {
             )}
           </form>
         </section>
-        )}
-
-        {showCollaboratorsModal && (
-          <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-            <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">Gérer les collaborateurs et médias</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowCollaboratorsModal(false)}
-                  className="text-gray-400 hover:text-white text-2xl"
-                >
-                  ✕
-                </button>
-              </div>
-
-              {/* Upload vignette (max 3) */}
-              <div className="mb-4">
-                <label className="text-white font-semibold mb-1 text-xs uppercase">Vignettes</label>
-                {[0,1,2].map(idx => (
-                  <div key={idx} className="flex items-center gap-2 mb-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={e => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          setThumbnailNames(prev => {
-                            const next = [...prev];
-                            next[idx] = file.name;
-                            return next;
-                          });
-                          setThumbnailUploadSuccess(true);
-                          setTimeout(() => setThumbnailUploadSuccess(false), 2000);
-                        }
-                      }}
-                      className="sr-only"
-                      id={`modal-thumbnail-upload-${idx}`}
-                      disabled={thumbnailNames.filter(n => n && n !== "Aucun fichier sélectionné").length >= 3}
-                    />
-                    <label htmlFor={`modal-thumbnail-upload-${idx}`} className="cursor-pointer text-white font-semibold text-sm bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5">
-                      Choisir
-                    </label>
-                    <span className="text-gray-400 text-xs truncate">{thumbnailNames[idx]}</span>
-                    {thumbnailNames[idx] && thumbnailNames[idx] !== "Aucun fichier sélectionné" && (
-                      <button type="button" onClick={() => {
-                        setThumbnailNames(prev => {
-                          const next = [...prev];
-                          next[idx] = "Aucun fichier sélectionné";
-                          return next;
-                        });
-                      }} className="text-red-500 text-xs ml-2">Supprimer</button>
-                    )}
-                  </div>
-                ))}
-                {thumbnailUploadSuccess && (
-                  <div className="text-green-400 text-xs mb-2">Vignette téléchargée avec succès !</div>
-                )}
-              </div>
-
-              {/* Upload film file */}
-              <div className="mb-4">
-                <label className="text-white font-semibold mb-1 text-xs uppercase">Fichier du film</label>
-                <input
-                  type="file"
-                  accept="video/*"
-                  onChange={e => {
-                    const file = e.target.files?.[0];
-                    setFilmFileName(file ? file.name : "Aucun fichier sélectionné");
-                  }}
-                  className="sr-only"
-                  id="modal-film-upload"
-                  placeholder="Choisir un fichier"
-                />
-                <label htmlFor="modal-film-upload" className="cursor-pointer text-white font-semibold text-sm bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5">
-                  Choisir un fichier
-                </label>
-                <span className="text-gray-400 text-xs truncate">{filmFileName}</span>
-              </div>
-
-              <div className="mb-4">
-                <button
-                  type="button"
-                  onClick={() => appendCollaborator({ first_name: "", last_name: "", email: "", job: "" })}
-                  className="px-4 py-2 bg-[#AD46FF] text-white rounded-lg hover:opacity-90 transition"
-                >
-                  + Ajouter un collaborateur
-                </button>
-              </div>
-
-              {collaboratorFields.length === 0 && (
-                <p className="text-gray-400 text-center py-8">Aucun collaborateur ajouté.</p>
-              )}
-
-              <div className="space-y-3">
-                {collaboratorFields.map((field, index) => (
-                  <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-3 bg-gray-900 border border-gray-800 p-3 rounded-xl">
-                    <div className="flex flex-col">
-                      <label className="text-xs uppercase text-gray-400 mb-1">Prénom</label>
-                      <input
-                        type="text"
-                        {...registerMovie(`collaborators.${index}.first_name`)}
-                        className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg text-sm"
-                        placeholder="Prénom"
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className="text-xs uppercase text-gray-400 mb-1">Nom</label>
-                      <input
-                        type="text"
-                        {...registerMovie(`collaborators.${index}.last_name`)}
-                        className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg text-sm"
-                        placeholder="Nom"
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className="text-xs uppercase text-gray-400 mb-1">Email</label>
-                      <input
-                        type="email"
-                        {...registerMovie(`collaborators.${index}.email`)}
-                        className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg text-sm"
-                        placeholder="email@example.com"
-                      />
-                    </div>
-                    <div className="flex flex-col">
-                      <label className="text-xs uppercase text-gray-400 mb-1">Rôle</label>
-                      <input
-                        type="text"
-                        {...registerMovie(`collaborators.${index}.job`)}
-                        className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg text-sm"
-                        placeholder="Réalisateur, Acteur..."
-                      />
-                    </div>
-                    <div className="md:col-span-4 flex justify-end">
-                      <button
-                        type="button"
-                        onClick={() => removeCollaborator(index)}
-                        className="text-red-400 hover:text-red-300 text-sm"
-                      >
-                        ✕ Supprimer
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  type="button"
-                  onClick={() => setShowCollaboratorsModal(false)}
-                  className="px-6 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition"
-                >
-                  Fermer
-                </button>
-              </div>
-            </div>
-          </div>
         )}
 
         {showTermsModal && (
