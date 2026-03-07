@@ -1,31 +1,16 @@
-import React, { useState, useEffect, useMemo } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
 /**
  * Composant Categories (Gestion des Catégories)
- * Page admin pour gérer les catégories de films.
- * Utilise le style e i colori della dashboard admin, awards.jsx e users.jsx.
- * Utilise TanStack Query pour CRUD, modale per aggiunta/modifica, layout full-page.
+ * Page administrateur pour créer, modifier et supprimer les catégories
+ * @returns {JSX.Element} La page de gestion des catégories
  */
-import {
-  getCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory
-} from "../../api/videos";
-import GlassTableBody from "../../components/admin/GlassTableBody.jsx";
-import Pagination from "../../components/admin/Pagination.jsx";
-
+import { useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getCategories, createCategory, updateCategory, deleteCategory } from "../../api/videos.js";
+import TutorialBox from "../../components/TutorialBox.jsx";
 
 function Categories() {
-  const categorySchema = z.object({
-    name: z.string().min(1, "Le nom est requis"),
-  });
-
   const queryClient = useQueryClient();
-  const [showModal, setShowModal] = useState(false);
+  const [categoryName, setCategoryName] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
   const [feedback, setFeedback] = useState(null);
   
@@ -242,65 +227,69 @@ function Categories() {
         <div className="flex justify-end">
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-4 py-2.5 bg-purple-500/10 border border-purple-500/30 text-purple-300 text-sm rounded-lg hover:bg-purple-500/20 transition-colors"
+            className="px-4 py-2.5 bg-purple-500/10 border border-purple-500/30 text-purple-300 text-sm rounded-lg hover:bg-purple-500/20 transition-all duration-300 hover:shadow-lg hover:shadow-purple-500/10"
           >
             + Nouvelle catégorie
           </button>
         </div>
 
-        {/* Liste des catégories - avec lignes de séparation */}
-        <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden">
-          {/* Header avec compteur */}
-          <div className="px-6 py-4 border-b border-white/10">
-            <div className="flex items-center justify-between">
-              <h2 className="text-lg font-light text-white/90">Catégories existantes</h2>
-              <span className="px-2 py-1 bg-white/5 border border-white/10 rounded-full text-[10px] text-white/40">
-                {categories.length} catégorie{categories.length !== 1 ? 's' : ''}
-              </span>
-            </div>
-          </div>
-
-          {/* Liste des catégories */}
-          {categories.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-12">
-              <svg className="w-12 h-12 text-white/20 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        {/* Liste des catégories en CARDS GLASS - Version simplifiée */}
+        {categories.length === 0 ? (
+          <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl p-12 flex flex-col items-center justify-center">
+            <div className="w-16 h-16 rounded-full bg-purple-500/10 border border-purple-500/30 flex items-center justify-center mb-4">
+              <svg className="w-8 h-8 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l5 5a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-5-5A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
               </svg>
-              <p className="text-white/40 text-sm">Aucune catégorie pour le moment.</p>
             </div>
-          ) : (
-            <div className="divide-y divide-white/5">
-              {categories.map((category, index) => (
-                <div
-                  key={category.id_categorie}
-                  className="px-6 py-3 flex items-center justify-between hover:bg-white/5 transition-colors"
-                >
+            <p className="text-white/60 text-sm mb-2">Aucune catégorie pour le moment</p>
+            <p className="text-white/40 text-xs">Cliquez sur "Nouvelle catégorie" pour commencer</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {categories.map((category, index) => (
+              <div
+                key={category.id_categorie}
+                className="group bg-gradient-to-br from-white/5 to-white/[0.02] backdrop-blur-sm border border-white/10 rounded-xl p-5 hover:border-purple-500/30 transition-all duration-300 hover:shadow-2xl hover:shadow-purple-500/5"
+              >
+                <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="text-xs text-white/40 w-6">{index + 1}.</span>
-                    <h3 className="text-sm font-medium text-white">{category.name}</h3>
+                    {/* Numéro de catégorie */}
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-white/10 flex items-center justify-center">
+                      <span className="text-sm font-medium text-purple-300">#{index + 1}</span>
+                    </div>
+
+                    {/* Nom de la catégorie */}
+                    <h3 className="text-base font-medium text-white group-hover:text-purple-300 transition-colors duration-300">
+                      {category.name}
+                    </h3>
                   </div>
-                  
-                  <div className="flex gap-2">
-                    {/* Bouton Modifier - effet glass bleu */}
+
+                  {/* Actions */}
+                  <div className="flex gap-1.5">
                     <button
                       onClick={() => openEditModal(category)}
-                      className="px-3 py-1.5 bg-blue-500/10 border border-blue-500/30 text-blue-300 text-xs rounded-lg hover:bg-blue-500/20 transition-colors"
+                      className="p-2 bg-blue-500/10 border border-blue-500/30 rounded-lg hover:bg-blue-500/20 transition-all duration-300"
+                      title="Modifier"
                     >
-                      Modifier
+                      <svg className="w-4 h-4 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                      </svg>
                     </button>
-                    {/* Bouton Supprimer - effet glass rouge */}
                     <button
                       onClick={() => openDeleteModal(category)}
-                      className="px-3 py-1.5 bg-red-500/10 border border-red-500/30 text-red-300 text-xs rounded-lg hover:bg-red-500/20 transition-colors"
+                      className="p-2 bg-red-500/10 border border-red-500/30 rounded-lg hover:bg-red-500/20 transition-all duration-300"
+                      title="Supprimer"
                     >
-                      Supprimer
+                      <svg className="w-4 h-4 text-red-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                     </button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* MODAL CRÉATION */}

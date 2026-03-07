@@ -105,9 +105,6 @@ const getStatusBadge = (s) =>
    COMPOSANT PRINCIPAL
 ════════════════════════════════════════════════════════ */
 export default function ProducerHome() {
-  // Stato per mostrare la modale di upload/update
-  const [showEditMovieModal, setShowEditMovieModal] = useState(false);
-  const [editMovieFiles, setEditMovieFiles] = useState({ filmFile: null, thumbnails: [] });
   const { t } = useTranslation();
 
   /* États utilisateur */
@@ -131,9 +128,6 @@ export default function ProducerHome() {
   const [formStep, setFormStep] = useState(1);
   const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
-
-  // Stato per il successo upload vignette
-  const [thumbnailUploadSuccess, setThumbnailUploadSuccess] = useState(false);
 
   /* ── FIX: fichiers gérés hors RHF ── */
   /* filmFile via ref pour éviter les problèmes de FileList RHF */
@@ -1281,7 +1275,7 @@ export default function ProducerHome() {
                     onClick={() => startEditCollaborators(selectedMovie)}
                     className="text-xs text-[#AD46FF] hover:text-[#F6339A]"
                   >
-                    Éditer
+                    Modifier
                   </button>
                 </div>
                 {selectedMovie.Collaborators?.length ? (

@@ -1,11 +1,10 @@
-import { Outlet, NavLink, useLocation, useNavigate } from "react-router";
+import { Outlet, NavLink, useNavigate } from "react-router";
 import { useState, useEffect } from "react";
 
 export default function AdminLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);      // desktop: wide vs mini
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // mobile drawer
   const navigate = useNavigate();
-  const location = useLocation();
 
   const firstName = localStorage.getItem("firstName") || "Admin";
   const role = localStorage.getItem("role") || "ADMIN";
@@ -394,24 +393,6 @@ export default function AdminLayout() {
         <div className="flex-1 overflow-y-auto bg-gradient-to-b from-[#0a0c0f] via-[#0c0e11] to-[#0d0f12] p-3 sm:p-4 md:p-6 pt-16 lg:pt-6 scrollbar-thin-dark">
           <Outlet />
         </div>
-
-        {showTutorialModal && (
-          <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
-            <div className="w-full max-w-2xl bg-gray-950 border border-gray-800 rounded-2xl p-5 max-h-[88vh] overflow-auto">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-white text-lg font-semibold">Instructions</h3>
-                <button
-                  type="button"
-                  onClick={() => setShowTutorialModal(false)}
-                  className="text-gray-400 hover:text-white"
-                >
-                  ✕
-                </button>
-              </div>
-              <TutorialBox title={tutorial.title} steps={tutorial.steps} defaultOpen={true} />
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );

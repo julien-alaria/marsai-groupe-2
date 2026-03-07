@@ -12,6 +12,7 @@ import dashboardRouter from "./Dashboard.route.js";
 import googleRouter from "./googleAuth.route.js";
 import youtubeRouter from "./Youtube.route.js";
 import sponsorRouter from "./Sponsor.route.js";
+import newsLetterRouter from "./Newsletter.route.js";
 
 
 const router = express.Router();
@@ -42,6 +43,8 @@ router.use("/admin/dashboard", dashboardRouter); // Routes de gestion du dashboa
 router.use("/google", googleRouter) // Routes d'authentification Google
 
 router.use("/sponsors", sponsorRouter);// Routes de gestion sponsors
+
+router.use("/newsletter", newsLetterRouter);
 
 // pour test via CLIENT HTTP
 // router.use("/youtube", youtubeRouter);

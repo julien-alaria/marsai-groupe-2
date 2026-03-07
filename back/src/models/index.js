@@ -1,6 +1,8 @@
+// 
+
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
+import { fileURLToPath, pathToFileURL } from "url";
 import dotenv from "dotenv";
 import { Sequelize } from "sequelize";
 import configFile from "../../config/config.cjs"; // <-- Utilise config.cjs comme module
@@ -56,7 +58,7 @@ async function loadModels() {
     );
 
   for (const file of files) {
-    const modelModule = await import(path.join(__dirname, file));
+    const modelModule = await import(pathToFileURL(path.join(__dirname, file)).href);
     const model = modelModule.default || modelModule;
     // Si c'est une classe avec init
     if (typeof model.init === "function") {

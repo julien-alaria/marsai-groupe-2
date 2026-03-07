@@ -45,7 +45,7 @@ instance.interceptors.response.use(
       localStorage.removeItem("firstName");
       localStorage.removeItem("lastName");
       localStorage.removeItem("role");
-      alert("Sessione scaduta o non autorizzato. Effettua di nuovo il login.");
+      alert("Session expirée ou non autorisé. Veuillez vous reconnecter.");
       if (window.location.pathname !== "/auth/login") {
         window.location.href = "/auth/login";
       }
