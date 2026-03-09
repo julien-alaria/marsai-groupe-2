@@ -189,6 +189,7 @@
     },
     "buttons": {
       "submit": "Submit Film",
+      "submitting": "Soumission en cours...",
       "save": "Save",
       "edit": "Edit",
       "cancel": "Cancel",
@@ -525,17 +526,99 @@
       "modified": "Modified {{count}}×",
       "approved": "Approved"
     },
+
+    "errors": {
+      "notAuthenticated": "Not authenticated",
+      "userLoad": "Error loading user data",
+      "moviesLoad": "Error loading assigned movies",
+      "votesLoad": "Error loading votes",
+      "userNotFound": "User not found"
+  },
+
+   "badges": {
+     "alreadyVoted": "You have already voted.",
+     "modified": "Modified {{count}}×",
+     "approved": "Approved",
+     "secondVote": "Second vote",
+     "secondVoteOpen": "✓ Second vote open"
+},
+
     "vote": {
       "title": "Your Vote",
-      "watchRequired": "You must watch the entire film before voting.",
-      "confirmWatched": "I confirm I have watched the entire film.",
+      "infoTitle": "Voting Information",
+      "mustWatch": "You must watch the entire film before voting.",
+      "confirmWatch": "I confirm I have watched the entire film.",
       "decision": "Decision",
       "comment": "Comment",
       "submit": "Save vote",
-      "submitting": "Submitting...",
+      "sending": "Submitting...",
       "saved": "Vote saved.",
-      "error": "Error saving vote."
-    }
+      "error": "Error saving vote.",
+      "rules": {
+          "watch": "Watch the entire film before voting.",
+          "comment": "The comment is mandatory.",
+          "modify": "You can modify your vote.",
+          "influence": "Your vote influences the film's average.",
+          "archive": "You can archive the film after voting."
+         },
+      "options": {
+          "approved": "Approved / Like / Good 👍",
+          "discuss": "To be discussed with the admin.",
+          "rejected": "Rejected / Don't like 👎"
+       }  
+    },
+
+    "folderDescriptions": {
+      "vote": "1st / 2nd voting",
+      "voted": "Recorded votes",
+      "candidate": "Promoted to candidate"
+    },
+
+
+    "modal": {
+       "secondVoteMode": "Second vote mode",
+       "producer": "Producer",
+       "name": "Name",
+       "email": "Email",
+       "source": "Source",
+       "aiMethodology": "AI & Methodology",
+       "classification": "Classification",
+       "methodology": "Methodology",
+       "aiTool": "AI Tool",
+       "synopsisFr": "Synopsis (FR)",
+       "synopsisEn": "Synopsis (EN)",
+       "filmInfos": "Film info",
+       "duration": "Duration",
+       "language": "Language",
+       "nationality": "Nationality",
+       "status": "Status",
+       "fullscreenTrailer": "Fullscreen trailer",
+       "media": "Media",
+       "noVideo": "No video available"
+ 
+},
+
+    "history": {
+       "title": "Vote history",
+       "vote": "Vote {{number}}",
+       "current": "Current vote"
+},
+
+    "actions": {
+       "promoteCandidate": "Promote to candidate"
+       
+},
+
+    "messages": {
+       "secondVoteClosed": "The second vote is not open yet. Your vote has been recorded.",
+       "voteSaved": "Vote saved.",
+       "voteSavedSuccess": "Vote successfully recorded.",
+       "voteError": "Error while saving vote.",
+       "promoted": "Film promoted to candidate.",
+       "promoteError": "Unable to promote film.",
+       "adminMessage": "Message for admin (optional)"
+       
+      }
   },
   "evaluation": {
     "title": "Film Evaluation",

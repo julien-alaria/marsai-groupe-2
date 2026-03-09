@@ -11,7 +11,7 @@ import eventRouter from "./Event.route.js";
 import dashboardRouter from "./Dashboard.route.js";
 import googleRouter from "./googleAuth.route.js";
 import youtubeRouter from "./Youtube.route.js";
-import newsLetterRouter from "./NewsLetter.route.js";
+import sponsorRouter from "./Sponsor.route.js";
 
 
 const router = express.Router();
@@ -39,9 +39,9 @@ router.use("/events", eventRouter); // Routes de gestion réservations
 
 router.use("/admin/dashboard", dashboardRouter); // Routes de gestion du dashboard admin
 
-router.use("/google", googleRouter); // Routes d'authentification Google
+router.use("/google", googleRouter) // Routes d'authentification Google
 
-router.use("/newsletter", newsLetterRouter);
+router.use("/sponsors", sponsorRouter);// Routes de gestion sponsors
 
 // pour test via CLIENT HTTP
 // router.use("/youtube", youtubeRouter);

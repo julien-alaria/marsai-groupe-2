@@ -7,7 +7,7 @@
 import { useTranslation } from "react-i18next";
 import { useEffect, useState } from "react";
 import { getCurrentUser } from "../../api/users";
-import { getAssignedMovies, updateMovieStatus } from "../../api/videos";
+import { getAssignedMovies, promoteMovieToCandidateByJury } from "../../api/videos";
 import { getMyVotes, submitMyVote } from "../../api/votes";
 import { VideoPreview } from "../../components/VideoPreview.jsx";
 
@@ -185,12 +185,12 @@ export default function JuryHome() {
         return acc;
       }, {});
       setVotesByMovie(mapped);
-      setVoteFeedback("Vote enregistré.");
-      setVoteNotice("Vote enregistré avec succès.");
-      setModalNotice("Vote enregistré avec succès.");
+      setVoteFeedback(t("jury.home.messages.voteSaved"));
+      setVoteNotice(t("jury.home.messages.voteSavedSuccess"));
+      setModalNotice(t("jury.home.messages.voteSavedSuccess"));
       await refreshAssignedMovies();
     } catch (err) {
-      const message = err?.response?.data?.error || "Erreur lors de l'enregistrement du vote.";
+      const message = err?.response?.data?.error || t("jury.home.messages.voteError");
       setVoteFeedback(message);
     } finally {
       setVoteLoading(false);
@@ -200,17 +200,17 @@ export default function JuryHome() {
   async function handlePromoteCandidate() {
     if (!selectedMovie) return;
     try {
-      const message = window.prompt("Message pour l'admin (optionnel):", "");
+      const message = window.prompt(t("jury.home.messages.adminMessage"), "");
       await updateMovieStatus(selectedMovie.id_movie, "candidate", {
         jury_comment: message || ""
       });
-      setModalNotice("Film promu à la candidature.");
+      setModalNotice(t("jury.home.messages.promoted"));
       await refreshAssignedMovies();
       // Aggiorna anche la lista dei film candidati
       setActiveFolder('approved');
       setSelectedMovie(null);
     } catch (err) {
-      const message = err?.response?.data?.error || "Impossible de promouvoir le film.";
+      const message = err?.response?.data?.error || t("jury.home.messages.promoteError");
       setVoteFeedback(message);
     }
   }
@@ -256,8 +256,8 @@ export default function JuryHome() {
     <div className="min-h-screen bg-black text-white font-light pt-28 pb-20 px-4 md:pt-32">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-[#AD46FF]">Espace Jury</h1>
-          <p className="text-gray-400 mt-2">Bienvenue {user.first_name} {user.last_name}</p>
+          <h1 className="text-4xl font-bold text-[#AD46FF]">{t("jury.home.title")}</h1>
+          <p className="text-gray-400 mt-2"> {t("jury.home.welcome", { firstName: user.first_name, lastName: user.last_name })}</p>
         </div>
 
         {voteNotice && (
@@ -286,8 +286,8 @@ export default function JuryHome() {
                     <path d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-[#AD46FF] transition-colors">À voter</h2>
-                <p className="text-gray-400 mb-4">1ère / 2e votation</p>
+                <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-[#AD46FF] transition-colors">{t("jury.home.sections.awaitingVote")}</h2>
+                <p className="text-gray-400 mb-4">{t("jury.home.folderDescriptions.vote")}</p>
                 <div className="inline-block px-4 py-2 bg-gradient-to-r from-[#AD46FF] to-[#F6339A] text-white rounded-full font-bold text-xl shadow-lg">
                   {awaitingVoteMovies.length}
                 </div>
@@ -305,8 +305,8 @@ export default function JuryHome() {
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-[#AD46FF] transition-colors">Votés</h2>
-                <p className="text-gray-400 mb-4">Votes enregistrés</p>
+                <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-[#AD46FF] transition-colors">{t("jury.home.sections.awaitingApproval")}</h2>
+                <p className="text-gray-400 mb-4">{t("jury.home.folderDescriptions.voted")}</p>
                 <div className="inline-block px-4 py-2 bg-gradient-to-r from-purple-700 to-[#AD46FF] text-white rounded-full font-bold text-xl shadow-lg">
                   {votedMovies.length}
                 </div>
@@ -324,8 +324,8 @@ export default function JuryHome() {
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                   </svg>
                 </div>
-                <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-[#F6339A] transition-colors">Candidats</h2>
-                <p className="text-gray-400 mb-4">Promus à la candidature</p>
+                <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-[#F6339A] transition-colors">{t("jury.home.sections.approvedSecondVote")}</h2>
+                <p className="text-gray-400 mb-4">{t("jury.home.folderDescriptions.candidate")}</p>
                 <div className="inline-block px-4 py-2 bg-gradient-to-r from-[#F6339A] to-pink-700 text-white rounded-full font-bold text-xl shadow-lg">
                   {candidateMovies.length}
                 </div>
@@ -344,12 +344,12 @@ export default function JuryHome() {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
                 </svg>
-                <span>Retour</span>
+                <span>{t("common.back")}</span>
               </button>
               <h2 className="text-2xl font-bold text-white">
-                {activeFolder === 'assigned' && 'Films à voter'}
-                {activeFolder === 'voted' && 'Films votés'}
-                {activeFolder === 'approved' && 'Films candidats'}
+                {activeFolder === 'assigned' && t("jury.home.sections.awaitingVote")}
+                {activeFolder === 'voted' && t("jury.home.sections.awaitingApproval")}
+                {activeFolder === 'approved' && t("jury.home.sections.approvedSecondVote")}
               </h2>
               <div className="w-24"></div>
             </div>
@@ -357,7 +357,7 @@ export default function JuryHome() {
             {/* Griglia Film */}
             {activeFolder === 'assigned' && (
               awaitingVoteMovies.length === 0 ? (
-                <p className="text-center text-gray-400 py-12">Aucun film à voter.</p>
+                <p className="text-center text-gray-400 py-12">{t("jury.home.noMovies.awaitingVote")}</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {awaitingVoteMovies.map((movie) => {
@@ -378,7 +378,7 @@ export default function JuryHome() {
                             )}
                             {movie.selection_status === "to_discuss" && (
                               <span className="bg-green-900/80 text-green-200 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                                Second vote
+                                {t("jury.home.badges.secondVote")}
                               </span>
                             )}
                           </div>
@@ -411,7 +411,7 @@ export default function JuryHome() {
 
             {activeFolder === 'voted' && (
               votedMovies.length === 0 ? (
-                <p className="text-center text-gray-400 py-12">Aucun film voté.</p>
+                <p className="text-center text-gray-400 py-12">{t("jury.home.noMovies.awaitingApproval")}</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {votedMovies.map((movie) => {
@@ -433,7 +433,7 @@ export default function JuryHome() {
                             )}
                             {movie.selection_status === "to_discuss" && (
                               <span className="bg-green-900/80 text-green-200 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                                Second vote
+                                {t("jury.home.badges.secondVote")}
                               </span>
                             )}
                           </div>
@@ -473,7 +473,7 @@ export default function JuryHome() {
 
             {activeFolder === 'approved' && (
               candidateMovies.length === 0 ? (
-                <p className="text-center text-gray-400 py-12">Aucun film candidat pour le moment.</p>
+                <p className="text-center text-gray-400 py-12">{t("jury.home.noMovies.approved")}</p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                   {candidateMovies.map((movie) => {
@@ -494,7 +494,7 @@ export default function JuryHome() {
                             )}
                             {movie.selection_status === "to_discuss" && (
                               <span className="bg-green-900/80 text-green-200 text-[10px] px-2 py-0.5 rounded-full font-bold">
-                                Second vote
+                                {t("jury.home.badges.secondVote")}
                               </span>
                             )}
                           </div>
@@ -541,7 +541,7 @@ export default function JuryHome() {
                   <h3 className="text-xl font-bold text-white">{selectedMovie.title}</h3>
                   {isSecondVoteOpen && (
                     <span className="text-xs bg-green-900/40 text-green-200 px-2 py-1 rounded">
-                      Mode second vote
+                      {t("jury.home.modal.secondVoteMode")}
                     </span>
                   )}
                   {(selectedMovie.Awards || []).length > 0 && (
@@ -569,46 +569,46 @@ export default function JuryHome() {
                 <div className="col-span-12 xl:col-span-7 space-y-2">
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                     <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-2">
-                      <h4 className="text-xs uppercase text-gray-400 mb-1">Producteur</h4>
+                      <h4 className="text-xs uppercase text-gray-400 mb-1">{t("jury.home.modal.producer")}</h4>
                       <div className="text-gray-300 grid grid-cols-2 gap-2">
-                        <div><span className="text-gray-400">Nom:</span> {(selectedMovie.User || selectedMovie.Producer) ? `${(selectedMovie.User || selectedMovie.Producer).first_name} ${(selectedMovie.User || selectedMovie.Producer).last_name}` : "-"}</div>
-                        <div><span className="text-gray-400">Email:</span> {(selectedMovie.User || selectedMovie.Producer)?.email || "-"}</div>
-                        <div><span className="text-gray-400">Source:</span> {(selectedMovie.User || selectedMovie.Producer)?.known_by_mars_ai || "-"}</div>
+                        <div><span className="text-gray-400">{t("jury.home.modal.name")}:</span> {(selectedMovie.User || selectedMovie.Producer) ? `${(selectedMovie.User || selectedMovie.Producer).first_name} ${(selectedMovie.User || selectedMovie.Producer).last_name}` : "-"}</div>
+                        <div><span className="text-gray-400">{t("jury.home.modal.email")}:</span> {(selectedMovie.User || selectedMovie.Producer)?.email || "-"}</div>
+                        <div><span className="text-gray-400">{t("jury.home.modal.source")}:</span> {(selectedMovie.User || selectedMovie.Producer)?.known_by_mars_ai || "-"}</div>
                       </div>
                     </div>
 
                     <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-2">
-                      <h4 className="text-xs uppercase text-gray-400 mb-1">IA & Methodologie</h4>
+                      <h4 className="text-xs uppercase text-gray-400 mb-1">{t("jury.home.modal.aiMethodology")}</h4>
                       <div className="text-gray-300 grid grid-cols-2 gap-2">
-                        <div><span className="text-gray-400">Classification:</span> {selectedMovie.production || "-"}</div>
-                        <div><span className="text-gray-400">Methodologie:</span> {selectedMovie.workshop || "-"}</div>
-                        <div className="col-span-2"><span className="text-gray-400">Outil IA:</span> {selectedMovie.ai_tool || "-"}</div>
+                        <div><span className="text-gray-400">{t("jury.home.modal.classification")}:</span> {selectedMovie.production || "-"}</div>
+                        <div><span className="text-gray-400">{t("jury.home.modal.methodology")}:</span> {selectedMovie.workshop || "-"}</div>
+                        <div className="col-span-2"><span className="text-gray-400">{t("jury.home.modal.aiTool")}:</span> {selectedMovie.ai_tool || "-"}</div>
                       </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                     <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-2">
-                      <h4 className="text-xs uppercase text-gray-400 mb-1">Synopsis (FR)</h4>
+                      <h4 className="text-xs uppercase text-gray-400 mb-1">{t("jury.home.modal.synopsisFr")}</h4>
                       <p className="text-gray-300 line-clamp-4">{selectedMovie.synopsis || selectedMovie.description || "-"}</p>
                     </div>
                     <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-2">
-                      <h4 className="text-xs uppercase text-gray-400 mb-1">Synopsis (EN)</h4>
+                      <h4 className="text-xs uppercase text-gray-400 mb-1">{t("jury.home.modal.synopsisEn")}</h4>
                       <p className="text-gray-300 line-clamp-4">{selectedMovie.synopsis_anglais || "-"}</p>
                     </div>
                   </div>
 
                   <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-2">
-                    <h4 className="text-xs uppercase text-gray-400 mb-1">Infos film</h4>
+                    <h4 className="text-xs uppercase text-gray-400 mb-1">{t("jury.home.modal.filmInfos")}</h4>
                     <div className="grid grid-cols-2 gap-2 text-gray-300">
-                      <div><span className="text-gray-400">Durée:</span> {selectedMovie.duration ? `${selectedMovie.duration}s` : "-"}</div>
-                      <div><span className="text-gray-400">Langue:</span> {selectedMovie.main_language || "-"}</div>
-                      <div><span className="text-gray-400">Nationalité:</span> {selectedMovie.nationality || "-"}</div>
-                      <div><span className="text-gray-400">Statut:</span> {selectedMovie.selection_status || "submitted"}</div>
+                      <div><span className="text-gray-400">{t("jury.home.modal.duration")}:</span> {selectedMovie.duration ? `${selectedMovie.duration}s` : "-"}</div>
+                      <div><span className="text-gray-400">{t("jury.home.modal.language")}:</span> {selectedMovie.main_language || "-"}</div>
+                      <div><span className="text-gray-400">{t("jury.home.modal.nationality")}:</span> {selectedMovie.nationality || "-"}</div>
+                      <div><span className="text-gray-400">{t("jury.home.modal.status")}:</span> {selectedMovie.selection_status || "submitted"}</div>
                     </div>
                     <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                       {getTrailer(selectedMovie) && (
-                        <span className="text-gray-400">Trailer plein ecran</span>
+                        <span className="text-gray-400">{t("jury.home.modal.fullscreenTrailer")}</span>
                       )}
                       {typeof selectedMovie.subtitle === "string" && selectedMovie.subtitle.toLowerCase().endsWith(".srt") && (
                         <a
@@ -618,7 +618,7 @@ export default function JuryHome() {
                           rel="noreferrer"
                           download
                         >
-                          Sous-titres
+                          {t("jury.home.links.downloadSubtitles")}
                         </a>
                       )}
                       {selectedMovie.youtube_link && (
@@ -628,14 +628,14 @@ export default function JuryHome() {
                           target="_blank"
                           rel="noreferrer"
                         >
-                          YouTube
+                          {t("jury.home.links.youtube")}
                         </a>
                       )}
                     </div>
                   </div>
 
                   <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-2">
-                    <h4 className="text-xs uppercase text-gray-400 mb-1">Media</h4>
+                    <h4 className="text-xs uppercase text-gray-400 mb-1">{t("jury.home.modal.media")}</h4>
                     {(getTrailer(selectedMovie) || selectedMovie.youtube_link) ? (
                       <div className="aspect-video h-[170px]">
                         {getTrailer(selectedMovie) ? (
@@ -648,12 +648,12 @@ export default function JuryHome() {
                           />
                         ) : (
                           <a className="text-[#AD46FF] hover:text-[#F6339A]" href={selectedMovie.youtube_link} target="_blank" rel="noreferrer">
-                            Ouvrir la vidéo
+                            {t("jury.home.links.openVideo")}
                           </a>
                         )}
                       </div>
                     ) : (
-                      <p className="text-gray-500">Aucune vidéo disponible.</p>
+                      <p className="text-gray-500">{t("jury.home.modal.noVideo")}</p>
                     )}
                   </div>
                 </div>
@@ -661,11 +661,11 @@ export default function JuryHome() {
                 <div className="col-span-12 xl:col-span-5 space-y-2">
                   <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-2">
                     <div className="flex items-center justify-between">
-                      <h4 className="text-base font-semibold text-white">Votre vote</h4>
+                      <h4 className="text-base font-semibold text-white">{t("jury.home.vote.title")}</h4>
                       {votesByMovie[selectedMovie.id_movie] && (
                         <div className="flex items-center gap-2">
                           <span className="text-xs bg-blue-900/40 text-blue-200 px-2 py-1 rounded">
-                            Déjà voté
+                            {t("jury.home.badges.alreadyVoted")}
                           </span>
                           {votesByMovie[selectedMovie.id_movie].modification_count > 0 && (
                             <span className="text-xs bg-orange-900/40 text-orange-200 px-2 py-1 rounded">
@@ -674,7 +674,7 @@ export default function JuryHome() {
                           )}
                           {isSecondVoteOpen && (
                             <span className="text-xs bg-green-900/40 text-green-200 px-2 py-1 rounded">
-                              ✓ Second vote ouvert
+                              {t("jury.home.badges.secondVoteOpen")}
                             </span>
                           )}
                         </div>
@@ -683,7 +683,7 @@ export default function JuryHome() {
 
                     {selectedVote?.history?.length > 0 && (
                       <div className="mt-2 bg-gray-950 border border-gray-800 rounded-lg p-2">
-                        <h5 className="text-xs uppercase text-gray-400 mb-2">Historique des votes</h5>
+                        <h5 className="text-xs uppercase text-gray-400 mb-2">{t("jury.home.history.title")}</h5>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs text-gray-300">
                           {selectedVote.history.map((entry, index) => (
                             <div key={`history-${entry.id_vote_history || index}`} className="bg-gray-900 border border-gray-800 rounded-lg p-2">
@@ -723,7 +723,7 @@ export default function JuryHome() {
                         onClick={handlePromoteCandidate}
                         className="mt-2 w-full px-3 py-2 bg-green-600/80 text-white rounded-lg text-xs font-semibold hover:bg-green-600"
                       >
-                        Promouvoir à la candidature
+                        {t("jury.home.actions.promoteCandidate")}
                       </button>
                     )}
                   </div>
@@ -731,7 +731,7 @@ export default function JuryHome() {
                   <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-2">
                     {getTrailer(selectedMovie) ? (
                       <p className="text-xs text-gray-400 mb-2">
-                        Vous devez visionner le film en entier avant de voter.
+                       {t("jury.home.vote.rules.watch")}
                       </p>
                     ) : (
                       <label className="flex items-center gap-2 text-xs text-gray-400 mb-2">
@@ -741,20 +741,20 @@ export default function JuryHome() {
                           onChange={(event) => setConfirmedWatched(event.target.checked)}
                           className="accent-[#AD46FF]"
                         />
-                        Je confirme avoir visionné le film en entier.
+                        {t("jury.home.vote.confirmWatch")}
                       </label>
                     )}
 
                     {voteFeedback && <p className="text-xs text-gray-300 mb-2">{voteFeedback}</p>}
                     {!canEditVote && selectedVote && (
                       <p className="text-xs text-orange-200 bg-orange-900/30 border border-orange-700/50 px-3 py-2 rounded-lg mb-2">
-                        Le second vote n'est pas encore ouvert. Votre vote actuel est enregistré.
+                       {t("jury.home.messages.secondVoteClosed")}
                       </p>
                     )}
 
                     <form onSubmit={handleVoteSubmit} className="space-y-3">
                       <div className="flex flex-col gap-2">
-                        <label className="text-sm uppercase text-gray-400">Décision</label>
+                        <label className="text-sm uppercase text-gray-400">{t("jury.home.vote.decision")}</label>
                         <div className="grid grid-cols-1 gap-2">
                           <label className={`flex items-center gap-3 text-gray-300 bg-gray-900/60 border border-gray-800 rounded-lg px-3 py-2 ${!voteAllowed ? "opacity-50" : "cursor-pointer"}`}>
                             <input
@@ -767,7 +767,7 @@ export default function JuryHome() {
                               disabled={!voteAllowed}
                               className="accent-[#AD46FF]"
                             />
-                            <span className="text-sm">Validé / J'aime / Bon 👍</span>
+                            <span className="text-sm">{t("jury.home.vote.options.approved")}</span>
                           </label>
                           <label className={`flex items-center gap-3 text-gray-300 bg-gray-900/60 border border-gray-800 rounded-lg px-3 py-2 ${!voteAllowed ? "opacity-50" : "cursor-pointer"}`}>
                             <input
@@ -780,7 +780,7 @@ export default function JuryHome() {
                               disabled={!voteAllowed}
                               className="accent-[#AD46FF]"
                             />
-                            <span className="text-sm">À discuter avec l'admin</span>
+                            <span className="text-sm">{t("jury.home.vote.options.discuss")}</span>
                           </label>
                           <label className={`flex items-center gap-3 text-gray-300 bg-gray-900/60 border border-gray-800 rounded-lg px-3 py-2 ${!voteAllowed ? "opacity-50" : "cursor-pointer"}`}>
                             <input
@@ -793,12 +793,12 @@ export default function JuryHome() {
                               disabled={!voteAllowed}
                               className="accent-[#AD46FF]"
                             />
-                            <span className="text-sm">Refusé / Je n'aime pas 👎</span>
+                            <span className="text-sm">{t("jury.home.vote.options.rejected")}</span>
                           </label>
                         </div>
                       </div>
                       <div className="flex flex-col">
-                        <label className="text-sm uppercase text-gray-400">Commentaire</label>
+                        <label className="text-sm uppercase text-gray-400">{t("jury.home.vote.comment")}</label>
                         <textarea
                           name="commentaire"
                           value={voteForm.commentaire}
@@ -814,7 +814,7 @@ export default function JuryHome() {
                         disabled={!voteAllowed || voteLoading}
                         className="w-full bg-gradient-to-r from-[#AD46FF] to-[#F6339A] text-white px-4 py-2 rounded-lg font-semibold disabled:opacity-50"
                       >
-                        {voteLoading ? "Envoi..." : "Enregistrer le vote"}
+                        {voteLoading ? t("jury.home.vote.sending") : t("jury.home.vote.submit")}
                       </button>
                     </form>
                   </div>

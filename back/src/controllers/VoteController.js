@@ -104,15 +104,36 @@ async function createOrUpdateMyVote(req, res) {
             return res.status(403).json({ error: "Film non assigné à ce jury" });
         }
 
+        const movie = await Movie.findByPk(id_movie);
+        if (!movie) {
+            return res.status(404).json({ error: "Film non trouvé" });
+        }
+
+        const status = movie.selection_status;
+        if (!['assigned', 'to_discuss'].includes(status)) {
+            return res.status(400).json({
+                error: "Vote non autorisé pour ce statut de film"
+            });
+        }
+
         const existingVote = await Vote.findOne({ where: { id_movie, id_user } });
 
         if (existingVote) {
-            // Verifica se il film è stato approvato dall'admin
-            const movie = await Movie.findByPk(id_movie);
-            const isApproved = movie?.selection_status === 'to_discuss';
-            
-            // Incrementa il counter solo se il film è già approvato
-            if (isApproved) {
+            const isSecondRound = status === 'to_discuss';
+
+            if (!isSecondRound) {
+                return res.status(409).json({
+                    error: "Le second vote n'est pas encore ouvert pour ce film"
+                });
+            }
+
+            if ((existingVote.modification_count || 0) >= 1) {
+                return res.status(409).json({
+                    error: "Le second vote a déjà été utilisé"
+                });
+            }
+
+            if (isSecondRound) {
                 existingVote.modification_count = (existingVote.modification_count || 0) + 1;
             }
             
@@ -137,7 +158,13 @@ async function createOrUpdateMyVote(req, res) {
                 message: "Vote mis à jour", 
                 vote: existingVote,
                 isModified: existingVote.modification_count > 0,
-                isApproved
+                isApproved: isSecondRound
+            });
+        }
+
+        if (status !== 'assigned') {
+            return res.status(409).json({
+                error: "Le premier vote n'est autorisé qu'en phase assigned"
             });
         }
 

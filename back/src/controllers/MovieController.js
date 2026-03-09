@@ -2,6 +2,7 @@ import db from "../models/index.js";
 import path from "path";
 import ffmpeg from "fluent-ffmpeg";
 import { Op } from "sequelize";
+import EmailController from "./EmailController.js";
 
 const {
   Movie,
@@ -375,7 +376,24 @@ async function updateMovie(req, res) {
       });
     }
 
-    await movie.update(req.body);
+
+    // Gestion fichiers uploadés (film, vignettes, SRT)
+    const files = req.files || {};
+    const filmFile = files.filmFile?.[0]?.filename || null;
+    const thumb1 = files.thumbnail1?.[0]?.filename || null;
+    const thumb2 = files.thumbnail2?.[0]?.filename || null;
+    const thumb3 = files.thumbnail3?.[0]?.filename || null;
+    const subtitleFile = files.subtitlesSrt?.[0]?.filename || null;
+
+    const updateData = { ...req.body };
+    if (filmFile) updateData.trailer = filmFile;
+    if (thumb1) updateData.picture1 = thumb1;
+    if (thumb2) updateData.picture2 = thumb2;
+    if (thumb3) updateData.picture3 = thumb3;
+    if (thumb1) updateData.thumbnail = thumb1;
+    if (subtitleFile) updateData.subtitle = subtitleFile;
+
+    await movie.update(updateData);
 
     res.status(200).json({
       message: "Film mis à jour avec succès",
@@ -422,7 +440,7 @@ async function deleteMovie(req, res) {
 async function updateMovieStatus(req, res) {
   try {
     const { id } = req.params;
-    const { selection_status, jury_comment } = req.body;
+    const { selection_status, jury_comment, force_transition } = req.body;
 
     const allowed = [
       "submitted",
@@ -438,9 +456,42 @@ async function updateMovieStatus(req, res) {
       return res.status(400).json({ error: "Statut invalide" });
     }
 
-    const movie = await Movie.findByPk(id);
+    const movie = await Movie.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: "Producer",
+          attributes: ["email", "first_name"],
+        },
+      ],
+    });
     if (!movie) {
       return res.status(404).json({ error: "Film non trouvé" });
+    }
+
+    const previousStatus = movie.selection_status;
+
+    const transitionMap = {
+      submitted: ["assigned", "candidate", "refused"],
+      assigned: ["to_discuss", "candidate", "refused"],
+      to_discuss: ["candidate", "refused"],
+      candidate: ["awarded", "refused"],
+      selected: ["candidate", "awarded", "refused"],
+      finalist: ["candidate", "awarded", "refused"],
+      awarded: [],
+      refused: []
+    };
+
+    const allowedTargets = transitionMap[previousStatus] || [];
+    const forceTransition = Boolean(force_transition);
+    if (
+      !forceTransition
+      && previousStatus !== selection_status
+      && !allowedTargets.includes(selection_status)
+    ) {
+      return res.status(400).json({
+        error: `Transition invalide: ${previousStatus} -> ${selection_status}`,
+      });
     }
 
     movie.selection_status = selection_status;
@@ -449,7 +500,27 @@ async function updateMovieStatus(req, res) {
     }
     await movie.save();
 
-    res.json({ message: "Statut mis à jour", movie });
+    let rejectEmail = null;
+    if (
+      previousStatus !== "refused"
+      && selection_status === "refused"
+      && movie?.Producer?.email
+    ) {
+      try {
+        await EmailController.sendVideoRejectedEmail({
+          to: movie.Producer.email,
+          firstName: movie.Producer.first_name,
+          movieTitle: movie.title,
+          juryComment: movie.jury_comment,
+        });
+        rejectEmail = "sent";
+      } catch (emailError) {
+        console.warn("Reject email error:", emailError.message);
+        rejectEmail = "failed";
+      }
+    }
+
+    res.json({ message: "Statut mis à jour", movie, rejectEmail, forceTransition });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -677,18 +748,16 @@ async function updateMovieCollaborators(req, res) {
           const [record] = await Collaborator.findOrCreate({
             where: { email: collab.email },
             defaults: {
-              first_name: collab.first_name || "",
-              last_name: collab.last_name || "",
+              first_name: collab.first_name || collab.firstname || "",
+              last_name: collab.last_name || collab.lastname || "",
               email: collab.email,
               job: collab.job || null
             }
           });
-
           const needsUpdate =
             (collab.first_name && collab.first_name !== record.first_name)
             || (collab.last_name && collab.last_name !== record.last_name)
             || (collab.job && collab.job !== record.job);
-
           if (needsUpdate) {
             await record.update({
               first_name: collab.first_name || record.first_name,
@@ -696,12 +765,37 @@ async function updateMovieCollaborators(req, res) {
               job: collab.job || record.job
             });
           }
-
           return record;
         })
     );
 
     await movie.setCollaborators(collaboratorRecords);
+
+    // Gestione file upload (ADMIN o owner)
+    if (req.user.role === "ADMIN" || movie.id_user === req.user.id_user) {
+      const files = req.files || {};
+      const filmFile = files.filmFile?.[0]?.filename || null;
+      const thumb1 = files.thumbnail1?.[0]?.filename || null;
+      const thumb2 = files.thumbnail2?.[0]?.filename || null;
+      const thumb3 = files.thumbnail3?.[0]?.filename || null;
+      const subtitleFile = files.subtitlesSrt?.[0]?.filename || null;
+
+      const updateData = { ...req.body };
+      if (filmFile) updateData.trailer = filmFile;
+      if (thumb1) updateData.picture1 = thumb1;
+      if (thumb2) updateData.picture2 = thumb2;
+      if (thumb3) updateData.picture3 = thumb3;
+      if (thumb1) updateData.thumbnail = thumb1;
+              await movie.setJuries(juries);
+
+              // Se almeno un jury è assegnato e lo status non è già avanzato, aggiorna lo status a 'assigned'
+              const advancedStatuses = ["to_discuss", "candidate", "selected", "finalist", "awarded", "refused"];
+              if (juries.length > 0 && !advancedStatuses.includes(movie.selection_status)) {
+                movie.selection_status = "assigned";
+                await movie.save();
+              }
+      await movie.update(updateData);
+    }
 
     const updatedMovie = await Movie.findByPk(id, {
       include: [

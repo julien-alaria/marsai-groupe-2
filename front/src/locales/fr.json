@@ -187,6 +187,7 @@
     },
     "buttons": {
       "submit": "Soumettre le film",
+      "submitting": "Soumission en cours...",
       "save": "Enregistrer",
       "edit": "Modifier",
       "cancel": "Annuler",
@@ -487,64 +488,119 @@
     },
 
     "errors": {
-  "notAuthenticated": "Non authentifié",
-  "userLoad": "Erreur lors de la récupération des données utilisateur",
-  "moviesLoad": "Erreur lors du chargement des films assignés",
-  "votesLoad": "Erreur lors du chargement des votes",
-  "userNotFound": "Utilisateur introuvable"
-},
-"loading": "Chargement...",
-"noPoster": "Aucune vignette",
+      "notAuthenticated": "Non authentifié",
+      "userLoad": "Erreur lors de la récupération des données utilisateur",
+      "moviesLoad": "Erreur lors du chargement des films assignés",
+      "votesLoad": "Erreur lors du chargement des votes",
+      "userNotFound": "Utilisateur introuvable"
+   },
+  "loading": "Chargement...",
+  "noPoster": "Aucune vignette",
 
-"details": {
-  "duration": "Durée :",
-  "language": "Langue :",
-  "nationality": "Nationalité :",
-  "status": "Statut :"
-},
-
-"links": {
-  "openVideo": "Ouvrir la vidéo",
-  "downloadSubtitles": "Télécharger les sous-titres",
-  "youtube": "Voir sur YouTube"
-},
-
-"previousVote": {
-  "title": "Vote précédent :",
-  "note": "Note : {{note}}",
-  "comment": "Commentaire : {{comment}}"
-},
-
-"badges": {
-  "alreadyVoted": "Déjà voté",
-  "modified": "Modifié {{count}}×",
-  "approved": "Approuvé"
-},
-    "vote": {
-      "title": "Votre vote",
-  "infoTitle": "Informations de vote",
-  "mustWatch": "Vous devez visionner le film en entier avant de voter.",
-  "confirmWatch": "Je confirme avoir visionné le film en entier.",
-  "decision": "Décision",
-  "comment": "Commentaire",
-  "submit": "Enregistrer le vote",
-  "sending": "Envoi...",
-  "saved": "Vote enregistré.",
-  "error": "Erreur lors de l'enregistrement du vote.",
-  "rules": {
-    "watch": "Regardez le film en entier avant de voter.",
-    "comment": "Le commentaire est obligatoire.",
-    "modify": "Vous pouvez modifier votre vote.",
-    "influence": "Votre vote influence la moyenne du film.",
-    "archive": "Vous pouvez archiver le film après vote."
+    "details": {
+      "duration": "Durée :",
+      "language": "Langue :",
+      "nationality": "Nationalité :",
+      "status": "Statut :"
   },
-  "options": {
-    "approved": "Validé / J'aime / Bon 👍",
-    "discuss": "À discuter avec l'admin",
-    "rejected": "Refusé / Je n'aime pas 👎"
+
+  "links": {
+     "openVideo": "Ouvrir la vidéo",
+     "downloadSubtitles": "Télécharger les sous-titres",
+     "youtube": "Voir sur YouTube"
+  },
+
+  "previousVote": {
+     "title": "Vote précédent :",
+     "note": "Note : {{note}}",
+     "comment": "Commentaire : {{comment}}"
+   },
+
+  "badges": {
+     "alreadyVoted": "Déjà voté",
+     "modified": "Modifié {{count}}×",
+     "approved": "Approuvé",
+     "secondVote": "Second vote",
+     "secondVoteOpen": "✓ Second vote ouvert"
+   },
+  "vote": {
+     "title": "Votre vote",
+     "infoTitle": "Informations de vote",
+     "mustWatch": "Vous devez visionner le film en entier avant de voter.",
+     "confirmWatch": "Je confirme avoir visionné le film en entier.",
+     "decision": "Décision",
+     "comment": "Commentaire",
+     "submit": "Enregistrer le vote",
+     "sending": "Envoi...",
+     "saved": "Vote enregistré.",
+     "error": "Erreur lors de l'enregistrement du vote.",
+     "rules": {
+          "watch": "Regardez le film en entier avant de voter.",
+          "comment": "Le commentaire est obligatoire.",
+          "modify": "Vous pouvez modifier votre vote.",
+          "influence": "Votre vote influence la moyenne du film.",
+          "archive": "Vous pouvez archiver le film après vote."
+         },
+     "options": {
+          "approved": "Validé / J'aime / Bon 👍",
+          "discuss": "À discuter avec l'admin",
+          "rejected": "Refusé / Je n'aime pas 👎"
+       }
+   },
+
+    "folderDescriptions": {
+      "vote": "1ère / 2e votation",
+      "voted": "Votes enregistrés",
+      "candidate": "Promus à la candidature"
+  },
+
+    "modal": {
+       "secondVoteMode": "Mode second vote",
+       "producer": "Producteur",
+       "name": "Nom",
+       "email": "Email",
+       "source": "Source",
+       "aiMethodology": "IA & Méthodologie",
+       "classification": "Classification",
+       "methodology": "Méthodologie",
+       "aiTool": "Outil IA",
+       "synopsisFr": "Synopsis (FR)",
+       "synopsisEn": "Synopsis (EN)",
+       "filmInfos": "Infos film",
+       "duration": "Durée",
+       "language": "Langue",
+       "nationality": "Nationalité",
+       "status": "Statut",
+       "fullscreenTrailer": "Trailer plein écran",
+       "media": "Média",
+       "noVideo": "Aucune vidéo disponible"
+       
+  },
+
+    "history": {
+       "title": "Historique des votes",
+       "vote": "Vote {{number}}",
+       "current": "Vote actuel"
+},
+
+   "actions": {
+      "promoteCandidate": "Promouvoir à la candidature"
+      
+},
+
+   "messages": {
+      "secondVoteClosed": "Le second vote n'est pas encore ouvert. Votre vote actuel est enregistré.",
+      "voteSaved": "Vote enregistré.",
+      "voteSavedSuccess": "Vote enregistré avec succès.",
+      "voteError": "Erreur lors de l'enregistrement du vote.",
+      "promoted": "Film promu à la candidature.",
+      "promoteError": "Impossible de promouvoir le film.",
+      "adminMessage": "Message pour l'admin (optionnel)"
+      
   }
-    }
   },
+
+
   "evaluation": {
     "title": "Évaluation des films",
     "rate": "Noter",

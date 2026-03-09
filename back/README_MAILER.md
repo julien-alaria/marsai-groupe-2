@@ -4,7 +4,7 @@
 
 async function sendMail(to, subject, html) {
   let info = await transporter.sendMail({
-    from: '"//YOUR NAME" <//YOUR MAIL>', // sender address, add YOUR NAME & YOUR MAIL
+    from: '"contact" <contact@marsai.com>', // sender address, add YOUR NAME & YOUR MAIL
     to, // list of receivers
     subject, // Subject line
     html,
@@ -14,7 +14,7 @@ async function sendMail(to, subject, html) {
 
 
 ## Modifier 
-"//YOUR NAME" 
+"contact" 
 ## avec le nom de l'expéditeur ainsi que
-<//YOUR MAIL> 
+<contact@marsai.com> 
 ## avec son adresse email.

@@ -1,9 +1,13 @@
+import { useTranslation } from "react-i18next";
 import { useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getMovies } from '../../api/movies';
 import { submitVote } from '../../api/votes';
 
 export default function JuryEvaluation() {
+
+  const { t } = useTranslation();
+
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [rating, setRating] = useState(5);
   const [comment, setComment] = useState('');
@@ -16,7 +20,7 @@ export default function JuryEvaluation() {
   const voteMutation = useMutation({
     mutationFn: submitVote,
     onSuccess: () => {
-      alert('Vote submitted successfully!');
+      alert(t("jury.evaluation.success"));
       setSelectedMovie(null);
       setRating(5);
       setComment('');
@@ -34,7 +38,7 @@ export default function JuryEvaluation() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Film Evaluation</h1>
+      <h1 className="text-2xl font-bold">{t("jury.evaluation.title")}</h1>
 
       {/* Movie Selection */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -60,12 +64,12 @@ export default function JuryEvaluation() {
       {selectedMovie && (
         <form onSubmit={handleSubmit} className="bg-gray-900 p-6 rounded-lg">
           <h2 className="text-xl font-bold mb-4">
-            Rate: {selectedMovie.title}
+            {t("jury.evaluation.rate")}: {selectedMovie.title}
           </h2>
 
           {/* Rating */}
           <div className="mb-4">
-            <label className="block mb-2">Rating (1-10)</label>
+            <label className="block mb-2">{t("jury.evaluation.rating")}</label>
             <input
               type="range"
               min="1"
@@ -79,7 +83,7 @@ export default function JuryEvaluation() {
 
           {/* Comment */}
           <div className="mb-4">
-            <label className="block mb-2">Comment</label>
+            <label className="block mb-2">{t("jury.evaluation.comment")}</label>
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}

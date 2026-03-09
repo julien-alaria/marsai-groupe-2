@@ -1,6 +1,15 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
-export function VideoPreview({ src, poster, title, onEnded, openMode = "overlay" }) {
+export function VideoPreview({
+  src,
+  poster,
+  title,
+  onEnded,
+  openMode = "overlay",
+  modalPlacement = "center",
+  modalTopOffsetClass = "inset-0",
+}) {
   const videoRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -41,6 +50,11 @@ export function VideoPreview({ src, poster, title, onEnded, openMode = "overlay"
       video.webkitRequestFullscreen();
     }
   }
+
+  const placementClasses =
+    modalPlacement === "bottom"
+      ? "items-end pb-4"
+      : "items-center";
 
   return (
     <>
@@ -91,40 +105,44 @@ export function VideoPreview({ src, poster, title, onEnded, openMode = "overlay"
         </div>
       </div>
 
-      {isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 mobile-modal-overlay">
-          <div className="w-full max-w-6xl mobile-modal-panel">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="text-white font-semibold text-lg">{title}</h3>
-              <button
-                onClick={closeFullscreen}
-                className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+      {isOpen &&
+        createPortal(
+          <div
+            className={`fixed ${modalTopOffsetClass} z-[9999] bg-black/90 flex justify-center p-4 mobile-modal-overlay ${placementClasses}`}
+          >
+            <div className="relative z-[10000] w-full max-w-6xl mobile-modal-panel">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="text-white font-semibold text-lg">{title}</h3>
+                <button
+                  onClick={closeFullscreen}
+                  className="p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+              <video
+                className="w-full h-auto max-h-[80vh] bg-black rounded-lg"
+                src={src}
+                poster={poster || undefined}
+                controls
+                autoPlay
+                onEnded={onEnded}
+              />
+              <div className="mt-3 flex justify-end">
+                <button
+                  type="button"
+                  onClick={requestNativeFullscreen}
+                  className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
+                >
+                  Plein écran
+                </button>
+              </div>
             </div>
-            <video
-              className="w-full h-auto max-h-[80vh] bg-black rounded-lg"
-              src={src}
-              poster={poster || undefined}
-              controls
-              autoPlay
-              onEnded={onEnded}
-            />
-            <div className="mt-3 flex justify-end">
-              <button
-                type="button"
-                onClick={requestNativeFullscreen}
-                className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700"
-              >
-                Plein écran
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+          </div>,
+          document.body
+        )}
     </>
   );
 }

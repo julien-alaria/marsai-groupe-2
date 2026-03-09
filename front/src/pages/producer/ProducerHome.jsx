@@ -33,8 +33,14 @@ const movieSchema = z.object({
   nationality: z.string().optional(),
   translation: z.string().optional(),
   youtubeLink: z.string().optional(),
-  synopsisOriginal: z.string().min(1, "Le synopsis est requis"),
-  synopsisEnglish: z.string().optional(),
+  synopsisOriginal: z
+    .string()
+    .min(1, "Le synopsis est requis")
+    .max(300, "Le synopsis original ne peut pas dépasser 300 caractères"),
+  synopsisEnglish: z
+    .string()
+    .min(1, "Le synopsis anglais est obligatoire")
+    .max(300, "Le synopsis anglais ne peut pas dépasser 300 caractères"),
   aiClassification: z.string().min(1, "La classification IA est obligatoire"),
   aiStack: z.string().optional(),
   aiMethodology: z.string().optional(),
@@ -59,6 +65,9 @@ const movieSchema = z.object({
 });
 
 export default function ProducerHome() {
+  // Stato per mostrare la modale di upload/update
+  const [showEditMovieModal, setShowEditMovieModal] = useState(false);
+  const [editMovieFiles, setEditMovieFiles] = useState({ filmFile: null, thumbnails: [] });
   const { t } = useTranslation();
   // État pour stocker les données utilisateur
   const [user, setUser] = useState(null);
@@ -86,6 +95,9 @@ export default function ProducerHome() {
   const [submittedSuccess, setSubmittedSuccess] = useState(false);
   const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+
+  // Stato per il successo upload vignette
+  const [thumbnailUploadSuccess, setThumbnailUploadSuccess] = useState(false);
 
   const handleFileName = (event, setter) => {
     const file = event.target.files?.[0];
@@ -124,7 +136,7 @@ export default function ProducerHome() {
         },
       ],
       filmFile: null,
-      thumbnails: [],
+      thumbnails: [null],
       subtitlesSrt: null,
       acceptTerms: true,
     },
@@ -134,6 +146,7 @@ export default function ProducerHome() {
   const filmTitleOriginal = useWatch({ control: movieControl, name: "filmTitleOriginal" });
   const durationSeconds = useWatch({ control: movieControl, name: "durationSeconds" });
   const synopsisOriginal = useWatch({ control: movieControl, name: "synopsisOriginal" });
+  const synopsisEnglish = useWatch({ control: movieControl, name: "synopsisEnglish" });
   const acceptRules = useWatch({ control: movieControl, name: "acceptRules" });
   const aiClassification = useWatch({ control: movieControl, name: "aiClassification" });
   const categoryId = useWatch({ control: movieControl, name: "categoryId" });
@@ -150,6 +163,12 @@ export default function ProducerHome() {
 
   // Dynamic thumbnails field array
   const { fields, append, remove } = useFieldArray({ control: movieControl, name: "thumbnails" });
+
+  useEffect(() => {
+    if (fields.length === 0) {
+      append(null);
+    }
+  }, [fields.length, append]);
 
   const createMovieMutation = useMutation({
     mutationFn: async (data) => {
@@ -185,8 +204,13 @@ export default function ProducerHome() {
 
       if (data.filmFile?.[0]) formData.append("filmFile", data.filmFile[0]);
       if (data.thumbnails?.length) {
-        data.thumbnails.forEach((file, idx) => {
-          if (file) formData.append(`thumbnails`, file);
+        const selectedThumbnails = data.thumbnails
+          .map((entry) => entry?.[0] || null)
+          .filter(Boolean)
+          .slice(0, 3);
+
+        selectedThumbnails.forEach((file, idx) => {
+          formData.append(`thumbnail${idx + 1}`, file);
         });
       }
       if (data.subtitlesSrt?.[0]) formData.append("subtitlesSrt", data.subtitlesSrt[0]);
@@ -248,7 +272,9 @@ export default function ProducerHome() {
       durationSeconds > 0 && 
       durationSeconds <= 120 &&
       synopsisOriginal && 
-      synopsisOriginal.trim().length > 0
+      synopsisOriginal.trim().length > 0 &&
+      synopsisEnglish &&
+      synopsisEnglish.trim().length > 0
     );
   };
 
@@ -281,9 +307,7 @@ export default function ProducerHome() {
     setMovieError(null); // Nascondere eventuali errori
     resetMovie();
     setFilmFileName("Aucun fichier sélectionné");
-    setThumbnail1Name("Aucun fichier sélectionné");
-    setThumbnail2Name("Aucun fichier sélectionné");
-    setThumbnail3Name("Aucun fichier sélectionné");
+    setThumbnailNames(["Aucun fichier sélectionné"]);
     setSubtitlesName("Aucun fichier sélectionné");
   };
 
@@ -436,10 +460,6 @@ export default function ProducerHome() {
 
         {submittedSuccess ? (
           <section className="bg-gray-900 rounded-2xl p-8 border border-gray-800 shadow-2xl">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl font-bold text-[#AD46FF] mb-2">Succès ! 🎬</h2>
-              <p className="text-gray-300">{movieSuccess || "Votre film a été soumis avec succès au festival."}</p>
-            </div>
 
             {movies.length > 0 && (
               <div className="mb-8">
@@ -484,6 +504,48 @@ export default function ProducerHome() {
                             </span>
                           </div>
                         </div>
+                        {/* Bottone promozione candidatura */}
+                        {movie.selection_status === "selected" && (user?.role === "admin" || user?.role === "producer") && (
+                          <button
+                            type="button"
+                            className="px-3 py-1.5 bg-[#5EEAD4]/80 text-white rounded-lg text-xs hover:bg-[#5EEAD4] mt-2"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                const res = await fetch(`/api/movies/${movie.id_movie}/jury-candidate`, {
+                                  method: "PUT",
+                                  headers: { "Content-Type": "application/json", "Authorization": `Bearer ${localStorage.getItem("token")}` },
+                                });
+                                if (res.ok) {
+                                  setMovieSuccess("Film promu à la candidature !");
+                                  // Aggiorna la lista
+                                  const moviesRes = await getMyMovies();
+                                  setMovies(moviesRes.data || []);
+                                } else {
+                                  setMovieError("Erreur lors de la promotion.");
+                                }
+                              } catch {
+                                setMovieError("Erreur lors de la promotion.");
+                              }
+                            }}
+                          >
+                            Promouvoir les candidats primés
+                          </button>
+                        )}
+                        {/* Bouton Modifier le film (admin ou producteur) */}
+                        {(user?.role === "admin" || user?.role === "producer") && (
+                          <button
+                            type="button"
+                            className="mt-4 w-full bg-[#AD46FF] text-white font-bold py-2 rounded-lg hover:bg-[#F6339A] transition"
+                            onClick={e => {
+                              e.stopPropagation();
+                              setSelectedMovie(movie);
+                              setShowEditMovieModal(true);
+                            }}
+                          >
+                            Modifier le film
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -683,7 +745,7 @@ export default function ProducerHome() {
 
                 <div className="flex flex-col md:col-span-3">
                   <label htmlFor="synopsisEnglish" className="text-white font-semibold mb-1 text-xs uppercase">
-                    Synopsis anglais (300 char max)
+                    Synopsis anglais * (300 char max)
                   </label>
                   <textarea
                     id="synopsisEnglish"
@@ -693,6 +755,9 @@ export default function ProducerHome() {
                     maxLength={300}
                     className="bg-gray-800 border border-gray-700 text-white px-2 py-1.5 rounded-lg focus:outline-none focus:border-[#AD46FF] transition resize-none text-sm"
                   />
+                  {movieErrors.synopsisEnglish && (
+                    <p className="text-red-400 text-sm mt-1">{movieErrors.synopsisEnglish.message}</p>
+                  )}
                 </div>
               </div>
             </section>
@@ -799,41 +864,69 @@ export default function ProducerHome() {
 
                 {/* Dynamic thumbnails upload */}
                 <div className="flex flex-col md:col-span-3">
-                  <label className="text-white font-semibold mb-1 text-xs uppercase">Vignettes</label>
-                  {/* Move useFieldArray to top of component */}
-                  {/* Dynamic thumbnails upload */}
-                  <div className="flex flex-col md:col-span-3">
-                    <label className="text-white font-semibold mb-1 text-xs uppercase">Vignettes</label>
-                    {fields.map((field, idx) => (
-                      <div key={field.id} className="flex items-center gap-2 mb-2">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          {...registerMovie(`thumbnails.${idx}`)}
-                          onChange={e => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              setThumbnailNames(prev => {
+                  <label className="text-white font-semibold mb-1 text-xs uppercase">Vignettes (max 3)</label>
+                  <div className="space-y-2">
+                    {fields.map((field, idx) => {
+                      const { onChange, ...rest } = registerMovie(`thumbnails.${idx}`);
+                      return (
+                        <div key={field.id} className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            {...rest}
+                            onChange={(event) => {
+                              onChange(event);
+                              const file = event.target.files?.[0];
+                              setThumbnailNames((prev) => {
                                 const next = [...prev];
-                                next[idx] = file.name;
+                                next[idx] = file ? file.name : "Aucun fichier sélectionné";
                                 return next;
                               });
-                              // Add a new empty field if last
-                              if (idx === fields.length - 1) append({});
-                            }
-                          }}
-                          className="sr-only"
-                          id={`thumbnail-upload-${idx}`}
-                        />
-                        <label htmlFor={`thumbnail-upload-${idx}`} className="cursor-pointer text-white font-semibold text-sm bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5">
-                          Choisir
-                        </label>
-                        <span className="text-gray-400 text-xs truncate">{thumbnailNames[idx]}</span>
-                        {idx > 0 && (
-                          <button type="button" onClick={() => remove(idx)} className="text-red-500 text-xs ml-2">Supprimer</button>
-                        )}
-                      </div>
-                    ))}
+                            }}
+                            className="sr-only"
+                            id={`thumbnail-upload-${idx}`}
+                          />
+                          <label
+                            htmlFor={`thumbnail-upload-${idx}`}
+                            className="cursor-pointer text-white font-semibold text-sm bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5"
+                          >
+                            Choisir
+                          </label>
+                          <span className="text-gray-400 text-xs truncate flex-1">
+                            {thumbnailNames[idx] || "Aucun fichier sélectionné"}
+                          </span>
+                          {idx > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                remove(idx);
+                                setThumbnailNames((prev) => {
+                                  const next = [...prev];
+                                  next.splice(idx, 1);
+                                  return next;
+                                });
+                              }}
+                              className="text-red-500 text-xs ml-2"
+                            >
+                              Supprimer
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {fields.length < 3 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          append(null);
+                          setThumbnailNames((prev) => [...prev, "Aucun fichier sélectionné"]);
+                        }}
+                        className="px-3 py-2 bg-gray-800 border border-gray-700 text-white rounded-lg hover:bg-gray-700 text-sm"
+                      >
+                        Ajouter une vignette
+                      </button>
+                    )}
                   </div>
                 </div>
 
@@ -896,6 +989,25 @@ export default function ProducerHome() {
             )}
 
             <div className="flex flex-col gap-4 pt-2">
+                          {/* Mostra errori globali dei campi obbligatori in entrambe le parti del form */}
+                          {movieErrors.categoryId && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.categoryId.message}</p>
+                          )}
+                          {movieErrors.filmTitleOriginal && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.filmTitleOriginal.message}</p>
+                          )}
+                          {movieErrors.durationSeconds && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.durationSeconds.message}</p>
+                          )}
+                          {movieErrors.synopsisOriginal && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.synopsisOriginal.message}</p>
+                          )}
+                          {movieErrors.synopsisEnglish && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.synopsisEnglish.message}</p>
+                          )}
+                          {movieErrors.aiClassification && (
+                            <p className="text-red-400 text-sm text-center">{movieErrors.aiClassification.message}</p>
+                          )}
               {formStep === 1 && (
                 <button
                   type="button"
@@ -919,7 +1031,7 @@ export default function ProducerHome() {
                     disabled={createMovieMutation.isPending || !acceptTerms}
                     className="w-full bg-gradient-to-r from-[#AD46FF] to-[#F6339A] text-white font-bold py-4 rounded-lg uppercase hover:opacity-90 transition disabled:opacity-50"
                   >
-                    {createMovieMutation.isPending ? t('producerHome.submitting') : t('producerHome.submit')}
+                    {createMovieMutation.isPending ? t('producer.filmSubmission.buttons.submitting') : t('producer.filmSubmission.buttons.submit')}
                   </button>
                 </>
               )}
@@ -944,7 +1056,7 @@ export default function ProducerHome() {
           <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
             <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-y-auto p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xl font-bold text-white">Gérer les collaborateurs</h3>
+                <h3 className="text-xl font-bold text-white">Gérer les collaborateurs et médias</h3>
                 <button
                   type="button"
                   onClick={() => setShowCollaboratorsModal(false)}
@@ -952,6 +1064,70 @@ export default function ProducerHome() {
                 >
                   ✕
                 </button>
+              </div>
+
+              {/* Upload vignette (max 3) */}
+              <div className="mb-4">
+                <label className="text-white font-semibold mb-1 text-xs uppercase">Vignettes</label>
+                {[0,1,2].map(idx => (
+                  <div key={idx} className="flex items-center gap-2 mb-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setThumbnailNames(prev => {
+                            const next = [...prev];
+                            next[idx] = file.name;
+                            return next;
+                          });
+                          setThumbnailUploadSuccess(true);
+                          setTimeout(() => setThumbnailUploadSuccess(false), 2000);
+                        }
+                      }}
+                      className="sr-only"
+                      id={`modal-thumbnail-upload-${idx}`}
+                      disabled={thumbnailNames.filter(n => n && n !== "Aucun fichier sélectionné").length >= 3}
+                    />
+                    <label htmlFor={`modal-thumbnail-upload-${idx}`} className="cursor-pointer text-white font-semibold text-sm bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5">
+                      Choisir
+                    </label>
+                    <span className="text-gray-400 text-xs truncate">{thumbnailNames[idx]}</span>
+                    {thumbnailNames[idx] && thumbnailNames[idx] !== "Aucun fichier sélectionné" && (
+                      <button type="button" onClick={() => {
+                        setThumbnailNames(prev => {
+                          const next = [...prev];
+                          next[idx] = "Aucun fichier sélectionné";
+                          return next;
+                        });
+                      }} className="text-red-500 text-xs ml-2">Supprimer</button>
+                    )}
+                  </div>
+                ))}
+                {thumbnailUploadSuccess && (
+                  <div className="text-green-400 text-xs mb-2">Vignette téléchargée avec succès !</div>
+                )}
+              </div>
+
+              {/* Upload film file */}
+              <div className="mb-4">
+                <label className="text-white font-semibold mb-1 text-xs uppercase">Fichier du film</label>
+                <input
+                  type="file"
+                  accept="video/*"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    setFilmFileName(file ? file.name : "Aucun fichier sélectionné");
+                  }}
+                  className="sr-only"
+                  id="modal-film-upload"
+                  placeholder="Choisir un fichier"
+                />
+                <label htmlFor="modal-film-upload" className="cursor-pointer text-white font-semibold text-sm bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5">
+                  Choisir un fichier
+                </label>
+                <span className="text-gray-400 text-xs truncate">{filmFileName}</span>
               </div>
 
               <div className="mb-4">
@@ -1131,6 +1307,93 @@ export default function ProducerHome() {
                 </button>
               </div>
 
+              <div className="flex justify-end mt-2">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 bg-[#AD46FF] text-white rounded-lg text-xs hover:bg-[#F6339A]"
+                  onClick={() => setShowEditMovieModal(true)}
+                >
+                  Modifier le film / vignettes
+                </button>
+              </div>
+                      {/* Modale upload/update film/vignettes */}
+                      {showEditMovieModal && (
+                        <div className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4">
+                          <div className="bg-gray-950 border border-gray-800 rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
+                            <div className="flex items-center justify-between mb-4">
+                              <h3 className="text-lg font-bold text-white">Mettre à jour le film ou les vignettes</h3>
+                              <button
+                                type="button"
+                                onClick={() => setShowEditMovieModal(false)}
+                                className="text-gray-400 hover:text-white text-2xl"
+                              >✕</button>
+                            </div>
+                            <form
+                              onSubmit={async (e) => {
+                                e.preventDefault();
+                                const formData = new FormData();
+                                if (editMovieFiles.filmFile) formData.append("filmFile", editMovieFiles.filmFile);
+                                editMovieFiles.thumbnails.forEach((file) => {
+                                  if (file) formData.append("thumbnails", file);
+                                });
+                                try {
+                                  await fetch(`/api/movies/${selectedMovie.id_movie}`, {
+                                    method: "PUT",
+                                    headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+                                    body: formData,
+                                  });
+                                  setShowEditMovieModal(false);
+                                  setSelectedMovie(null);
+                                  const moviesRes = await getMyMovies();
+                                  setMovies(moviesRes.data || []);
+                                } catch {
+                                  alert("Erreur lors de la mise à jour du film.");
+                                }
+                              }}
+                            >
+                              <div className="mb-4">
+                                <label className="text-white font-semibold mb-1 text-xs uppercase">Nouveau fichier du film</label>
+                                <input
+                                  type="file"
+                                  accept="video/*"
+                                  onChange={e => setEditMovieFiles(f => ({ ...f, filmFile: e.target.files?.[0] }))}
+                                  className="block w-full text-sm text-gray-300 bg-gray-800 border border-gray-700 rounded-lg p-2 mt-1"
+                                />
+                              </div>
+                              <div className="mb-4">
+                                <label className="text-white font-semibold mb-1 text-xs uppercase">Nouvelles vignettes (max 3)</label>
+                                {[0,1,2].map(idx => (
+                                  <input
+                                    key={idx}
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={e => {
+                                      const file = e.target.files?.[0];
+                                      setEditMovieFiles(f => {
+                                        const thumbs = [...f.thumbnails];
+                                        thumbs[idx] = file;
+                                        return { ...f, thumbnails: thumbs };
+                                      });
+                                    }}
+                                    className="block w-full text-sm text-gray-300 bg-gray-800 border border-gray-700 rounded-lg p-2 mt-1 mb-2"
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex justify-end gap-2 mt-4">
+                                <button
+                                  type="button"
+                                  onClick={() => setShowEditMovieModal(false)}
+                                  className="px-4 py-2 border border-gray-700 rounded-lg text-white"
+                                >Annuler</button>
+                                <button
+                                  type="submit"
+                                  className="px-4 py-2 bg-[#AD46FF] text-white rounded-lg hover:bg-[#F6339A]"
+                                >Sauvegarder</button>
+                              </div>
+                            </form>
+                          </div>
+                        </div>
+                      )}
               <p className="text-gray-400 mt-1 text-sm line-clamp-2">{selectedMovie.synopsis || selectedMovie.description || "-"}</p>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3">
@@ -1185,7 +1448,7 @@ export default function ProducerHome() {
                     onClick={() => startEditCollaborators(selectedMovie)}
                     className="text-sm text-[#AD46FF] hover:text-[#F6339A]"
                   >
-                    Modifier
+                    Éditer
                   </button>
                 </div>
                 {selectedMovie.Collaborators?.length ? (

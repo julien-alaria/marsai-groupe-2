@@ -14,7 +14,12 @@ export default function PartenaireCard({ name, logo, color, url }) {
       }}
     >
       <div className="w-full h-40 flex items-center justify-center mb-3">
-        <img src={logo} alt={name} className="max-h-full object-contain" />
+        {/* <img src={logo} alt={name} className="max-h-full object-contain" /> */}
+        <img
+            src={`http://localhost:3000${logo}`}
+            alt={name}
+            className="max-h-full object-contain"
+/>
       </div>
 
       <h3 className="text-center font-semibold">{name}</h3>

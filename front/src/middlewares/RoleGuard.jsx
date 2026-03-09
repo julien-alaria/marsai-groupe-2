@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Navigate } from "react-router";
 
 /**
  * Composant de protection des routes par rôle
@@ -15,19 +16,29 @@ import { useEffect, useState } from "react";
  * </RoleGuard>
  */
 export function RoleGuard({ allowedRoles, children }) {
-  // Récupérer le rôle initial du localStorage
-  const [userRole, setUserRole] = useState(() => localStorage.getItem("role"));
+  const [auth, setAuth] = useState(() => ({
+    userRole: localStorage.getItem("role"),
+    token: localStorage.getItem("token"),
+  }));
 
   useEffect(() => {
     // Créer un écouteur d'événements storage (change dans localStorage)
-    const onStorage = () => setUserRole(localStorage.getItem("role"));
+    const onStorage = () =>
+      setAuth({
+        userRole: localStorage.getItem("role"),
+        token: localStorage.getItem("token"),
+      });
     window.addEventListener("storage", onStorage);
     
     return () => window.removeEventListener("storage", onStorage);
   }, []);
 
+  if (!auth.token) {
+    return <Navigate to="/auth/login" replace />;
+  }
+
   // Vérifier si le rôle de l'utilisateur figure dans la liste des rôles autorisés
-  if (allowedRoles.includes(userRole)) {
+  if (allowedRoles.includes(auth.userRole)) {
     return children;
   } else {
     return <div className="p-6 text-red-600 font-bold">Accès refusé - Vous n'avez pas les permissions nécessaires</div>;

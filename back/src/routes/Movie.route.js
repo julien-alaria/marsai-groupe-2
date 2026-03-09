@@ -71,7 +71,18 @@ movieRouter.post("/",
 movieRouter.delete("/:id", AuthMiddleware(["ADMIN"]),MovieController.deleteMovie);
 
 // Modifier un film (ADMIN)
-movieRouter.put("/:id", AuthMiddleware(["ADMIN"]),MovieController.updateMovie);
+movieRouter.put(
+  "/:id",
+  AuthMiddleware(["ADMIN"]),
+  upload.fields([
+    { name: "filmFile", maxCount: 1 },
+    { name: "thumbnail1", maxCount: 1 },
+    { name: "thumbnail2", maxCount: 1 },
+    { name: "thumbnail3", maxCount: 1 },
+    { name: "subtitlesSrt", maxCount: 1 }
+  ]),
+  MovieController.updateMovie
+);
 
 // Assigner un film à des juries(ADMIN)
 // movieRouter.post("/:id/assign-juries", AuthMiddleware(["ADMIN"]),MovieController.assignJuriesToMovie);

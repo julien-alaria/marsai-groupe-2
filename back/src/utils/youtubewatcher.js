@@ -78,7 +78,7 @@ async function processQueue() {
     if (data.licensedContent === true) {
       EmailController.sendMail(
         userEmail,
-        "Video rejected, licensed content",
+        "Video rejected, content under license",
         VIDEO_REJECT_TEMPLATE,
       );
     } else {
