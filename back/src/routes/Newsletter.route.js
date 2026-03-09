@@ -1,11 +1,11 @@
 import express from "express";
-import NewsLetterController from "../controllers/NewsLetterController.js";
+import NewsletterController from "../controllers/NewsletterController.js";
 
-const newsLetterRouter = express.Router();
+const newsletterRouter = express.Router();
 
-newsLetterRouter.post("/", NewsLetterController.main);
+newsletterRouter.post("/", NewsletterController.main);
 
-export default newsLetterRouter;
+export default newsletterRouter;
 
 
 
