@@ -26,6 +26,7 @@ export default function Sponsors() {
     <OneCardWithImage
       key={index}
       image={`http://localhost:3000${sponsor.logo}`}
+      url={sponsor.url}
       accentColor={sponsor.accentColor || "#F6339A"}
       borderColor={sponsor.borderColor || "#F6339A"}
       hoverShadow={sponsor.hoverShadow || "#F6339A"}

@@ -66,3 +66,24 @@ Pour supprimer automatiquement tous les fichiers non utilisés :
    Ce script supprimera tous les fichiers listés dans `uploads-unused.json` du dossier `uploads` et mettra à jour ce fichier (il sera vidé).
 
 Si vous partagez uniquement les données structurées (films, utilisateurs), vous pouvez ignorer ou vider `uploads`. Si les films référencent des fichiers présents dans ce dossier (ex : images), leur absence peut entraîner des erreurs ou des images manquantes dans l’application.
+
+
+## importer les seeds sponsors
+
+Pour récupérer les logos déjà  existants (mobile film festival):
+
+### entrer les seeds dans la  bdd
+
+1. Exécutez :
+   ```sh
+   node scripts/seed-sponsors.js
+   ```
+
+### récuperer les logos dans le front et coller dans le back
+
+1. Copiez les fichiers dans le  front : /front/src/assets/images/sponsors
+2. Coller les fichiers dans le back : /back/uploads/sponsors
+   ```
+   Cela importera les utilisateur logos dans le back (dossier en gitignore)
+
+> **Remarque :** Si vous mettez à jour les données, il suffit de relancer ces scripts pour synchroniser.
