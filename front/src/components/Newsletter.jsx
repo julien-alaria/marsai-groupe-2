@@ -2,12 +2,15 @@ import { createNewsLetter } from "../api/newsletter";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { useState } from "react";
 
 const emailNewsletterSchema = z.object({
   email: z.string().email("validation.invalidEmail")
 });
 
 export default function Newsletter() {
+
+  const [status, setStatus] = useState("");
 
   const { register, handleSubmit, formState: { errors }, reset } = useForm({
     resolver: zodResolver(emailNewsletterSchema)
@@ -16,11 +19,11 @@ export default function Newsletter() {
   const onSubmit = async (data) => {
     try {
       await createNewsLetter(data.email);
-      console.log("Inscription à la newsletter réussie");
+      setStatus("Inscription à la newsletter réussie");
       reset();
     } catch (err) {
       console.error(err);
-      console.log("Erreur lors de l'inscription à la newsletter");
+      setStatus("Erreur lors de l'inscription à la newsletter");
     }
   }
 
@@ -43,7 +46,7 @@ export default function Newsletter() {
         </button>
       </form>
 
-      {errors.email && ( <p className="text-red-500 text-sm mt-1">{errors.email.message}</p>)}
+       {status && <p style={{ marginTop: "10px" }}>{status}</p>}
     </div>
   );
 }
