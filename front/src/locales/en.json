@@ -266,7 +266,8 @@
         "title3": "DESIRABLE",
         "description1": "The festival of 60-second short films created by AI.",
         "description2": "Two days of immersion in the heart of Marseille.",
-        "button": "submit your film ➝"
+        "button": "submit your film ➝",
+        "buttonLogged": "submit a new film ➝"
       },
       "reassure": {
         "card1": { "title": "1 MINUTE", "description": "Ultra-short format for maximum impact" },

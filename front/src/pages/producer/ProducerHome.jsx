@@ -525,7 +525,7 @@ export default function ProducerHome() {
                           </div>
                         </div>
                         {/* Bottone promozione candidatura */}
-                        {movie.selection_status === "selected" && (user?.role === "admin" || user?.role === "producer") && (
+                        {movie.selection_status === "selected" && (user?.role === "ADMIN" || user?.role === "PRODUCER") && (
                           <button
                             type="button"
                             className="px-3 py-1.5 bg-[#5EEAD4]/80 text-white rounded-lg text-xs hover:bg-[#5EEAD4] mt-2"
@@ -553,7 +553,7 @@ export default function ProducerHome() {
                           </button>
                         )}
                         {/* Bouton Modifier le film (admin ou producteur) */}
-                        {(user?.role === "admin" || user?.role === "producer") && (
+                        {(user?.role === "ADMIN" || user?.role === "PRODUCER") && (
                           <>
                             <button
                               type="button"

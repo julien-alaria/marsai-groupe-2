@@ -262,7 +262,8 @@
         "title3": "SOUHAITABLES",
         "description1": "Le festival de courts-métrages de 60 secondes réalisés par IA.",
         "description2": "Deux jours d'immersion au cœur de Marseille.",
-        "button": "inscrivez votre film ➝"
+        "button": "inscrivez votre film ➝",
+        "buttonLogged": "soumettre un nouveau film ➝"
       },
       "reassure": {
         "card1": { "title": "1 MINUTE", "description": "Format ultra-court pour un impact maximum" },
