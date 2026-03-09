@@ -485,7 +485,7 @@ async function updateMovieStatus(req, res) {
       candidate: ["awarded", "refused"],
       selected: ["candidate", "awarded", "refused"],
       finalist: ["candidate", "awarded", "refused"],
-      awarded: [\"candidate\", \"refused\"],
+      awarded: ["candidate", "refused"],
       refused: []
     };
 

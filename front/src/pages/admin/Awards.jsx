@@ -18,6 +18,7 @@ function Awards() {
   const [feedback, setFeedback] = useState(null);
   const [activeTab, setActiveTab] = useState("create"); // "create" ou "awarded"
 
+  const [movieAwardsInModal, setMovieAwardsInModal] = useState([]);
   const { data: awardsData, isPending: awardsLoading, isError: awardsError } = useQuery({
     queryKey: ["awards"],
     queryFn: getAwards,
@@ -159,6 +160,7 @@ function Awards() {
 
   const handleOpenModal = (movie) => {
     setSelectedMovie(movie);
+    setMovieAwardsInModal(awards.filter((aw) => aw.id_movie === movie.id_movie) || []);
     setShowModal(true);
     setAwardName("");
   };
@@ -196,6 +198,28 @@ function Awards() {
     const movieTitle = movie ? movie.title : `Film #${award.id_movie}`;
     if (window.confirm(`Supprimer le prix "${award.award_name}" pour "${movieTitle}" ?`)) {
       deleteAwardMutation.mutate(award.id_award);
+    }
+  };
+
+  const handleDeleteRewardOnly = (award) => {
+    if (window.confirm(`Supprimer la rïcompense "${award.award_name}" ?`)) {
+      deleteAwardMutation.mutate(award.id_award);
+      setMovieAwardsInModal(movieAwardsInModal.filter((aw) => aw.id_award !== award.id_award));
+    }
+  };
+
+  const handleResetRewardsAndCandidacy = (movie) => {
+    if (window.confirm(`Supprimer tous les prix et remettre "${movie.title}" en "Nominé" ?`)) {
+      const movieAwards = awards.filter((aw) => aw.id_movie === movie.id_movie);
+      if (movieAwards.length > 0) {
+        Promise.all(movieAwards.map((aw) => deleteAward(aw.id_award))).then(() => {
+          updateStatusMutation.mutate({ id_movie: movie.id_movie, selection_status: "candidate" });
+          setShowModal(false);
+        });
+      } else {
+        updateStatusMutation.mutate({ id_movie: movie.id_movie, selection_status: "candidate" });
+        setShowModal(false);
+      }
     }
   };
 
@@ -643,6 +667,25 @@ function Awards() {
               <div className="col-span-12 xl:col-span-5 space-y-3">
                 <div className="bg-gray-900/60 border border-gray-800 rounded-lg p-3">
                   <h4 className="text-sm font-semibold text-white mb-3">Attribuer une récompense</h4>
+                  {movieAwardsInModal.length > 0 && (
+                    <div className="mb-3 p-2 bg-gray-950 border border-gray-800 rounded-lg max-h-40 overflow-auto">
+                      <p className="text-xs text-gray-400 mb-2">Récompenses attribuées:</p>
+                      <div className="space-y-1">
+                        {movieAwardsInModal.map((award) => (
+                          <div key={award.id_award} className="flex items-center justify-between bg-gray-900 p-1.5 rounded text-xs">
+                            <span className="text-yellow-300">🏆 {award.award_name}</span>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteRewardOnly(award)}
+                              className="text-red-400 hover:text-red-300 font-bold"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                   <form onSubmit={handleSubmit} className="space-y-3">
                     <div>
                       <label className="block text-xs text-gray-400 mb-1">Nom de la récompense *</label>
@@ -670,6 +713,13 @@ function Awards() {
                       className="w-full px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 font-semibold text-sm"
                     >
                       Annuler
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleResetRewardsAndCandidacy(selectedMovie)}
+                      className="w-full px-4 py-2 bg-red-700 text-white rounded-lg hover:bg-red-600 font-semibold text-sm"
+                    >
+                      🗑️ Azzerare Premi e Nomina
                     </button>
                   </form>
                   
