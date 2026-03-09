@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import dotenv from "dotenv";
 import { Sequelize } from "sequelize";
 import configFile from "../../config/config.cjs"; // <-- Utilise config.cjs comme module
+// import process from 'process';
 
 // Charge les variables d'environnement
 dotenv.config();
