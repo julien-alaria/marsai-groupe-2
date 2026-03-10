@@ -76,6 +76,7 @@ export default (sequelize, DataTypes) => {
     thumbnail: DataTypes.STRING(255),        // Image thumbnail
     admin_comment: DataTypes.TEXT,           // Commentaire admin
     jury_comment: DataTypes.TEXT,            // Message jury (candidature)
+    assigned_jury_id: DataTypes.INTEGER,     // Jury qui propose la nomination
 
     // Statut de sélection du film dans le processus de jury
     selection_status: {
@@ -117,6 +118,12 @@ export default (sequelize, DataTypes) => {
     Movie.belongsTo(models.User, {
       as: 'Producer',
       foreignKey: 'id_user'
+    });
+
+    // Relation: Jury qui a proposé la nomination (workflow admin)
+    Movie.belongsTo(models.User, {
+      as: 'NominatorJury',
+      foreignKey: 'assigned_jury_id'
     });
 
     // Relation: Un film peut avoir plusieurs prix (Awards)

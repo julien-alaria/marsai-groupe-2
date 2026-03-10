@@ -1,9 +1,17 @@
 import { useTranslation } from "react-i18next";
+import { useState, useEffect } from "react";
 import TitleInBox from "../TitleInBox.jsx";
 import Button from "../Button.jsx";
 
 export default function Hero() {
   const { t } = useTranslation();
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Controlla se l'utente è loggato verificando il token in localStorage
+    const token = localStorage.getItem("token");
+    setIsLoggedIn(!!token);
+  }, []);
 
   return (
     <div className="relative w-full h-screen overflow-hidden">
@@ -83,8 +91,8 @@ export default function Hero() {
           {/* Bouton */}
           <div className="flex justify-center pt-6 mt-6">
             <Button
-              title={t("pages.home.hero.button")}
-              href="/auth/register"
+              title={isLoggedIn ? t("pages.home.hero.buttonLogged") : t("pages.home.hero.button")}
+              href={isLoggedIn ? "/producer" : "/auth/register"}
               backgroundColor="bg-white"
               textColor="text-black"
               hoverBackgroundColor="hover:bg-[#F5F5F5]"

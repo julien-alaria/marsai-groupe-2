@@ -1,7 +1,7 @@
 /**
- * Composant Leaderboard (Gestion du système de votation)
- * Permet à l'admin de gérer les films à voter, votés, refusés, et à primer.
- * Filtres, actions de masse, commentaires, visualisation des votes et classement.
+ * Composant Leaderboard Officiel (Gestion system de votation et récompenses)
+ * Permet à l'admin de gérer les films votés, nominés et refusés.
+ * Ici l'admin peut riassegner pour deuxième votation ou nominer directement.
  */
 import React, { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -15,7 +15,6 @@ import { VideoPreview } from "../../components/VideoPreview";
 function Leaderboard() {
   const queryClient = useQueryClient();
   const [filter, setFilter] = useState("");
-  const [activeTab, setActiveTab] = useState("to_vote");
   const [selectedMovies, setSelectedMovies] = useState([]);
   const [message, setMessage] = useState("");
   const [showVotesModal, setShowVotesModal] = useState(false);
@@ -35,21 +34,20 @@ function Leaderboard() {
   const movies = data?.data || [];
   const votes = votesData?.data || [];
 
-  // Pagination state (moved outside mutation)
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [activeTab, filter]);
+  }, [filter]);
 
-  // Group movies by status
-  const grouped = useMemo(() => ({
-    to_vote: movies.filter(m => m.selection_status === "assigned"),
-    second_vote: movies.filter(m => m.selection_status === "to_discuss"),
-    refused: movies.filter(m => m.selection_status === "refused"),
-    candidate: movies.filter(m => ["candidate", "selected", "finalist"].includes(m.selection_status)),
-  }), [movies]);
+  // Filtrer uniquement films avec status votés, nominés ou refusés
+  const trackedMovies = useMemo(() => {
+    return movies.filter(m => 
+      ["assigned", "to_discuss", "refused", "candidate"].includes(m.selection_status)
+    );
+  }, [movies]);
 
   const votesByMovie = useMemo(() => {
     return votes.reduce((acc, vote) => {
@@ -61,10 +59,10 @@ function Leaderboard() {
 
   // Filtraggio
   const filteredMovies = useMemo(() => {
-    return (grouped[activeTab] || []).filter((movie) =>
+    return trackedMovies.filter((movie) =>
       movie.title.toLowerCase().includes(filter.toLowerCase())
     );
-  }, [grouped, activeTab, filter]);
+  }, [trackedMovies, filter]);
 
   // Mutations
   const statusMutation = useMutation({
@@ -80,20 +78,12 @@ function Leaderboard() {
       setMessage(backendMessage || "Erreur lors du changement de statut");
     },
   });
+
   // Actions
   function handleSelect(movie) {
     setSelectedMovies((prev) => prev.includes(movie.id_movie)
       ? prev.filter(id => id !== movie.id_movie)
       : [...prev, movie.id_movie]);
-  }
-  function handleBulkStatus(status) {
-    selectedMovies.forEach((id) =>
-      statusMutation.mutate({
-        id,
-        status,
-        payload: {},
-      })
-    );
   }
 
   function handleSetStatus(movie, status) {
@@ -102,6 +92,48 @@ function Leaderboard() {
       status,
       payload: {},
     });
+  }
+
+  function handleDetectAllAsRefused() {
+    if (selectedMovies.length === 0) {
+      setMessage("Sélectionnez au moins un film.");
+      return;
+    }
+    selectedMovies.forEach((id) =>
+      statusMutation.mutate({
+        id,
+        status: "refused",
+        payload: {},
+      })
+    );
+  }
+
+  function handleBulkReassign() {
+    if (selectedMovies.length === 0) {
+      setMessage("Sélectionnez au moins un film.");
+      return;
+    }
+    selectedMovies.forEach((id) =>
+      statusMutation.mutate({
+        id,
+        status: "assigned",
+        payload: {},
+      })
+    );
+  }
+
+  function handleBulkNominate() {
+    if (selectedMovies.length === 0) {
+      setMessage("Sélectionnez au moins un film.");
+      return;
+    }
+    selectedMovies.forEach((id) =>
+      statusMutation.mutate({
+        id,
+        status: "candidate",
+        payload: {},
+      })
+    );
   }
 
   function handleViewVotes(movie) {
@@ -154,13 +186,13 @@ function Leaderboard() {
   function getStatusStepMeta(status) {
     const map = {
       submitted: { label: "Soumis", className: "bg-gray-700/70 text-gray-200" },
-      assigned: { label: "Step 1 • 1er vote", className: "bg-indigo-600/80 text-white" },
-      to_discuss: { label: "Step 2 • 2e vote", className: "bg-purple-700/80 text-white" },
-      candidate: { label: "Step 3 • Candidat", className: "bg-yellow-600/80 text-white" },
-      awarded: { label: "Step 4 • Primé", className: "bg-green-600/80 text-white" },
+      assigned: { label: "Step 1 • Assigné", className: "bg-indigo-600/80 text-white" },
+      to_discuss: { label: "Step 2 • En Discussion", className: "bg-purple-700/80 text-white" },
+      candidate: { label: "Step 3 • Nominé", className: "bg-yellow-600/80 text-white" },
+      awarded: { label: "Step 4 • Gagnant du Prix", className: "bg-green-600/80 text-white" },
       refused: { label: "Refusé", className: "bg-red-600/80 text-white" },
-      selected: { label: "Selected (legacy)", className: "bg-blue-700/70 text-white" },
-      finalist: { label: "Finalist (legacy)", className: "bg-cyan-700/70 text-white" }
+      selected: { label: "Sélectionné (legacy)", className: "bg-blue-700/70 text-white" },
+      finalist: { label: "Finaliste (legacy)", className: "bg-cyan-700/70 text-white" }
     };
 
     return map[status] || { label: status || "-", className: "bg-gray-700/70 text-gray-200" };
@@ -174,89 +206,69 @@ function Leaderboard() {
     return unique;
   }
 
-  // Classement (top 10 par score moyen)
-  const leaderboard = useMemo(() => {
-    return [...movies]
-      .filter(m => typeof m.average_score === "number")
-      .sort((a, b) => b.average_score - a.average_score)
-      .slice(0, 10);
-  }, [movies]);
-
   return (
     <div className="space-y-6 p-6">
       <div>
         <h1 className="text-3xl font-bold bg-gradient-to-r from-[#AD46FF] to-[#F6339A] bg-clip-text text-transparent">
-          Système de Votation & Classement
+          Système de Votation & Récompenses
         </h1>
-        <p className="text-gray-400 mt-2">Suivi des films à voter, votés, refusés, candidats et primés.</p>
+        <p className="text-gray-400 mt-2">Gestion des films votés, nominés et refusés. Ici vous pouvez réassigner pour une deuxième votation ou nominer directement à la récompense.</p>
       </div>
 
-      <div className="flex gap-2 border-b border-gray-800">
-        <button
-          onClick={() => setActiveTab("to_vote")}
-          className={`px-4 py-2 font-semibold transition-colors ${
-            activeTab === "to_vote"
-              ? "text-[#AD46FF] border-b-2 border-[#AD46FF]"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          À Voter
-        </button>
-        <button
-          onClick={() => setActiveTab("second_vote")}
-          className={`px-4 py-2 font-semibold transition-colors ${
-            activeTab === "second_vote"
-              ? "text-[#AD46FF] border-b-2 border-[#AD46FF]"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          2e vote
-        </button>
-        <button
-          onClick={() => setActiveTab("refused")}
-          className={`px-4 py-2 font-semibold transition-colors ${
-            activeTab === "refused"
-              ? "text-[#AD46FF] border-b-2 border-[#AD46FF]"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          Refusés
-        </button>
-        <button
-          onClick={() => setActiveTab("candidate")}
-          className={`px-4 py-2 font-semibold transition-colors ${
-            activeTab === "candidate"
-              ? "text-[#AD46FF] border-b-2 border-[#AD46FF]"
-              : "text-gray-400 hover:text-white"
-          }`}
-        >
-          Candidats
-        </button>
-      </div>
-      <div className="mb-4 flex gap-2 items-center">
-        <input type="text" placeholder="Filtrer par titre..." value={filter} onChange={e => setFilter(e.target.value)} className="border px-2 py-1 rounded bg-gray-900 border-gray-700 text-white" />
+      <div className="mb-4 flex flex-col gap-3 items-start lg:items-center lg:flex-row lg:justify-between">
+        <input 
+          type="text" 
+          placeholder="Filtrer par titre..." 
+          value={filter} 
+          onChange={e => setFilter(e.target.value)} 
+          className="border px-3 py-2 rounded bg-gray-900 border-gray-700 text-white w-full lg:w-auto"
+        />
         {selectedMovies.length > 0 && (
-          <>
-            <button onClick={() => handleBulkStatus("to_discuss")} className="bg-purple-700 text-white px-2 py-1 rounded">Passer au 2e vote</button>
-            <button onClick={() => handleBulkStatus("candidate")} className="bg-yellow-500 text-black px-2 py-1 rounded">Nominer candidat</button>
-          </>
+          <div className="flex flex-wrap gap-2">
+            <button 
+              onClick={handleBulkReassign} 
+              className="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-500 text-sm"
+            >
+              Réassigner votation ({selectedMovies.length})
+            </button>
+            <button 
+              onClick={handleBulkNominate} 
+              className="bg-yellow-600 text-white px-3 py-2 rounded hover:bg-yellow-500 text-sm"
+            >
+              Nominer directement ({selectedMovies.length})
+            </button>
+            <button 
+              onClick={handleDetectAllAsRefused} 
+              className="bg-red-600 text-white px-3 py-2 rounded hover:bg-red-500 text-sm"
+            >
+              Refuser ({selectedMovies.length})
+            </button>
+          </div>
         )}
       </div>
-      <div className="mb-4 text-xs text-gray-300 bg-gray-900 border border-gray-800 rounded-lg px-3 py-2">
-        <span className="text-gray-400">Status de votation:</span> Soumis → 1er vote (`assigned`) → 2e vote (`to_discuss`) → Candidature (`candidate`) → Primé (`awarded`) | Refus (`refused`).
-      </div>
-      {message && <div className="mb-2 text-green-600">{message}</div>}
+
+      {message && <div className="mb-2 text-green-600 text-sm">{message}</div>}
+
       {filteredMovies.length === 0 ? (
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center text-gray-400">
-          Aucun film dans cet onglet.
+          Aucun film en votation, nomination ou refusé.
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {paginatedMovies.map(movie => (
           <div key={movie.id_movie} className={`border border-gray-800 bg-gray-900/50 rounded p-3 relative ${selectedMovies.includes(movie.id_movie) ? 'ring-2 ring-blue-500' : ''}`}>
-            <input type="checkbox" checked={selectedMovies.includes(movie.id_movie)} onChange={() => handleSelect(movie)} className="absolute top-2 left-2" />
+            <input 
+              type="checkbox" 
+              checked={selectedMovies.includes(movie.id_movie)} 
+              onChange={() => handleSelect(movie)} 
+              className="absolute top-2 left-2"
+            />
             <div className="flex gap-3">
-              <img src={getPoster(movie) ? `${uploadBase}/${getPoster(movie)}` : undefined} alt="Vignette" className="w-24 h-16 object-cover rounded bg-gray-800" />
+              <img 
+                src={getPoster(movie) ? `${uploadBase}/${getPoster(movie)}` : undefined} 
+                alt="Vignette" 
+                className="w-24 h-16 object-cover rounded bg-gray-800"
+              />
               <div className="flex-1">
                 <h2 className="font-bold text-lg">{movie.title}</h2>
                 <div className="mt-1">
@@ -265,10 +277,25 @@ function Leaderboard() {
                   </span>
                 </div>
                 <p className="text-sm text-gray-400 line-clamp-2">{movie.synopsis}</p>
-                <div className="flex gap-2 mt-2">
-                  <button className="text-blue-600 underline text-xs" onClick={() => handleViewVotes(movie)}>Voir votes</button>
-                  <button className="text-purple-400 underline text-xs" onClick={() => handleSetStatus(movie, "to_discuss")}>Passer au 2e vote</button>
-                  <button className="text-yellow-500 underline text-xs" onClick={() => handleSetStatus(movie, "candidate")}>Nominer candidat</button>
+                <div className="flex gap-2 mt-2 flex-wrap">
+                  <button 
+                    className="text-blue-600 underline text-xs" 
+                    onClick={() => handleViewVotes(movie)}
+                  >
+                    Voir votes
+                  </button>
+                  <button 
+                    className="text-indigo-400 underline text-xs" 
+                    onClick={() => handleSetStatus(movie, "assigned")}
+                  >
+                    Réassigner
+                  </button>
+                  <button 
+                    className="text-yellow-500 underline text-xs" 
+                    onClick={() => handleSetStatus(movie, "candidate")}
+                  >
+                    Nominer
+                  </button>
                 </div>
               </div>
             </div>
@@ -276,6 +303,7 @@ function Leaderboard() {
           ))}
         </div>
       )}
+
       <div className="mt-4 flex items-center justify-end gap-2">
         <button
           type="button"
@@ -294,17 +322,6 @@ function Leaderboard() {
         >
           Next
         </button>
-      </div>
-      {/* Classement Top 10 */}
-      <div className="mt-8">
-        <h2 className="text-xl font-bold mb-2">Classement des Meilleurs Films</h2>
-        <ol className="list-decimal ml-6">
-          {leaderboard.map((movie, idx) => (
-            <li key={movie.id_movie} className="mb-1">
-              <span className="font-bold">{idx + 1}. {movie.title}</span> — Score moyen: <span className="text-green-700 font-semibold">{movie.average_score}</span>
-            </li>
-          ))}
-        </ol>
       </div>
       {/* Modal votes */}
       {showVotesModal && movieToView && (
@@ -369,7 +386,7 @@ function Leaderboard() {
                 <h4 className="text-xs uppercase text-gray-400 mb-2">Workflow votation</h4>
                 <div className="grid grid-cols-1 gap-2">
                   <button className="px-3 py-2 bg-purple-700/80 text-white rounded hover:bg-purple-700" onClick={() => handleSetStatus(movieToView, "to_discuss")}>Effectuer un 2e vote</button>
-                  <button className="px-3 py-2 bg-yellow-600/80 text-white rounded hover:bg-yellow-600" onClick={() => handleSetStatus(movieToView, "candidate")}>Sauter à la nomination candidature</button>
+                  <button className="px-3 py-2 bg-yellow-600/80 text-white rounded hover:bg-yellow-600" onClick={() => handleSetStatus(movieToView, "candidate")}>Sauter à la nomination</button>
                 </div>
                 <p className="mt-2 text-[11px] text-gray-400">L'admin peut toujours consulter les votes avant la décision.</p>
               </div>

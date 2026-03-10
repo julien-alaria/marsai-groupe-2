@@ -17,6 +17,11 @@
       "links": {
         "noAccount": "Don't have an account?",
         "register": "Register"
+      },
+      "errors": {
+        "invalidCredentials": "Invalid email or password.",
+        "missingUserData": "Invalid login response: missing user data.",
+        "loginFailed": "Login failed. Please try again."
       }
     },
     "register": {
@@ -69,6 +74,7 @@
         "tiktok": "TikTok",
         "knownByMarsAi": "Known by MarsAI",
         "password": "Password",
+        "socialLink": "Social link or website",
         "collaborators": {
           "firstName": "First name",
           "lastName": "Last name",
@@ -135,6 +141,7 @@
         "remove": "Remove",
         "chooseFile": "Choose file"
       }
+    }
   },
 
 
@@ -198,10 +205,10 @@
       "chooseFile": "Choose file"
     }
   }
-}
-
-
-}, 
+},
+  "producerHome": {
+    "alertStep1": "Please complete all required fields in Step 1 before continuing."
+  },
   "validation": {
     "firstName": {
       "required": "First name is required"
@@ -219,6 +226,9 @@
     },
     "filmTitleOriginal": {
       "required": "Film title is required"
+    },
+    "filmFile": {
+      "required": "Film file is required"
     },
     "durationSeconds": {
       "required": "Duration is required",
@@ -257,7 +267,8 @@
         "title3": "DESIRABLE",
         "description1": "The festival of 60-second short films created by AI.",
         "description2": "Two days of immersion in the heart of Marseille.",
-        "button": "submit your film ➝"
+        "button": "submit your film ➝",
+        "buttonLogged": "submit a new film ➝"
       },
       "reassure": {
         "card1": { "title": "1 MINUTE", "description": "Ultra-short format for maximum impact" },
