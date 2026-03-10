@@ -33,7 +33,6 @@ const filmUpload = upload.fields([
 
 // PUBLIC
 movieRouter.get("/", MovieController.getMovies);
-movieRouter.get("/:id", MovieController.getMovieById);
 
 // PUBLIC PHASE2 50 FILMS
 movieRouter.get("/phase2", MovieController.phase2Movies);
@@ -58,5 +57,7 @@ movieRouter.put("/:id/collaborators", AuthMiddleware(["ADMIN", "PRODUCER"]), Mov
 movieRouter.put("/:id/status", AuthMiddleware(["ADMIN"]), MovieController.updateMovieStatus);
 movieRouter.put("/:id/categories", AuthMiddleware(["ADMIN"]), MovieController.updateMovieCategories);
 movieRouter.put("/:id/juries", AuthMiddleware(["ADMIN"]), MovieController.updateMovieJuries);
+
+movieRouter.get("/:id", MovieController.getMovieById);
 
 export default movieRouter;
