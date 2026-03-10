@@ -34,6 +34,12 @@ const filmUpload = upload.fields([
 // PUBLIC
 movieRouter.get("/", MovieController.getMovies);
 
+// PUBLIC PHASE2 50 FILMS
+movieRouter.get("/phase2", MovieController.phase2Movies);
+
+// PUBLIC PHASE3 10 FILMS
+movieRouter.get("/phase3", MovieController.phase3Movies)
+
 // PRODUCER
 movieRouter.get("/mine", AuthMiddleware(["PRODUCER"]), MovieController.getMyMovies);
 

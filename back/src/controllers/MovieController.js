@@ -820,6 +820,52 @@ async function updateMovieCollaborators(req, res) {
   }
 }
 
+async function phase2Movies(req, res) {
+   try {
+    const phase2 = await Movie.findAll({
+      where: {
+        selection_status: "assigned"
+      },
+      limit: 50
+    });
+
+    res.json(phase2);
+
+  } catch (error) {
+    console.error("phase2Movies error:", error);
+    res.status(500).json({
+      error: error.message,
+      name: error.name,
+      detail: error?.parent?.sqlMessage || error?.original?.message
+    });
+  }
+}
+
+async function phase3Movies(req, res) {
+   try {
+    const movies = await Movie.findAll({
+      where: {
+        selection_status: "candidate"
+      },
+      limit: 10
+    });
+
+    res.json(movies);
+
+  } catch (error) {
+    console.error("phase3Movies error:", error);
+    res.status(500).json({
+      error: error.message,
+      name: error.name,
+      detail: error?.parent?.sqlMessage || error?.original?.message
+    });
+  }
+}
+
+
+
+
+
 export default {
   getMovies,
   getMyMovies,
@@ -832,5 +878,7 @@ export default {
   getAssignedMovies,
   updateMovieCategories,
   updateMovieJuries,
-  updateMovieCollaborators
+  updateMovieCollaborators,
+  phase2Movies,
+  phase3Movies
 };
