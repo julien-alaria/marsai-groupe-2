@@ -58,6 +58,7 @@ movieRouter.put("/:id/status", AuthMiddleware(["ADMIN"]), MovieController.update
 movieRouter.put("/:id/categories", AuthMiddleware(["ADMIN"]), MovieController.updateMovieCategories);
 movieRouter.put("/:id/juries", AuthMiddleware(["ADMIN"]), MovieController.updateMovieJuries);
 
+// PUBLIC
 movieRouter.get("/:id", MovieController.getMovieById);
 
 export default movieRouter;
