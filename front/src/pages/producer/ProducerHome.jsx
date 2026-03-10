@@ -500,9 +500,9 @@ export default function ProducerHome() {
                   { name: "first_name", label: "Prénom", type: "text" },
                   { name: "last_name", label: "Nom", type: "text" },
                   { name: "phone", label: "Téléphone", type: "text" },
-                  { name: "nationality", label: "Nationalité", type: "text" },
+                  { name: "country", label: "Pays", type: "text" },
                   { name: "biography", label: "Biographie", type: "textarea" },
-                  { name: "website", label: "Site web", type: "text" },
+                  { name: "portfolio", label: "Site web", type: "text" },
                 ].map(({ name, label, type }) => (
                   <div
                     key={name}
@@ -554,8 +554,8 @@ export default function ProducerHome() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 {[
                   { label: "Téléphone", value: user.phone },
-                  { label: "Nationalité", value: user.nationality },
-                  { label: "Site web", value: user.website },
+                  { label: "Pays", value: user.country },
+                  { label: "Site web", value: user.portfolio },
                 ].map(({ label, value }) => (
                   <div key={label}>
                     <p className="text-[10px] uppercase tracking-wider text-white/25 mb-1">
