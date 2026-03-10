@@ -17,6 +17,11 @@
       "links": {
         "noAccount": "Pas encore de compte ?",
         "register": "S'inscrire"
+      },
+      "errors": {
+        "invalidCredentials": "Email ou mot de passe invalide.",
+        "missingUserData": "Réponse de connexion invalide : données utilisateur manquantes.",
+        "loginFailed": "Erreur de connexion. Veuillez réessayer."
       }
     },
     "register": {
@@ -69,6 +74,7 @@
         "tiktok": "TikTok",
         "knownByMarsAi": "Connu par MarsAI",
         "password": "Mot de passe",
+        "socialLink": "Lien réseau social ou site web",
         "collaborators": {
           "firstName": "Prénom",
           "lastName": "Nom",
@@ -135,7 +141,8 @@
         "remove": "Supprimer",
         "chooseFile": "Choisir un fichier"
       }
-    },
+    }
+  },
 
 
 "producer": {
@@ -196,9 +203,9 @@
       "chooseFile": "Choisir un fichier"
     }
   }
-}
-
-
+},
+  "producerHome": {
+    "alertStep1": "Veuillez compléter tous les champs obligatoires de l'Étape 1 avant de continuer."
   },
   "validation": {
     "firstName": {
@@ -217,6 +224,9 @@
     },
     "filmTitleOriginal": {
       "required": "Le titre du film est requis"
+    },
+    "filmFile": {
+      "required": "Le fichier du film est obligatoire"
     },
     "durationSeconds": {
       "required": "La durée est obligatoire",
@@ -253,7 +263,8 @@
         "title3": "SOUHAITABLES",
         "description1": "Le festival de courts-métrages de 60 secondes réalisés par IA.",
         "description2": "Deux jours d'immersion au cœur de Marseille.",
-        "button": "inscrivez votre film ➝"
+        "button": "inscrivez votre film ➝",
+        "buttonLogged": "soumettre un nouveau film ➝"
       },
       "reassure": {
         "card1": { "title": "1 MINUTE", "description": "Format ultra-court pour un impact maximum" },

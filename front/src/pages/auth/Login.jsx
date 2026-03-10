@@ -193,6 +193,12 @@ const loginSchema = z.object({
  */
 export function Login() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // Configuration du formulaire avec react-hook-form et Zod
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(loginSchema),
+  });
 
   // Si déjà connecté, afficher un message
   const storedEmail = localStorage.getItem("email");
@@ -215,13 +221,6 @@ export function Login() {
     localStorage.removeItem("token");
   }
 
-  const navigate = useNavigate();
-
-  // Configuration du formulaire avec react-hook-form et Zod
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(loginSchema),
-  });
-
   /**
    * Mutation pour envoyer les données de connexion au backend
    * Stocke le token et les données utilisateur en localStorage
@@ -240,7 +239,7 @@ export function Login() {
         localStorage.removeItem("lastName");
         localStorage.removeItem("role");
         localStorage.removeItem("token");
-        alert("Connexion invalide: données utilisateur manquantes");
+        alert(t('forms.login.errors.missingUserData'));
         return;
       }
       localStorage.setItem("email", userData?.email);
@@ -265,7 +264,12 @@ export function Login() {
       }
     },
     onError: (error) => {
-      alert(error.response?.data?.error || "Erreur de connexion");
+      if (error?.response?.status === 401) {
+        alert(t('forms.login.errors.invalidCredentials'));
+        return;
+      }
+
+      alert(error?.response?.data?.error || t('forms.login.errors.loginFailed'));
     },
   });
 

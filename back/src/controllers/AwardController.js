@@ -1,6 +1,6 @@
 import db from "../models/index.js";
 
-const { Award } = db;
+const { Award, Movie } = db;
 
 function getAward(req, res) {
     Award.findAll().then((award) => {
@@ -24,13 +24,25 @@ function createAward(req, res) {
         return res.status(400).json({ error: "L'identifiant du film est requis" });
     }
 
-    Award.create({
-        award_name: award_name,
-        id_movie: id_movie
-    }).then((newAward) => {
-        res.status(201).json({ message: "Prix créé", newAward });
-    }).catch((err) => {
-        res.status(500).json({ error: err.message });
+    Award.findOne({ where: { award_name } }).then(async (award) => {
+        if (award) {
+            res.json({ message: "Award déjà existant", award});
+        } else {
+            const movie = await Movie.findByPk(id_movie);
+            if (!movie) {
+                return res.status(404).json({ error: "Film non trouvé" });
+            }
+
+            const newAward = await Award.create({
+                award_name: award_name,
+                id_movie: id_movie
+            });
+
+            // Règle métier: la création d'un prix place automatiquement le film en "awarded"
+            await movie.update({ selection_status: "awarded" });
+
+            res.status(201).json({ message: "Award créé", newAward});
+        }
     });
 }
 

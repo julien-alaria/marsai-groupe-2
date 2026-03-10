@@ -30,4 +30,15 @@ async function updateMovieCollaborators(id, collaborators) {
   return await instance.put(`movies/${id}/collaborators`, { collaborators });
 }
 
-export { getMyMovies, createMovie, updateMovieCollaborators };
+/**
+ * Supprime un film
+ * Endpoint: DELETE /movies/:id
+ * Requiert: Token JWT valide (ADMIN ou PRODUCER propriétaire)
+ * @param {number} id - ID du film à supprimer
+ * @returns {Promise<Object>} Message de confirmation
+ */
+async function deleteMovie(id) {
+  return await instance.delete(`movies/${id}`);
+}
+
+export { getMyMovies, createMovie, updateMovieCollaborators, deleteMovie };

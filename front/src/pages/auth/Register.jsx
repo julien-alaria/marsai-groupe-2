@@ -43,6 +43,13 @@ const registerSchema = z.object({
  */
 export function Register() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+
+  // Configuration du formulaire avec react-hook-form et Zod
+  const { register, handleSubmit, formState: { errors } } = useForm({
+    resolver: zodResolver(registerSchema),
+    defaultValues: { role: "PRODUCER", job: "PRODUCER" },
+  });
 
   // Si déjà connecté, afficher un message
   if (localStorage.getItem("email")) {
@@ -55,14 +62,6 @@ export function Register() {
       </>
     );
   }
-
-  const navigate = useNavigate();
-
-  // Configuration du formulaire avec react-hook-form et Zod
-  const { register, handleSubmit, formState: { errors } } = useForm({
-    resolver: zodResolver(registerSchema),
-    defaultValues: { role: "PRODUCER", job: "PRODUCER" },
-  });
 
   /**
    * Mutation pour envoyer les données d'enregistrement au backend
