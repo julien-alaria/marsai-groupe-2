@@ -54,6 +54,15 @@ function Awards() {
     return movies.filter((movie) => movie.selection_status === "selected" || movie.selection_status === "finalist");
   }, [movies]);
 
+  const getNominatorLabel = (movie) => {
+    const nominator = movie?.NominatorJury;
+    if (nominator) {
+      const fullName = `${nominator.first_name || ""} ${nominator.last_name || ""}`.trim();
+      return fullName || nominator.email || `Jury #${nominator.id_user}`;
+    }
+    return "Jury non spécifié";
+  };
+
   // Grouper les prix par film
   const awardsByMovie = useMemo(() => {
     const grouped = {};
@@ -198,6 +207,21 @@ function Awards() {
     const movieTitle = movie ? movie.title : `Film #${award.id_movie}`;
     if (window.confirm(`Supprimer le prix "${award.award_name}" pour "${movieTitle}" ?`)) {
       deleteAwardMutation.mutate(award.id_award);
+    }
+  };
+
+  const handleAcceptNomination = (movie) => {
+    if (window.confirm(`Accepter la nomination de "${movie.title}" ?`)) {
+      updateStatusMutation.mutate({ id_movie: movie.id_movie, selection_status: "candidate" });
+    }
+  };
+
+  const handleRejectNomination = (movie) => {
+    if (window.confirm(`Refuser la nomination de "${movie.title}" ?`)) {
+      updateStatusMutation.mutate({
+        id_movie: movie.id_movie,
+        selection_status: "refused",
+      });
     }
   };
 
@@ -455,8 +479,30 @@ function Awards() {
             <div className="mb-6 space-y-2">
               {proposedMovies.map((movie) => (
                 <div key={`proposed-${movie.id_movie}`} className="bg-gray-950 border border-gray-800 rounded-lg px-3 py-2 flex items-center justify-between">
-                  <span className="text-white text-sm truncate">{movie.title}</span>
-                  <span className="text-[11px] bg-green-900/40 text-green-200 px-2 py-0.5 rounded-full">Proposé</span>
+                  <div className="min-w-0 pr-3">
+                    <p className="text-white text-sm truncate font-medium">{movie.title}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">Nominé par: {getNominatorLabel(movie)}</p>
+                    {movie.jury_comment && (
+                      <p className="text-xs text-gray-500 mt-1 line-clamp-2">Commentaire jury: {movie.jury_comment}</p>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleAcceptNomination(movie)}
+                      className="text-[11px] bg-green-600/80 text-white px-2 py-1 rounded hover:bg-green-600"
+                    >
+                      Accepter
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleRejectNomination(movie)}
+                      className="text-[11px] bg-red-600/80 text-white px-2 py-1 rounded hover:bg-red-600"
+                    >
+                      Refuser
+                    </button>
+                    <span className="text-[11px] bg-green-900/40 text-green-200 px-2 py-0.5 rounded-full">Proposé</span>
+                  </div>
                 </div>
               ))}
             </div>

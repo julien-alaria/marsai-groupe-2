@@ -202,7 +202,7 @@ export default function JuryHome() {
     try {
       const message = window.prompt("Message pour l'admin (optionnel):", "");
       await promoteMovieToCandidateByJury(selectedMovie.id_movie, message || "");
-      setModalNotice("Film promu à la candidature.");
+      setModalNotice("Film proposé à la nomination. En attente de validation admin.");
       await refreshAssignedMovies();
       // Aggiorna anche la lista dei film candidati
       setActiveFolder('approved');

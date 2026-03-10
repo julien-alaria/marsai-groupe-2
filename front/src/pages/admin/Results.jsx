@@ -10,7 +10,12 @@ export default function Results() {
     queryFn: getVideos,
   });
 
-  const { data: votesData, isPending: votesLoading } = useQuery({
+  const {
+    data: votesData,
+    isPending: votesLoading,
+    isError: votesIsError,
+    error: votesError,
+  } = useQuery({
     queryKey: ["votes"],
     queryFn: getVotes,
   });
@@ -98,6 +103,15 @@ export default function Results() {
     );
   }
 
+  if (votesIsError) {
+    const message = votesError?.response?.data?.error || "Impossible de charger les votes jury";
+    return (
+      <div className="bg-red-900/30 border border-red-700 text-red-200 px-4 py-3 rounded-lg">
+        {message}
+      </div>
+    );
+  }
+
   const renderRows = (list, emptyText) => {
     if (list.length === 0) {
       return <tr><td className="px-3 py-4 text-gray-400" colSpan={5}>{emptyText}</td></tr>;
@@ -156,6 +170,38 @@ export default function Results() {
           </thead>
           <tbody>{renderRows(mostVoted, "Aucun vote pour le moment")}</tbody>
         </table>
+      </div>
+
+      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 overflow-x-auto">
+        <h2 className="text-white font-semibold mb-3">Votes du jury</h2>
+        {votes.length === 0 ? (
+          <p className="text-gray-400 text-sm">Aucun vote enregistré pour le moment.</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-gray-400 border-b border-gray-800">
+                <th className="px-3 py-2">Film</th>
+                <th className="px-3 py-2">Jury</th>
+                <th className="px-3 py-2">Note</th>
+                <th className="px-3 py-2">Commentaire</th>
+              </tr>
+            </thead>
+            <tbody>
+              {votes.map((vote) => (
+                <tr key={vote.id_vote} className="border-t border-gray-800">
+                  <td className="px-3 py-2 text-white">{vote.Movie?.title || `Film #${vote.id_movie}`}</td>
+                  <td className="px-3 py-2 text-gray-300">
+                    {vote.User
+                      ? `${vote.User.first_name || ""} ${vote.User.last_name || ""}`.trim() || vote.User.email
+                      : `Jury #${vote.id_user}`}
+                  </td>
+                  <td className="px-3 py-2 text-gray-300">{vote.note ?? "-"}</td>
+                  <td className="px-3 py-2 text-gray-300">{vote.comments || "-"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">

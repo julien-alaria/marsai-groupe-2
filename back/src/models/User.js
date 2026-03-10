@@ -167,6 +167,10 @@ export default (sequelize, DataTypes) => {
     User.hasMany(models.Movie, {
       foreignKey: 'id_user'
     });
+    User.hasMany(models.Movie, {
+      as: 'ProposedMovies',
+      foreignKey: 'assigned_jury_id'
+    });
     User.hasMany(models.Vote, {
       foreignKey: 'id_user'
     });
