@@ -2,21 +2,33 @@ import { useEffect, useState } from "react";
 import { VideoPreview } from "../../components/VideoPreview";
 import { UPLOAD_BASE } from "../../utils/constants";
 
-export default function Selection() {
+export default function Selection({ phaseFromAdmin }) {
   const [movies, setMovies] = useState([]);
 
+  const phase = phaseFromAdmin || "phase2";
+
   useEffect(() => {
-    fetch("http://localhost:3000/movies/phase2")
+    fetch(`http://localhost:3000/movies/${phase}`)
       .then((res) => res.json())
       .then((data) => {
         console.log("MOVIES:", data);
         if (Array.isArray(data)) setMovies(data);
       })
       .catch((err) => console.error(err));
-  }, []);
+  }, [phase]);
+
+   // Définir le texte du h2 dynamiquement
+  const headerText = phase === "phase2" 
+    ? "Sélection Officielle" 
+    : phase === "phase3" 
+      ? "Films en Compétition" 
+      : "Sélection Officielle";
 
   return (
     <div className="p-6">
+      <h2 className="text-2xl font-bold text-white mb-4 text-center">
+        {headerText}
+      </h2>
       {movies.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {movies.map(

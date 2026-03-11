@@ -38,7 +38,7 @@ function Home() {
   return (
     <>
       {show("hero")        && <Hero />}
-      {show("selection")   && <Selection />}
+      {show("selection")   && <Selection phaseFromAdmin={"phase2"}/>}
       {show("reassure")    && <Reassure />}
       {show("goals")       && <Goals />}
       {show("protocole")   && <Protocole />}
