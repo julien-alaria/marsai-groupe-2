@@ -83,7 +83,7 @@ export function VideoPreview({
         />
         
         {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
         
         {/* Play Button */}
         <div className="absolute inset-0 flex items-center justify-center">
@@ -100,7 +100,7 @@ export function VideoPreview({
         </div>
         
         {/* Title Badge */}
-        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 px-2 py-1 bg-black/80 backdrop-blur-sm border border-white/10 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 max-w-[150px] sm:max-w-[200px]">
+        <div className="absolute top-2 sm:top-3 left-2 sm:left-3 px-2 py-1 bg-black/80 backdrop-blur-sm border border-white/10 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 max-w-37.5 sm:max-w-50">
           <span className="text-[10px] text-white/90 font-medium truncate block">{title}</span>
         </div>
       </div>
@@ -112,7 +112,7 @@ export function VideoPreview({
               <h3 className="text-white font-semibold text-lg">{title}</h3>
               <button
                 onClick={closeFullscreen}
-                className="p-1.5 sm:p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors flex-shrink-0"
+                className="p-1.5 sm:p-2 rounded-lg hover:bg-white/10 text-gray-400 hover:text-white transition-colors shrink-0"
               >
                 <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

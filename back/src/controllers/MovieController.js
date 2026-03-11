@@ -60,6 +60,12 @@ async function getMovies(req, res) {
         },
         {
           model: User,
+          as: "NominatorJury",
+          attributes: ["id_user", "first_name", "last_name", "email"],
+          required: false
+        },
+        {
+          model: User,
           as: "Juries",
           attributes: ["id_user", "first_name", "last_name", "email", "role"],
           through: { attributes: [] },
@@ -127,6 +133,12 @@ async function getMovieById(req, res) {
          },
         { model: Award, required: false },
         { model: User, as: "Producer", attributes: ["id_user", "first_name", "last_name"] },
+        {
+          model: User,
+          as: "NominatorJury",
+          attributes: ["id_user", "first_name", "last_name", "email"],
+          required: false
+        },
         {
           model: User,
           as: "Juries",
@@ -348,7 +360,7 @@ async function createMovie(req, res) {
 
 
 
-///////////////////////////////////////////////////////////////////////// Modifier un film (ADMIN uniquement)
+///////////////////////////////////////////////////////////////////////// Modifier un film (ADMIN ou PRODUCER propriétaire)
 
 async function updateMovie(req, res) {
   try {
@@ -360,10 +372,10 @@ async function updateMovie(req, res) {
       return res.status(404).json({ error: "Film non trouvé" });
     }
 
-    // Sécurité : uniquement ADMIN
-    if (req.user.role !== "ADMIN") {
+    // Sécurité : ADMIN peut tout modifier, PRODUCER seulement ses films
+    if (req.user.role !== "ADMIN" && movie.id_user !== req.user.id_user) {
       return res.status(403).json({
-        error: "Seul un administrateur peut modifier un film"
+        error: "Vous n'êtes pas autorisé à modifier ce film"
       });
     }
 
@@ -425,11 +437,18 @@ function unlinkUploadFile(filename) {
 async function deleteMovie(req, res) {
   try {
     const { id } = req.params;
+    const userId = req.userId; // Dall'AuthMiddleware
+    const userRole = req.user?.role;
 
     const movie = await Movie.findByPk(id);
 
     if (!movie) {
       return res.status(404).json({ error: "Film non trouvé" });
+    }
+
+    // Se l'utente è PRODUCER, verifica che sia il proprietario del film
+    if (userRole === "PRODUCER" && movie.id_user !== userId) {
+      return res.status(403).json({ error: "Vous n'êtes pas autorisé à supprimer ce film" });
     }
 
     // FIX B-04: Utilise unlinkUploadFile qui cherche dans uploads/ ET uploads/uploaded/
@@ -576,16 +595,18 @@ async function promoteMovieToCandidateByJury(req, res) {
     }
 
     if (movie.selection_status !== "to_discuss") {
-      return res.status(400).json({ error: "Le film doit être en statut to_discuss pour être promu candidat." });
+      return res.status(400).json({ error: "Le film doit être en statut to_discuss pour proposer une candidature." });
     }
 
-    movie.selection_status = "candidate";
+    // Proposition jury: l'admin doit valider/refuser ensuite.
+    movie.selection_status = "selected";
+    movie.assigned_jury_id = id_user;
     if (typeof jury_comment === "string") {
       movie.jury_comment = jury_comment.trim();
     }
     await movie.save();
 
-    return res.json({ message: "Film promu à la candidature", movie });
+    return res.json({ message: "Film proposé à la nomination", movie });
   } catch (error) {
     return res.status(500).json({ error: error.message });
   }
@@ -620,6 +641,12 @@ async function getAssignedMovies(req, res) {
           model: User,
           as: "Producer",
           attributes: ["id_user", "first_name", "last_name", "known_by_mars_ai"]
+        },
+        {
+          model: User,
+          as: "NominatorJury",
+          attributes: ["id_user", "first_name", "last_name", "email"],
+          required: false
         },
         {
           model: User,
@@ -837,6 +864,52 @@ async function updateMovieCollaborators(req, res) {
   }
 }
 
+async function phase2Movies(req, res) {
+   try {
+    const phase2 = await Movie.findAll({
+      where: {
+        selection_status: "assigned"
+      },
+      limit: 50
+    });
+
+    res.json(phase2);
+
+  } catch (error) {
+    console.error("phase2Movies error:", error);
+    res.status(500).json({
+      error: error.message,
+      name: error.name,
+      detail: error?.parent?.sqlMessage || error?.original?.message
+    });
+  }
+}
+
+async function phase3Movies(req, res) {
+   try {
+    const movies = await Movie.findAll({
+      where: {
+        selection_status: "candidate"
+      },
+      limit: 10
+    });
+
+    res.json(movies);
+
+  } catch (error) {
+    console.error("phase3Movies error:", error);
+    res.status(500).json({
+      error: error.message,
+      name: error.name,
+      detail: error?.parent?.sqlMessage || error?.original?.message
+    });
+  }
+}
+
+
+
+
+
 export default {
   getMovies,
   getMyMovies,
@@ -849,5 +922,7 @@ export default {
   getAssignedMovies,
   updateMovieCategories,
   updateMovieJuries,
-  updateMovieCollaborators
+  updateMovieCollaborators,
+  phase2Movies,
+  phase3Movies
 };
