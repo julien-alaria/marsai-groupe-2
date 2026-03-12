@@ -76,6 +76,7 @@ function normalizeToRecipients(to) {
 // }
 
 async function sendEmail(userEmail, subject, html) {
+  try {
     const transporter = nodemailer.createTransport({
         host: env.SMTP_HOST,
         port: env.SMTP_PORT,
@@ -87,9 +88,13 @@ async function sendEmail(userEmail, subject, html) {
     await transporter.sendMail({
         from: env.FROM_EMAIL,
         to: userEmail,
-        subject, subject,
+        subject: subject,
         html: html
     })
+
+  } catch {
+    console.error("Erreur envoi mail :", errorMonitor.message);
+  }
 }
 
 

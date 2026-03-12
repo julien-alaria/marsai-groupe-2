@@ -21,7 +21,7 @@ export default function Selection({ phaseFromAdmin }) {
   const headerText = phase === "phase2" 
     ? "Sélection Officielle" 
     : phase === "phase3" 
-      ? "Films en Compétition" 
+      ? "Films Primés" 
       : "Sélection Officielle";
 
   return (
