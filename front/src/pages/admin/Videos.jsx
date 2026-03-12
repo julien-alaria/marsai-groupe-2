@@ -881,8 +881,6 @@
 // }
 
 
-
-
 /**
  * Videos.jsx — Gestion des films (Admin)
  *
@@ -906,6 +904,22 @@ import {
   getCategories, getVideos, deleteMovie,
   updateMovie, updateMovieCategories, updateMovieStatus
 } from "../../api/videos.js";
+
+const API = import.meta.env.VITE_API_URL || "http://localhost:3000";
+
+async function getFestivalPhase() {
+  const r = await fetch(`${API}/festival/phase`);
+  return r.json();
+}
+async function setFestivalPhase(phase) {
+  const token = localStorage.getItem("token");
+  const r = await fetch(`${API}/festival/phase`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ phase })
+  });
+  return r.json();
+}
 import { getVotes } from "../../api/votes.js";
 import { VideoPreview } from "../../components/VideoPreview.jsx";
 import { UPLOAD_BASE } from "../../utils/constants.js";
@@ -1047,6 +1061,9 @@ export default function Videos() {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [adminComment,  setAdminComment]  = useState("");
   const [modalNotice,   setModalNotice]   = useState(null);
+  const [phase2Active,  setPhase2Active]  = useState(false);
+  const [phase3Active,  setPhase3Active]  = useState(false);
+  const [phaseLoading,  setPhaseLoading]  = useState(false);
   const [catSel,        setCatSel]        = useState({});
 
   useEffect(() => {
@@ -1067,6 +1084,35 @@ export default function Videos() {
     const t = setTimeout(() => setModalNotice(null), 4500);
     return () => clearTimeout(t);
   }, [modalNotice]);
+
+  useEffect(() => {
+    getFestivalPhase().then((d) => {
+      setPhase2Active(d.phase === 2);
+      setPhase3Active(d.phase === 3);
+    }).catch(() => {});
+  }, []);
+
+  async function handlePhase2Toggle() {
+    setPhaseLoading(true);
+    try {
+      const next = phase2Active ? 0 : 2;        // toggle phase 2 ON/OFF
+      await setFestivalPhase(next);
+      setPhase2Active(!phase2Active);
+      if (!phase2Active) setPhase3Active(false); // activer 2 désactive 3
+    } catch { /* ignore */ }
+    setPhaseLoading(false);
+  }
+
+  async function handlePhase3Toggle() {
+    setPhaseLoading(true);
+    try {
+      const next = phase3Active ? 0 : 3;        // toggle phase 3 ON/OFF
+      await setFestivalPhase(next);
+      setPhase3Active(!phase3Active);
+      if (!phase3Active) setPhase2Active(false); // activer 3 désactive 2
+    } catch { /* ignore */ }
+    setPhaseLoading(false);
+  }
 
   const filteredMovies = useMemo(() => allMovies.filter((m) => {
     const s = m.selection_status || "submitted";
@@ -1123,8 +1169,7 @@ export default function Videos() {
 
   async function batchDelete() {
     if (!selectedIds.length) return;
-    const count = selectedIds.length;
-    if (!window.confirm(`Supprimer définitivement ${count} film(s) ? Action irréversible.`)) return;
+    if (!window.confirm(`Supprimer définitivement ${selectedIds.length} film(s) ? Action irréversible.`)) return;
     await Promise.all(selectedIds.map((id) => deleteMovie(id)));
     inv();
     setSelectedIds([]);
@@ -1173,6 +1218,40 @@ export default function Videos() {
                   <span className="text-[9px] tracking-[0.18em] uppercase text-white/25 font-medium mt-1">{scfg(s.key).label}</span>
                 </div>
               ))}
+            </div>
+            {/* ── Boutons phase publique ── */}
+            <div className="flex items-center gap-2 self-end pb-1">
+              {/* Phase 2 — Candidats */}
+              <button
+                type="button"
+                onClick={handlePhase2Toggle}
+                disabled={phaseLoading}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-medium border transition-all duration-300 disabled:opacity-50 ${
+                  phase2Active
+                    ? "bg-emerald-500/20 border-emerald-500/30 text-emerald-300 hover:bg-emerald-500/10"
+                    : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70"
+                }`}
+                title={phase2Active ? "Masquer les candidats du public" : "Publier les candidats (phase 2) sur le site public"}
+              >
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${phase2Active ? "bg-emerald-400 animate-pulse" : "bg-white/20"}`} />
+                {phase2Active ? "● Candidats publiés" : "Publier Candidats"}
+              </button>
+
+              {/* Phase 3 — Primés */}
+              <button
+                type="button"
+                onClick={handlePhase3Toggle}
+                disabled={phaseLoading}
+                className={`flex items-center gap-2 px-3 py-2 rounded-xl text-[11px] font-medium border transition-all duration-300 disabled:opacity-50 ${
+                  phase3Active
+                    ? "bg-yellow-500/20 border-yellow-500/30 text-yellow-300 hover:bg-yellow-500/10"
+                    : "bg-white/5 border-white/10 text-white/40 hover:bg-white/10 hover:text-white/70"
+                }`}
+                title={phase3Active ? "Masquer le palmarès du public" : "Publier le palmarès (primés) sur le site public"}
+              >
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${phase3Active ? "bg-yellow-400 animate-pulse" : "bg-white/20"}`} />
+                {phase3Active ? "🏆 Palmarès publié" : "Publier Palmarès"}
+              </button>
             </div>
           </div>
 

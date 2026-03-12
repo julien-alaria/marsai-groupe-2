@@ -13,6 +13,7 @@ import googleRouter from "./googleAuth.route.js";
 import youtubeRouter from "./Youtube.route.js";
 import sponsorRouter from "./Sponsor.route.js";
 import newsletterRouter from "./Newsletter.route.js";
+import festivalRouter from "./Festival.route.js";
 
 
 const router = express.Router();
@@ -45,6 +46,8 @@ router.use("/google", googleRouter) // Routes d'authentification Google
 router.use("/sponsors", sponsorRouter);// Routes de gestion sponsors
 
 router.use("/newsletter", newsletterRouter);// Routes de gestion newsletter
+
+router.use("/festival", festivalRouter);// Routes de gestion festivals 
 
 // pour test via CLIENT HTTP
 // router.use("/youtube", youtubeRouter);

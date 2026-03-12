@@ -865,16 +865,17 @@ async function updateMovieCollaborators(req, res) {
 }
 
 async function phase2Movies(req, res) {
-   try {
+  // Phase 2 publique : films en délibération / sélectionnés / finalistes
+  // Statuts éligibles : to_discuss, selected, candidate, finalist
+  try {
     const phase2 = await Movie.findAll({
       where: {
-        selection_status: "assigned"
+        selection_status: { [Op.in]: ["to_discuss", "selected", "candidate", "finalist"] }
       },
+      order: [["createdAt", "DESC"]],
       limit: 50
     });
-
     res.json(phase2);
-
   } catch (error) {
     console.error("phase2Movies error:", error);
     res.status(500).json({
@@ -886,16 +887,16 @@ async function phase2Movies(req, res) {
 }
 
 async function phase3Movies(req, res) {
-   try {
+  // Phase 3 publique : palmarès — films primés uniquement
+  try {
     const movies = await Movie.findAll({
       where: {
-        selection_status: "candidate"
+        selection_status: "awarded"
       },
-      limit: 10
+      order: [["createdAt", "DESC"]],
+      limit: 50
     });
-
     res.json(movies);
-
   } catch (error) {
     console.error("phase3Movies error:", error);
     res.status(500).json({
