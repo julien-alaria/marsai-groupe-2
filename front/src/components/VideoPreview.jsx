@@ -59,7 +59,7 @@ export function VideoPreview({
   return (
     <>
       <div
-        className="group relative w-full aspect-video bg-black/80 border border-white/10 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all duration-300 shadow-lg shadow-black/30"
+        className="group relative w-full aspect-video bg-black/80 border border-white/10 rounded-lg overflow-hidden cursor-pointer hover:border-blue-500/50 transition-all duration-300 shadow-lg shadow-black/30 flex items-center justify-center"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
         onClick={openFullscreen}
@@ -73,7 +73,7 @@ export function VideoPreview({
       >
         <video
           ref={videoRef}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           src={src}
           poster={poster || undefined}
           muted
@@ -87,7 +87,7 @@ export function VideoPreview({
         
         {/* Play Button */}
         <div className="absolute inset-0 flex items-center justify-center">
-          <div className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-blue-600/90 flex items-center justify-center border-2 border-white/30 shadow-xl transform scale-90 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-300">
+          <div className="flex items-center justify-center w-16 h-16 rounded-full bg-white/10 bg-gradient-to-br from-[#C6CAD2]/30 to-[#0f1114]/10 backdrop-blur-xxs border border-white/20 shadow-lg border border-white/40 text-white hover:bg-white/20 hover:scale-110 transition-all duration-300">
             <svg className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 text-white" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
@@ -106,7 +106,7 @@ export function VideoPreview({
       </div>
 
       {isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 mobile-modal-overlay">
+        <div className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4 mobile-modal-overlay backdrop-blur-sm">
           <div className="w-full max-w-6xl mobile-modal-panel">
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-white font-semibold text-lg">{title}</h3>

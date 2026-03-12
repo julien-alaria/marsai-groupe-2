@@ -34,20 +34,10 @@ export default function Selection() {
     );
   }
 
-  if (phase === 0 || phase === null) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] text-center px-6 gap-4">
-        <span className="text-5xl">🎬</span>
-        <h2 className="text-white text-2xl font-semibold">La sélection arrive bientôt</h2>
-        <p className="text-white/40 text-sm max-w-sm">
-          Les films seront publiés dès que le jury aura finalisé sa délibération.
-        </p>
-      </div>
-    );
-  }
+  if (phase === 0 || phase === null || movies.length === 0) return null;
 
   const isPhase3 = phase === 3;
-  const title    = isPhase3 ? "🏆 Palmarès" : "🎞 Sélection officielle";
+  const title    = isPhase3 ? "Palmarès" : "Sélection officielle";
   const subtitle = isPhase3
     ? "Les films primés par le jury"
     : "Les films sélectionnés pour la délibération finale";
@@ -58,18 +48,12 @@ export default function Selection() {
         <p className="text-[9px] tracking-[0.2em] uppercase text-amber-400/50 font-medium mb-2">
           {isPhase3 ? "Palmarès officiel" : "Sélection officielle"}
         </p>
-        <h1 className="text-3xl font-bold text-white mb-2">{title}</h1>
+        <h1 className="text-5xl font-bold text-amber-400 mb-2 uppercase">{title}</h1>
         <p className="text-white/40 text-sm">{subtitle}</p>
         <div className="mt-4 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
       </div>
 
-      {movies.length === 0 ? (
-        <div className="flex flex-col items-center justify-center min-h-[30vh] gap-3 text-white/30">
-          <span className="text-3xl">📭</span>
-          <p className="text-sm">Aucun film disponible pour l'instant.</p>
-        </div>
-      ) : (
-        <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {movies.map((movie) => {
             const trailer = getTrailer(movie);
             const poster  = getPoster(movie);
@@ -108,8 +92,7 @@ export default function Selection() {
               </div>
             );
           })}
-        </div>
-      )}
+      </div>
     </div>
   );
 }

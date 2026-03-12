@@ -2093,8 +2093,8 @@ export default function ProducerHome() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                 {[
                   { label: "Téléphone", value: user.phone },
-                  { label: "Nationalité", value: user.nationality },
-                  { label: "Site web", value: user.website },
+                  { label: "Pays", value: user.country },
+                  { label: "Site web", value: user.portfolio },
                 ].map(({ label, value }) => (
                   <div key={label}>
                     <p className="text-[10px] uppercase tracking-wider text-white/25 mb-1">

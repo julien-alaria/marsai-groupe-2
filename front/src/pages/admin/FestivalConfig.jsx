@@ -656,7 +656,7 @@ export default function FestivalConfig() {
       <div className="px-8 py-6 max-w-4xl">
 
         {/* ── Informations Générales */}
-        <SectionCard icon={<Icon d={ICONS.general} />} title="Informations Générales" defaultOpen>
+        <SectionCard icon={<Icon d={ICONS.general} />} title="Informations Générales">
           <div className="grid grid-cols-2 gap-4">
             <ConfigInput
               label="Nom du festival"
