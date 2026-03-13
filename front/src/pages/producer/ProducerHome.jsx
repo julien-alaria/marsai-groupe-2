@@ -59,7 +59,7 @@ const movieSchema = z.object({
 const tw = {
   // Field inputs - comfortable but not oversized
   fieldInput:
-    "w-full bg-white/[0.02] border border-white/[0.08] text-white px-4 py-2.5 rounded-lg text-sm transition-all duration-200 outline-none hover:border-[#AD46FF]/30 focus:border-[#AD46FF] focus:ring-1 focus:ring-[#AD46FF]/20 placeholder:text-white/20",
+    "w-full bg-white/[0.02] border border-white/[0.08] text-white px-4 py-2.5 rounded-lg text-sm transition-all duration-200 outline-none hover:border-[#AD46FF]/30 focus:border-[#AD46FF] focus:ring-1 focus:ring-[#AD46FF]/20 placeholder:text-white/50",
   fieldInputErr: "border-red-500/50 bg-red-500/[0.02] focus:ring-red-500/20",
 
   // File buttons - comfortable
@@ -468,7 +468,7 @@ export default function ProducerHome() {
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
-                  <p className="text-[10px] tracking-widest uppercase text-white/25 mb-0.5">
+                  <p className="text-[10px] tracking-widest uppercase text-white/50 mb-0.5">
                     Films soumis
                   </p>
                   <p className="text-2xl font-bold text-white leading-none">
@@ -489,9 +489,12 @@ export default function ProducerHome() {
             {/* ── Profil ── */}
             <div className="bg-white/3 border border-white/6 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] tracking-widest uppercase text-white/25 font-medium">
+                <div>
+                <p className="text-[12px] tracking-widest uppercase text-white/75 font-medium ">
                   Profil
                 </p>
+                 <div className="mt-1 h-px w-30 bg-gradient-to-r from-white/50 via-white/5 to-transparent" />
+                </div>
                 <button
                   onClick={() => setEditMode((v) => !v)}
                   className="text-[11px] text-[#AD46FF]/70 hover:text-[#AD46FF] transition-colors"
@@ -532,7 +535,7 @@ export default function ProducerHome() {
                           : "flex flex-col gap-1.5"
                       }
                     >
-                      <label className="text-[9px] uppercase tracking-widest text-white/20 font-medium">
+                      <label className="text-[9px] uppercase tracking-widest text-white/50 font-medium">
                         {label}
                       </label>
                       {type === "textarea" ? (
@@ -578,7 +581,7 @@ export default function ProducerHome() {
                     { label: "Site web", value: user.portfolio },
                   ].map(({ label, value }) => (
                     <div key={label}>
-                      <p className="text-[9px] uppercase tracking-widest text-white/20 mb-1.5 font-medium">
+                      <p className="text-[10px] uppercase tracking-widest text-white/90 mb-1.5 font-medium">
                         {label}
                       </p>
                       <p className="text-white/50 text-sm">{value || "—"}</p>
@@ -586,10 +589,10 @@ export default function ProducerHome() {
                   ))}
                   {user.biography && (
                     <div className="md:col-span-3">
-                      <p className="text-[9px] uppercase tracking-widest text-white/20 mb-1.5 font-medium">
+                      <p className="text-[10px] uppercase tracking-widest text-white/90 mb-1.5 font-medium">
                         Biographie
                       </p>
-                      <p className="text-white/45 text-sm leading-relaxed">
+                      <p className="text-white/65 text-sm leading-relaxed">
                         {user.biography}
                       </p>
                     </div>
@@ -602,7 +605,7 @@ export default function ProducerHome() {
             <div className="bg-white/3 border border-white/6 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <p className="text-[10px] tracking-widest uppercase text-white/25 font-medium">
+                  <p className="text-[10px] tracking-widest uppercase text-white/50 font-medium">
                     Mes films
                   </p>
                   {movies.length > 0 && (
@@ -638,7 +641,7 @@ export default function ProducerHome() {
                   <div className="w-14 h-14 rounded-2xl bg-white/3 border border-white/6 flex items-center justify-center text-2xl">
                     🎬
                   </div>
-                  <p className="text-sm text-white/25 text-center max-w-xs leading-relaxed">
+                  <p className="text-sm text-white/50 text-center max-w-xs leading-relaxed">
                     Aucun film soumis. Cliquez sur « Soumettre un film » pour
                     commencer.
                   </p>
@@ -681,12 +684,12 @@ export default function ProducerHome() {
                           <p className="text-sm font-semibold text-white/80 truncate group-hover:text-[#AD46FF]/90 transition-colors">
                             {movie.title}
                           </p>
-                          <p className="text-[11px] text-white/30 mt-1 line-clamp-2 leading-relaxed">
+                          <p className="text-[11px] text-white/55 mt-1 line-clamp-2 leading-relaxed">
                             {movie.synopsis ||
                               movie.description ||
                               "Aucun synopsis"}
                           </p>
-                          <div className="flex items-center gap-2 mt-2 text-[10px] text-white/20">
+                          <div className="flex items-center gap-2 mt-2 text-[10px] text-white/50">
                             {movie.duration && <span>{movie.duration}s</span>}
                             {movie.main_language && (
                               <span>· {movie.main_language}</span>
@@ -720,12 +723,12 @@ export default function ProducerHome() {
                         )}
                         <div className="flex items-center gap-2">
                           <div
-                            className={`w-8 h-8 rounded-xl flex items-center justify-center font-semibold text-sm transition-all duration-300 ${formStep >= n ? "bg-gradient-to-br from-[#AD46FF] to-[#F6339A] text-white shadow-md shadow-[#AD46FF]/25" : "bg-white/4 text-white/20 border border-white/8"}`}
+                            className={`w-8 h-8 rounded-xl flex items-center justify-center font-semibold text-sm transition-all duration-300 ${formStep >= n ? "bg-gradient-to-br from-[#AD46FF] to-[#F6339A] text-white shadow-md shadow-[#AD46FF]/25" : "bg-white/4 text-white/50 border border-white/8"}`}
                           >
                             {formStep > n ? "✓" : n}
                           </div>
                           <span
-                            className={`text-[11px] font-medium ${formStep >= n ? "text-white/60" : "text-white/20"}`}
+                            className={`text-[11px] font-medium ${formStep >= n ? "text-white/60" : "text-white/50"}`}
                           >
                             {label}
                           </span>
@@ -943,13 +946,13 @@ export default function ProducerHome() {
                       {/* Fichiers */}
                       <div className="space-y-4">
                         <div className="flex items-center gap-3">
-                          <p className="text-[10px] uppercase tracking-widest text-white/20 font-medium">
+                          <p className="text-[10px] uppercase tracking-widest text-white/50 font-medium">
                             Fichiers
                           </p>
                           <div className="flex-1 h-px bg-white/6" />
                         </div>
                         <div className="flex flex-col gap-2">
-                          <p className="text-[9px] uppercase tracking-widest text-white/20 font-medium">
+                          <p className="text-[9px] uppercase tracking-widest text-white/50 font-medium">
                             Fichier vidéo{" "}
                             <span className="text-red-400/60">*</span>
                           </p>
@@ -981,13 +984,13 @@ export default function ProducerHome() {
                                 }
                               />
                             </label>
-                            <span className="text-[11px] text-white/25 truncate max-w-[220px]">
+                            <span className="text-[11px] text-white/50 truncate max-w-[220px]">
                               {filmFileName || "Aucun fichier sélectionné"}
                             </span>
                           </div>
                         </div>
                         <div className="flex flex-col gap-2">
-                          <p className="text-[9px] uppercase tracking-widest text-white/20 font-medium">
+                          <p className="text-[9px] uppercase tracking-widest text-white/50 font-medium">
                             Vignettes (max 3)
                           </p>
                           <div className="flex gap-2">
@@ -1026,7 +1029,7 @@ export default function ProducerHome() {
                           </div>
                         </div>
                         <div className="flex flex-col gap-2">
-                          <p className="text-[9px] uppercase tracking-widest text-white/20 font-medium">
+                          <p className="text-[9px] uppercase tracking-widest text-white/50 font-medium">
                             Sous-titres (.srt)
                           </p>
                           <div className="flex items-center gap-3">
@@ -1057,7 +1060,7 @@ export default function ProducerHome() {
                                 }
                               />
                             </label>
-                            <span className="text-[11px] text-white/25 truncate max-w-[220px]">
+                            <span className="text-[11px] text-white/50 truncate max-w-[220px]">
                               {subtitlesName || "Aucun fichier"}
                             </span>
                           </div>
@@ -1073,7 +1076,7 @@ export default function ProducerHome() {
                         />
                         <label
                           htmlFor="acceptTerms"
-                          className="text-xs text-white/45 cursor-pointer leading-relaxed"
+                          className="text-xs text-white/65 cursor-pointer leading-relaxed"
                         >
                           J'accepte les{" "}
                           <button
@@ -1166,7 +1169,7 @@ export default function ProducerHome() {
             + Ajouter un collaborateur
           </button>
           {collabFields.length === 0 && (
-            <p className="text-white/30 text-center py-8 text-sm">
+            <p className="text-white/55 text-center py-8 text-sm">
               Aucun collaborateur ajouté.
             </p>
           )}
@@ -1295,7 +1298,7 @@ export default function ProducerHome() {
                       setSelectedMovie(null);
                       setEditingMovieId(null);
                     }}
-                    className="text-white/30 hover:text-white transition-colors text-lg leading-none"
+                    className="text-white/55 hover:text-white transition-colors text-lg leading-none"
                   >
                     ✕
                   </button>
@@ -1332,7 +1335,7 @@ export default function ProducerHome() {
                         ["Outil IA", selectedMovie.ai_tool || "—"],
                       ].map(([label, value]) => (
                         <div key={label}>
-                          <p className="text-[10px] tracking-widest uppercase text-white/30 mb-1 font-medium">
+                          <p className="text-[10px] tracking-widest uppercase text-white/55 mb-1 font-medium">
                             {label}
                           </p>
                           <p className="text-sm text-white/80">{value}</p>
@@ -1343,7 +1346,7 @@ export default function ProducerHome() {
                     {/* Synopsis */}
                     {(selectedMovie.synopsis || selectedMovie.description) && (
                       <div>
-                        <p className="text-[10px] tracking-widest uppercase text-white/30 mb-2 font-medium">
+                        <p className="text-[10px] tracking-widest uppercase text-white/55 mb-2 font-medium">
                           Synopsis
                         </p>
                         <p className="text-sm text-white/60 leading-relaxed">
@@ -1380,7 +1383,7 @@ export default function ProducerHome() {
                     {/* Collaborateurs */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <p className="text-[10px] tracking-widest uppercase text-white/30 font-medium">
+                        <p className="text-[10px] tracking-widest uppercase text-white/55 font-medium">
                           Collaborateurs
                         </p>
                         <button
@@ -1401,13 +1404,13 @@ export default function ProducerHome() {
                               <span className="w-1.5 h-1.5 rounded-full bg-[#AD46FF]/50 flex-shrink-0" />
                               {c.first_name} {c.last_name}
                               {c.job && (
-                                <span className="text-white/30">— {c.job}</span>
+                                <span className="text-white/55">— {c.job}</span>
                               )}
                             </li>
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-sm text-white/25">
+                        <p className="text-sm text-white/50">
                           Aucun collaborateur.
                         </p>
                       )}
@@ -1509,7 +1512,7 @@ export default function ProducerHome() {
                             <button
                               type="button"
                               onClick={() => setEditingMovieId(null)}
-                              className="px-3 py-1.5 text-xs border border-white/8 text-white/35 rounded-lg hover:bg-white/4 transition-all duration-200"
+                              className="px-3 py-1.5 text-xs border border-white/8 text-white/55 rounded-lg hover:bg-white/4 transition-all duration-200"
                             >
                               Annuler
                             </button>
@@ -1566,7 +1569,7 @@ function Modal({ title, onClose, maxW = "max-w-4xl", children }) {
           <button
             type="button"
             onClick={onClose}
-            className="w-8 h-8 flex items-center justify-center text-white/30 hover:text-white hover:bg-white/8 rounded-xl transition-all duration-200 text-sm"
+            className="w-8 h-8 flex items-center justify-center text-white/55 hover:text-white hover:bg-white/8 rounded-xl transition-all duration-200 text-sm"
           >
             ✕
           </button>
@@ -1580,7 +1583,7 @@ function Modal({ title, onClose, maxW = "max-w-4xl", children }) {
 function ModalBlock({ title, children }) {
   return (
     <div className="bg-white/3 border border-white/6 rounded-xl p-2.5">
-      <p className="text-[9px] tracking-widest uppercase text-white/20 font-medium mb-1.5">
+      <p className="text-[9px] tracking-widest uppercase text-white/50 font-medium mb-1.5">
         {title}
       </p>
       {children}
@@ -1591,7 +1594,7 @@ function ModalBlock({ title, children }) {
 function ModalRow({ label, value }) {
   return (
     <div className="flex gap-1.5 mb-0.5 last:mb-0">
-      <span className="text-white/20 text-[11px] shrink-0">{label} :</span>
+      <span className="text-white/50 text-[11px] shrink-0">{label} :</span>
       <span className="text-white/50 text-[11px] truncate">{value}</span>
     </div>
   );
@@ -1604,7 +1607,7 @@ function Fld({ label, hint, error, children, className = "" }) {
         {label}
       </label>
       {children}
-      {hint && <p className="text-[10px] text-white/20 mt-0.5">{hint}</p>}
+      {hint && <p className="text-[10px] text-white/50 mt-0.5">{hint}</p>}
       {error && (
         <p className="text-[11px] text-red-400/80 mt-0.5">{error.message}</p>
       )}

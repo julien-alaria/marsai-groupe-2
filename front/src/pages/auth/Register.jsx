@@ -180,7 +180,7 @@ export function Register() {
 
                 <Field label={t('forms.register.labels.birthDate')}>
                   <input id="birthDate" type="date" {...register("birthDate")}
-                    className={input(false)} />
+                    className={`${input(false)} [color-scheme:dark]`} />
                 </Field>
 
                 <Field label={t('forms.register.labels.street')}>
