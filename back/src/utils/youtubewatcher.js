@@ -276,9 +276,9 @@ async function processQueue() {
     // ── Email producteur ──
     try {
       if (youtubeData?.licensedContent === true) {
-        EmailController.sendMail(userEmail, "Video rejected, content under license", VIDEO_REJECT_TEMPLATE);
+        await EmailController.sendMail(userEmail, "Video rejected, content under license", VIDEO_REJECT_TEMPLATE);
       } else {
-        EmailController.sendMail(userEmail, "Your video has been accepted.", VIDEO_ACCEPT_TEMPLATE);
+        await EmailController.sendMail(userEmail, "Your video has been accepted.", VIDEO_ACCEPT_TEMPLATE);
       }
       console.log(`Envoyé à ${userEmail}`);
     } catch (mailErr) {

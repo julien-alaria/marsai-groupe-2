@@ -124,13 +124,20 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendMail(to, subject, html) {
-  let info = await transporter.sendMail({
+  try {
+     let info = await transporter.sendMail({
     from: '"contact marsAi" <contact@marsai.com>', // sender address, add YOUR NAME & YOUR MAIL
     to, // list of receivers
     subject, // Subject line
     html,
   });
   return info.response;
+
+  } catch (error) {
+    console.error("Email sending error:", error);
+    throw error;
+  } 
+ 
 }
 
 export default { sendMail };
