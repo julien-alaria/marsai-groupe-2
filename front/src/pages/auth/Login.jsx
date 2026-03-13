@@ -301,7 +301,7 @@ export function Login() {
 
               {/* Email */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="email" className="text-[9px] uppercase tracking-widest text-white/25 font-medium">
+                <label htmlFor="email" className="text-[9px] uppercase tracking-widest text-white/90 font-medium">
                   {t('forms.login.email')}
                 </label>
                 <input
@@ -319,7 +319,7 @@ export function Login() {
 
               {/* Mot de passe */}
               <div className="flex flex-col gap-1.5">
-                <label htmlFor="password" className="text-[9px] uppercase tracking-widest text-white/25 font-medium">
+                <label htmlFor="password" className="text-[9px] uppercase tracking-widest text-white/90 font-medium">
                   {t('forms.login.password')}
                 </label>
                 <input
