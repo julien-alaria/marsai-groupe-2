@@ -4,7 +4,6 @@ dotenv.config({ path: "../.env" });
 import bcrypt from "bcrypt";
 import db from "../src/models/index.js";
 
-
 async function createAdmin() {
   const hash = await bcrypt.hash("admin123", 10);
   const [admin, created] = await db.User.findOrCreate({
