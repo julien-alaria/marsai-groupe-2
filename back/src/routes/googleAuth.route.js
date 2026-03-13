@@ -2,12 +2,15 @@ import express from "express";
 import { google } from "googleapis";
 import fs from "fs";
 import path from "path";
+import dotenv from "dotenv";
 
 // New: Import du controller pour gérer les uploads après l'authentification
 import youtubeController from "../controllers/YoutubeController.js";
 
 
 const googleRouter = express.Router();
+
+dotenv.config();
 
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
