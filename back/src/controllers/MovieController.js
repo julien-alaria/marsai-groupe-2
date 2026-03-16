@@ -437,7 +437,10 @@ function unlinkUploadFile(filename) {
 async function deleteMovie(req, res) {
   try {
     const { id } = req.params;
-    const userId = req.userId; // Dall'AuthMiddleware
+    /* BUG #4 FIX: AuthMiddleware sets req.user, NOT req.userId.
+       Using req.userId was always undefined → ownership check was
+       always false → any PRODUCER could delete any film. */
+    const userId = req.user.id_user;
     const userRole = req.user?.role;
 
     const movie = await Movie.findByPk(id);
@@ -872,6 +875,7 @@ async function phase2Movies(req, res) {
       where: {
         selection_status: { [Op.in]: ["to_discuss", "selected", "candidate", "finalist"] }
       },
+      include: [{ model: Award, required: false }],
       order: [["createdAt", "DESC"]],
       limit: 50
     });
@@ -893,6 +897,7 @@ async function phase3Movies(req, res) {
       where: {
         selection_status: "awarded"
       },
+      include: [{ model: Award, required: false }],
       order: [["createdAt", "DESC"]],
       limit: 50
     });

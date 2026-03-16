@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { VideoPreview } from "../../components/VideoPreview.jsx";
+import { VideoPreview, PendingVideoPlaceholder } from "../../components/VideoPreview.jsx";
 // NOTE: Navbar is rendered by ProducerLayout — no import needed here.
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -14,7 +14,8 @@ import {
 } from "../../api/movies";
 import { getCategories } from "../../api/videos.js";
 import { UPLOAD_BASE } from "../../utils/constants.js";
-import { getPoster, getTrailer } from "../../utils/movieUtils.js";
+import { getPoster, getTrailer, isPending } from "../../utils/movieUtils.js";
+import Pagination from "../../components/admin/Pagination.jsx";
 
 /* ─── Schéma Zod ──────────────────────────────────────── */
 const movieSchema = z.object({
@@ -131,7 +132,39 @@ export default function ProducerHome() {
   const [movieError, setMovieError] = useState(null);
   const [editingMovieId, setEditingMovieId] = useState(null);
   const [collabDrafts, setCollabDrafts] = useState({});
-  const [selectedMovie, setSelectedMovie] = useState(null);
+  /* POLLING FIX: store only the selected movie's ID, not the full object.
+     This way every re-render (including the 5s polling setMovies calls) will
+     automatically resolve selectedMovie to the freshest copy from the movies array.
+     Previously setSelectedMovie(movie) stored a snapshot → isPending() never saw
+     the updated trailer path and the spinner never disappeared. */
+  const [selectedMovieId, setSelectedMovieId] = useState(null);
+  const selectedMovie = movies.find((m) => m.id_movie === selectedMovieId) ?? null;
+  const [lightboxImg, setLightboxImg] = useState(null);
+
+  // ── Pagination ──
+  const [currentPage, setCurrentPage] = useState(1);
+  const [moviesPerPage, setMoviesPerPage] = useState(8);
+  const totalPages = Math.max(1, Math.ceil(movies.length / moviesPerPage));
+  const paginatedMovies = movies.slice(
+    (currentPage - 1) * moviesPerPage,
+    currentPage * moviesPerPage
+  );
+
+  function goToPage(page) {
+    setCurrentPage(page);
+    setTimeout(() => {
+      mesFilmsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
+  }
+
+  // Reset to page 1 when movies list changes (e.g. after submit)
+  const prevMoviesLengthRef = useRef(movies.length);
+  useEffect(() => {
+    if (movies.length !== prevMoviesLengthRef.current) {
+      setCurrentPage(1);
+      prevMoviesLengthRef.current = movies.length;
+    }
+  }, [movies.length]);
   const [showForm, setShowForm] = useState(false);
 
   /* ── États formulaire multi-étapes ── */
@@ -144,6 +177,9 @@ export default function ProducerHome() {
   const filmFileRef = useRef(null);
   const subtitleRef = useRef(null);
   const formSectionRef = useRef(null); // scroll to form
+  const mesFilmsRef = useRef(null);    // scroll to Mes films on page change
+  /* BUG #1 FIX: pollIntervalRef was used but never declared → ReferenceError on submit */
+  const pollIntervalRef = useRef(null);
   const [filmFileName, setFilmFileName] = useState("");
   const [subtitlesName, setSubtitlesName] = useState("");
 
@@ -198,6 +234,9 @@ export default function ProducerHome() {
         if (target?.trailer?.startsWith("uploaded/")) {
           clearInterval(pollIntervalRef.current);
           pollIntervalRef.current = null;
+          // Affiche le message de succès générique et l'efface après 4s
+          setMovieSuccess("Film soumis avec succès !");
+          setTimeout(() => setMovieSuccess(null), 4000);
         }
       } catch {
         /* ignore */
@@ -256,9 +295,11 @@ export default function ProducerHome() {
 
       return await createMovie(fd);
     },
-    onSuccess: async () => {
+    /* BUG #3 FIX: onSuccess must capture the mutation result as first argument.
+       Previously declared as async () => {} with no param, so `data` was undefined
+       and startTrailerPolling(data?.data?.movie?.id_movie) always received undefined. */
+    onSuccess: async (result) => {
       setMovieError(null);
-      setMovieSuccess("Film soumis avec succès !");
       setShowForm(false);
       resetForm();
       try {
@@ -267,10 +308,8 @@ export default function ProducerHome() {
       } catch {
         /* ignore */
       }
-      // Lance le polling pour rattraper la mise à jour du trailer par le watcher
-      // On passe l'id_movie retourné par le backend pour stopper dès que ce film
-      // spécifique a son trailer archivé — quelle que soit la durée du traitement.
-      startTrailerPolling(data?.data?.movie?.id_movie);
+      // BUG #3 FIX: use result (not undefined data) to get the new movie id
+      startTrailerPolling(result?.data?.movie?.id_movie);
     },
     onError: (err) => {
       setMovieSuccess(null);
@@ -460,7 +499,7 @@ export default function ProducerHome() {
                   Espace Producteur
                 </h1>
                 <p className="text-white/55 mt-1 text-sm font-medium uppercase tracking-wide">
-                  {user.first_name} {user.last_name}
+                  {user.last_name} {user.first_name} 
                   <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-[#AD46FF]/15 text-[#AD46FF]/80 border border-[#AD46FF]/20 font-medium tracking-wide uppercase">
                     Producteur
                   </span>
@@ -476,9 +515,9 @@ export default function ProducerHome() {
                   </p>
                 </div>
                 <div className="w-px h-10 bg-white/10" />
-                <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-[#AD46FF] to-[#F6339A] flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-[#AD46FF]/20">
+                <div className="w-10 h-10 rounded-2xl bg-[#AD46FF]/10 text-[#AD46FF]/70 border border-[#AD46FF]/50 flex items-center justify-center font-bold text-sm shadow-lg shadow-[#AD46FF]/20">
+                    {user.last_name?.[0]}
                   {user.first_name?.[0]}
-                  {user.last_name?.[0]}
                 </div>
               </div>
             </div>
@@ -602,14 +641,14 @@ export default function ProducerHome() {
             </div>
 
             {/* ── Mes films ── */}
-            <div className="bg-white/3 border border-white/6 rounded-2xl p-5">
+            <div ref={mesFilmsRef} className="bg-white/3 border border-white/6 rounded-2xl p-5">
               <div className="flex items-center justify-between mb-5">
                 <div className="flex items-center gap-3">
-                  <p className="text-[10px] tracking-widest uppercase text-white/50 font-medium">
+                  <p className="text-[12px] tracking-widest uppercase text-white/70 font-medium">
                     Mes films
                   </p>
                   {movies.length > 0 && (
-                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#AD46FF]/10 text-[#AD46FF]/70 border border-[#AD46FF]/15">
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#AD46FF]/10 text-[#AD46FF]/70 border border-[#AD46FF]/50">
                       {movies.length}
                     </span>
                   )}
@@ -629,7 +668,7 @@ export default function ProducerHome() {
                       50,
                     );
                   }}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#AD46FF]/80 to-[#F6339A]/80 hover:from-[#AD46FF] hover:to-[#F6339A] text-white rounded-xl text-sm font-semibold transition-all duration-200"
+                  className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-[#AD46FF]/80 to-[#F6339A]/80 hover:from-[#AD46FF] hover:to-[#F6339A] text-white rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer"
                 >
                   <span className="text-base leading-none">+</span> Soumettre un
                   film
@@ -647,59 +686,151 @@ export default function ProducerHome() {
                   </p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {movies.map((movie) => {
+                <>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+                  {paginatedMovies.map((movie) => {
                     const badge = getStatusBadge(movie.selection_status);
                     const poster = getPoster(movie);
+                    const pending = isPending(movie);
                     return (
                       <button
                         key={movie.id_movie}
-                        onClick={() => setSelectedMovie(movie)}
-                        className="bg-white/3 border border-white/6 rounded-2xl overflow-hidden hover:border-[#AD46FF]/30 hover:shadow-xl hover:shadow-[#AD46FF]/8 transition-all duration-300 hover:-translate-y-0.5 text-left group"
+                        onClick={() => setSelectedMovieId(movie.id_movie)}
+                        className="group relative text-left focus:outline-none"
+                        style={{ aspectRatio: "2/3" }}
                       >
-                        <div className="h-40 bg-black/50 relative overflow-hidden">
+                        {/* Poster frame */}
+                        <div className="relative w-full h-full rounded-lg overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.7)] group-hover:shadow-[0_12px_40px_rgba(173,70,255,0.22)] transition-all duration-500 group-hover:-translate-y-2 cursor-pointer">
+
+                          {/* Background image or fallback */}
                           {poster ? (
                             <img
                               src={poster}
                               alt={movie.title}
-                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
                             />
                           ) : (
-                            <div className="w-full h-full flex items-center justify-center text-white/10 text-4xl">
-                              🎬
+                            <div className="absolute inset-0 bg-gradient-to-br from-[#1a1025] via-[#0d0f14] to-[#1a0a20] flex items-center justify-center">
+                              <span className="text-5xl opacity-20">🎬</span>
                             </div>
                           )}
-                          <div className="absolute bottom-2 right-2">
-                            <span
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider ${badge.color}`}
-                            >
-                              <span
-                                className={`w-1.5 h-1.5 rounded-full ${badge.dot}`}
-                              />
+
+                          {/* Film grain */}
+                          <div
+                            className="absolute inset-0 opacity-[0.07] pointer-events-none mix-blend-overlay"
+                            style={{
+                              backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+                              backgroundSize: "120px 120px",
+                            }}
+                          />
+
+                          {/* Top vignette */}
+                          <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent" />
+                          {/* Bottom vignette */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
+
+                          {/* Corner marks */}
+                          <div className="absolute top-2.5 left-2.5 w-3 h-3 border-t border-l border-white/20" />
+                          <div className="absolute top-2.5 right-2.5 w-3 h-3 border-t border-r border-white/20" />
+                          <div className="absolute bottom-2.5 left-2.5 w-3 h-3 border-b border-l border-white/20" />
+                          <div className="absolute bottom-2.5 right-2.5 w-3 h-3 border-b border-r border-white/20" />
+
+                          {/* Status badge */}
+                          <div className="absolute top-3 right-3">
+                            <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest backdrop-blur-sm rounded-sm ${badge.color}`}>
+                              <span className={`w-1 h-1 rounded-full ${badge.dot}`} />
                               {badge.label}
                             </span>
                           </div>
-                        </div>
-                        <div className="p-3.5">
-                          <p className="text-sm font-semibold text-white/80 truncate group-hover:text-[#AD46FF]/90 transition-colors">
-                            {movie.title}
-                          </p>
-                          <p className="text-[11px] text-white/55 mt-1 line-clamp-2 leading-relaxed">
-                            {movie.synopsis ||
-                              movie.description ||
-                              "Aucun synopsis"}
-                          </p>
-                          <div className="flex items-center gap-2 mt-2 text-[10px] text-white/50">
-                            {movie.duration && <span>{movie.duration}s</span>}
-                            {movie.main_language && (
-                              <span>· {movie.main_language}</span>
-                            )}
+
+                          {/* Pending spinner */}
+                          {pending && (
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="w-7 h-7 border-2 border-[#AD46FF]/30 border-t-[#AD46FF] rounded-full animate-spin" />
+                            </div>
+                          )}
+
+                          {/* Bottom text */}
+                          <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-1">
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <div className="flex-1 h-px bg-white/20" />
+                              <span className="text-[6px] tracking-[0.2em] text-white/35 uppercase font-medium">MarsAI</span>
+                              <div className="flex-1 h-px bg-white/20" />
+                            </div>
+                            <p
+                              className="font-bold uppercase tracking-wide leading-tight text-white group-hover:text-[#C179FB] transition-colors duration-300 line-clamp-2"
+                              style={{ fontSize: "clamp(8px, 1.8vw, 12px)", textShadow: "0 1px 6px rgba(0,0,0,1)" }}
+                            >
+                              {movie.title}
+                            </p>
+                            <div className="flex items-center gap-1 mt-1 text-white/35" style={{ fontSize: "8px" }}>
+                              {movie.main_language && <span className="uppercase tracking-wider">{movie.main_language}</span>}
+                              {movie.duration && movie.main_language && <span>·</span>}
+                              {movie.duration && <span>{movie.duration}s</span>}
+                            </div>
                           </div>
                         </div>
                       </button>
                     );
                   })}
                 </div>
+
+                {/* ── Pagination ── */}
+                {totalPages > 1 && (
+                  <div className="mt-6 px-1">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                      <span className="text-[9px] tracking-[0.3em] uppercase text-white/20 font-medium">
+                        {movies.length} films · page {currentPage}/{totalPages}
+                      </span>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+                    </div>
+                    <div className="flex items-center justify-center gap-1.5">
+                      <button
+                        onClick={() => goToPage(1)}
+                        disabled={currentPage === 1}
+                        className={`w-8 h-8 flex items-center justify-center rounded border text-xs transition-all duration-300 ${currentPage === 1 ? "border-white/5 text-white/15 cursor-not-allowed" : "border-white/10 text-white/40 hover:border-[#AD46FF]/40 hover:text-[#AD46FF] hover:bg-[#AD46FF]/5"}`}
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" /></svg>
+                      </button>
+                      <button
+                        onClick={() => goToPage(Math.max(1, currentPage - 1))}
+                        disabled={currentPage === 1}
+                        className={`w-8 h-8 flex items-center justify-center rounded border text-xs transition-all duration-300 ${currentPage === 1 ? "border-white/5 text-white/15 cursor-not-allowed" : "border-white/10 text-white/40 hover:border-[#AD46FF]/40 hover:text-[#AD46FF] hover:bg-[#AD46FF]/5"}`}
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+                      </button>
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          onClick={() => goToPage(page)}
+                          className={`w-8 h-8 flex items-center justify-center rounded border text-xs font-medium tracking-wider transition-all duration-300 ${
+                            currentPage === page
+                              ? "border-[#AD46FF]/60 bg-gradient-to-b from-[#AD46FF]/20 to-[#AD46FF]/10 text-[#C179FB] shadow-[0_0_12px_rgba(173,70,255,0.2)]"
+                              : "border-white/8 text-white/35 hover:border-[#AD46FF]/30 hover:text-[#AD46FF]/70 hover:bg-[#AD46FF]/5"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        onClick={() => goToPage(Math.min(totalPages, currentPage + 1))}
+                        disabled={currentPage === totalPages}
+                        className={`w-8 h-8 flex items-center justify-center rounded border text-xs transition-all duration-300 ${currentPage === totalPages ? "border-white/5 text-white/15 cursor-not-allowed" : "border-white/10 text-white/40 hover:border-[#AD46FF]/40 hover:text-[#AD46FF] hover:bg-[#AD46FF]/5"}`}
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+                      </button>
+                      <button
+                        onClick={() => goToPage(totalPages)}
+                        disabled={currentPage === totalPages}
+                        className={`w-8 h-8 flex items-center justify-center rounded border text-xs transition-all duration-300 ${currentPage === totalPages ? "border-white/5 text-white/15 cursor-not-allowed" : "border-white/10 text-white/40 hover:border-[#AD46FF]/40 hover:text-[#AD46FF] hover:bg-[#AD46FF]/5"}`}
+                      >
+                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" /></svg>
+                      </button>
+                    </div>
+                  </div>
+                )}
+                </>
               )}
             </div>
 
@@ -1295,7 +1426,7 @@ export default function ProducerHome() {
                   </h3>
                   <button
                     onClick={() => {
-                      setSelectedMovie(null);
+                      setSelectedMovieId(null);
                       setEditingMovieId(null);
                     }}
                     className="text-white/55 hover:text-white transition-colors text-lg leading-none"
@@ -1366,16 +1497,6 @@ export default function ProducerHome() {
                           className="inline-flex items-center gap-1.5 text-sm text-[#AD46FF] hover:text-[#F6339A] transition-colors font-medium"
                         >
                           ↓ Sous-titres
-                        </a>
-                      )}
-                      {selectedMovie.youtube_link && (
-                        <a
-                          href={selectedMovie.youtube_link}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1.5 text-sm text-[#AD46FF] hover:text-[#F6339A] transition-colors font-medium"
-                        >
-                          ▶ YouTube
                         </a>
                       )}
                     </div>
@@ -1524,35 +1645,83 @@ export default function ProducerHome() {
 
                   {/* ── Colonne droite : vidéo ── */}
                   <div>
-                    {getTrailer(selectedMovie) ? (
-                      <div className="rounded-xl overflow-hidden border border-white/8 w-full aspect-video">
-                        <VideoPreview
-                          title={selectedMovie.title}
-                          src={`${UPLOAD_BASE}/${getTrailer(selectedMovie)}`}
-                          poster={getPoster(selectedMovie) || undefined}
-                          openMode="fullscreen"
-                        />
-                      </div>
-                    ) : selectedMovie.youtube_link ? (
-                      <a
-                        href={selectedMovie.youtube_link}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex items-center gap-2 text-sm text-[#AD46FF] hover:text-[#F6339A] transition-colors font-medium"
-                      >
-                        ▶ Ouvrir la vidéo ↗
-                      </a>
+                    {isPending(selectedMovie) ? (
+                      <PendingVideoPlaceholder accepted={false} />
+                    ) : getTrailer(selectedMovie) ? (
+                      <VideoPreview
+                        title={selectedMovie.title}
+                        label="MarsAI Festival"
+                        src={`${UPLOAD_BASE}/${getTrailer(selectedMovie)}`}
+                        poster={getPoster(selectedMovie) || undefined}
+                      />
                     ) : (
                       <div className="w-full aspect-video rounded-xl border border-white/6 bg-white/3 flex items-center justify-center text-white/15 text-xs">
                         Pas de média
                       </div>
                     )}
+
+                    {/* ── Vignettes ── */}
+                    {(() => {
+                      const imgs = [
+                        // selectedMovie.thumbnail,
+                        selectedMovie.display_picture,
+                        selectedMovie.picture1,
+                        selectedMovie.picture2,
+                        selectedMovie.picture3,
+                      ].filter(Boolean);
+                      if (!imgs.length) return null;
+                      return (
+                        <div className="mt-3 grid grid-cols-3 gap-2">
+                          {imgs.map((img, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => setLightboxImg(`${UPLOAD_BASE}/${img}`)}
+                              className="group relative aspect-video rounded-lg overflow-hidden border border-white/8 hover:border-[#AD46FF]/50 transition-all duration-200"
+                            >
+                              <img
+                                src={`${UPLOAD_BASE}/${img}`}
+                                alt={`Vignette ${i + 1}`}
+                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              />
+                              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors duration-200 flex items-center justify-center">
+                                <svg className="w-5 h-5 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7" />
+                                </svg>
+                              </div>
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
             </div>
           );
         })()}
+      {lightboxImg && (
+        <div
+          className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={() => setLightboxImg(null)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightboxImg(null)}
+            className="absolute top-4 right-4 w-9 h-9 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-colors"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+          <img
+            src={lightboxImg}
+            alt="Vignette"
+            className="max-w-full max-h-[90vh] rounded-xl shadow-2xl object-contain"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </>
   );
 }

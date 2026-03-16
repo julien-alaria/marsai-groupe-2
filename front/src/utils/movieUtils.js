@@ -40,3 +40,21 @@ export const getTrailer = (movie) => {
     null
   );
 };
+
+/**
+ * BUG #2 FIX — isPending
+ * Returns true when a video has been submitted (trailer field is set)
+ * but has NOT yet been processed by the YouTube watcher.
+ * The watcher moves the file to uploads/uploaded/ and updates the DB
+ * with a path starting with "uploaded/". Until then the video is pending.
+ */
+export const isPending = (movie) =>
+  !!movie?.trailer && !movie.trailer.startsWith("uploaded/");
+
+/**
+ * BUG #2 FIX — isYouTubeAccepted
+ * Returns true when the YouTube watcher has finished processing the video:
+ * trailer starts with "uploaded/" AND a youtube_link has been written to DB.
+ */
+export const isYouTubeAccepted = (movie) =>
+  !!movie?.trailer?.startsWith("uploaded/") && !!movie?.youtube_link;

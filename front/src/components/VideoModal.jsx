@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { VideoPreview } from "./VideoPreview.jsx";
+import { VideoPreview, PendingVideoPlaceholder } from "./VideoPreview.jsx";
+import { isPending, isYouTubeAccepted } from "../utils/movieUtils.js";
 
 export function VideoModal({
   movie,
@@ -19,9 +20,26 @@ export function VideoModal({
   isUpdatingCategories,
   isUpdatingJuries,
 }) {
-  // Optimistic local status — updates immediately on click
-  // so the badge reflects the change without waiting for the refetch
+  // BUG #7 FIX — declare localStatus FIRST so STATUS_DISPLAY can reference it safely
   const [localStatus, setLocalStatus] = useState(movie?.selection_status);
+
+  // Complete 8-state lookup table (was only 3 states before)
+  const STATUS_DISPLAY = {
+    submitted:  { label: "Soumis",          style: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"  },
+    assigned:   { label: "En évaluation",   style: "bg-sky-500/20 text-sky-300 border-sky-500/30"           },
+    to_discuss: { label: "En discussion",   style: "bg-amber-500/20 text-amber-300 border-amber-500/30"     },
+    candidate:  { label: "Candidat",        style: "bg-violet-500/20 text-violet-300 border-violet-500/30"  },
+    selected:   { label: "Sélectionné",     style: "bg-green-500/20 text-green-300 border-green-500/30"     },
+    finalist:   { label: "Finaliste ⭐",     style: "bg-orange-500/20 text-orange-300 border-orange-500/30" },
+    awarded:    { label: "Primé 🏆",         style: "bg-yellow-400/20 text-yellow-200 border-yellow-400/30" },
+    refused:    { label: "Refusé",          style: "bg-red-500/20 text-red-300 border-red-500/30"           },
+  };
+  const statusDisplay = STATUS_DISPLAY[localStatus] || {
+    label: localStatus || "En attente",
+    style: "bg-yellow-500/20 text-yellow-300 border-yellow-500/30",
+  };
+
+  // Optimistic update helpers used by status buttons below
 
   if (!movie) return null;
 
@@ -67,28 +85,18 @@ export function VideoModal({
                   <span className="text-white/40">ID: {movie.id_movie}</span>
                   <span className="text-white/20 hidden xs:inline">•</span>
                    <span className="text-white/40 hidden sm:inline">
-                    {movie.created_at
-                      ? new Date(movie.created_at).toLocaleDateString("fr-FR", {
+                    {/* BUG #8 FIX: Sequelize uses camelCase createdAt, not snake_case created_at */}
+                    {movie.createdAt
+                      ? new Date(movie.createdAt).toLocaleDateString("fr-FR", {
                           day: "numeric",
                           month: "long",
                           year: "numeric",
                         })
                       : "Date inconnue"}
                   </span>
-                  <span
-                    className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full border ${
-                      localStatus === "selected"
-                        ? "bg-green-500/20 text-green-300 border-green-500/30"
-                        : localStatus === "refused"
-                          ? "bg-red-500/20 text-red-300 border-red-500/30"
-                          : "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
-                    }`}
-                  >
-                    {localStatus === "selected"
-                      ? "Sélectionné"
-                      : localStatus === "refused"
-                        ? "Refusé"
-                        : "En attente"}
+                  {/* BUG #7 FIX: use statusDisplay lookup instead of 3-state ternary */}
+                  <span className={`inline-flex px-2 py-0.5 text-[10px] font-medium rounded-full border ${statusDisplay.style}`}>
+                    {statusDisplay.label}
                   </span>
                 </div>
               </div>
@@ -150,54 +158,55 @@ export function VideoModal({
                   </h3>
                 </div>
 
-                {movie.trailer || movie.youtube_link ? (
-                  movie.trailer ? (
+                {/* BUG #2 + #6 FIX: check pending state before rendering player;
+                    show YouTube CTA alongside the player (not instead of it) */}
+                {isPending(movie) ? (
+                  /* Video submitted but not yet processed by YouTube watcher */
+                  <PendingVideoPlaceholder accepted={false} />
+                ) : movie.trailer ? (
+                  /* Video processed and in uploads/uploaded/ — show player */
+                  <div className="space-y-2">
                     <VideoPreview
                       title={movie.title}
                       src={`${uploadBase}/${movie.trailer}`}
                       poster={poster || undefined}
                     />
-                  ) : (
-                    <a
-                      href={movie.youtube_link}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="group relative flex items-center justify-center gap-3 w-full h-20 sm:h-24 md:h-28 bg-gradient-to-br from-red-500/20 to-red-600/10 backdrop-blur-md border border-red-500/40 text-red-300 text-sm rounded-lg hover:bg-red-500/30 hover:text-red-200 hover:border-red-500/60 transition-all duration-300 overflow-hidden shadow-lg"
-                    >
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-                      <svg
-                        className="w-4 h-4 sm:w-5 sm:h-5 relative"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
+                    {/* BUG #6 FIX: also show the YouTube link when available (was previously hidden) */}
+                    {movie.youtube_link && (
+                      <a
+                        href={movie.youtube_link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="group relative flex items-center justify-center gap-2 w-full py-2 bg-gradient-to-br from-red-500/15 to-red-600/5 border border-red-500/30 text-red-300 text-xs rounded-lg hover:bg-red-500/25 hover:text-red-200 transition-all duration-300"
                       >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                        />
-                      </svg>
-                      <span className="relative text-xs font-medium hidden xs:inline">
-                        Regarder sur YouTube
-                      </span>
-                    </a>
-                  )
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                        </svg>
+                        <span className="font-medium">Regarder sur YouTube ↗</span>
+                      </a>
+                    )}
+                  </div>
+                ) : movie.youtube_link ? (
+                  /* No local file but youtube_link exists — show YouTube button only */
+                  <a
+                    href={movie.youtube_link}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group relative flex items-center justify-center gap-3 w-full h-20 sm:h-24 md:h-28 bg-gradient-to-br from-red-500/20 to-red-600/10 backdrop-blur-md border border-red-500/40 text-red-300 text-sm rounded-lg hover:bg-red-500/30 hover:text-red-200 hover:border-red-500/60 transition-all duration-300 overflow-hidden shadow-lg"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+                    <svg className="w-4 h-4 sm:w-5 sm:h-5 relative" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    <span className="relative text-xs font-medium hidden xs:inline">
+                      Regarder sur YouTube
+                    </span>
+                  </a>
                 ) : (
                   <div className="flex items-center justify-center w-full h-20 sm:h-24 md:h-28 bg-black/50 border border-white/10 rounded-lg">
                     <div className="text-center">
-                      <svg
-                        className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500 mx-auto mb-2"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={1.5}
-                          d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
-                        />
+                      <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-500 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
                       <span className="text-xs sm:text-sm text-gray-400">
                         Aucune vidéo disponible

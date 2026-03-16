@@ -46,6 +46,8 @@ function IconChat() {
 }
 
 /* ─── Correspondance ENUM → libellé ──────────────────── */
+const GRAIN = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
+
 const VOTE_LABELS = {
   YES: "Validé",
   "TO DISCUSS": "À discuter",
@@ -449,10 +451,10 @@ export default function JuryHome() {
                       {getTrailer(selectedMovie) ? (
                         <VideoPreview
                           title={selectedMovie.title}
+                          label="MarsAI Festival"
                           src={`${UPLOAD_BASE}/${getTrailer(selectedMovie)}`}
                           poster={getPoster(selectedMovie) || undefined}
                           onEnded={handleVideoEnded}
-                          openMode="fullscreen"
                         />
                       ) : (
                         <a href={selectedMovie.youtube_link} target="_blank" rel="noreferrer"
@@ -704,6 +706,8 @@ function MovieGrid({ movies, votesByMovie, emptyText, onSelect, showVoteBadge, s
       </div>
     );
   }
+
+  const GRAIN_INSIDE = null; // moved to module level
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
       {movies.map((movie) => {
@@ -714,50 +718,86 @@ function MovieGrid({ movies, votesByMovie, emptyText, onSelect, showVoteBadge, s
             key={movie.id_movie}
             type="button"
             onClick={() => onSelect(movie)}
-            className="group relative bg-white/3 border border-white/8 rounded-2xl overflow-hidden hover:border-white/20 hover:bg-white/5 transition-all duration-200 text-left"
+            className="group relative text-left focus:outline-none"
+            style={{ aspectRatio: "2/3" }}
           >
-            {/* Badges */}
-            <div className="absolute top-1.5 left-1.5 z-10 flex flex-col gap-1">
-              {(movie.Awards || []).length > 0 && (
-                <span className="bg-yellow-500/90 text-black text-[9px] px-1.5 py-0.5 rounded-full font-bold">🏆</span>
-              )}
-              {showSecondVoteBadge && (
-                <span className="bg-amber-900/90 text-amber-200 text-[9px] px-1.5 py-0.5 rounded-full font-bold">2e</span>
-              )}
-            </div>
-            {showVoteBadge && vote && (
-              <div className="absolute top-1.5 right-1.5 z-10">
-                <span className="w-4 h-4 flex items-center justify-center bg-sky-500/80 text-white text-[9px] rounded-full font-bold">✓</span>
-              </div>
-            )}
-            {showCandidateBadge && (
-              <div className="absolute top-1.5 right-1.5 z-10">
-                <span className="w-4 h-4 flex items-center justify-center bg-emerald-500/80 text-white text-[9px] rounded-full font-bold">★</span>
-              </div>
-            )}
-            {/* Thumbnail */}
-            <div className="aspect-video bg-white/5">
+            <div className="relative w-full h-full rounded-lg overflow-hidden shadow-[0_8px_32px_rgba(0,0,0,0.7)] group-hover:shadow-[0_12px_40px_rgba(173,70,255,0.22)] transition-all duration-500 group-hover:-translate-y-2 cursor-pointer">
+
+              {/* Poster image or fallback */}
               {poster ? (
-                <img src={poster} alt={movie.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                <img src={poster} alt={movie.title} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" />
               ) : (
-                <div className="w-full h-full flex items-center justify-center text-white/10">
-                  <FilmIcon small />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#1a1025] via-[#0d0f14] to-[#1a0a20] flex items-center justify-center">
+                  <span className="text-4xl opacity-20">🎬</span>
                 </div>
               )}
-            </div>
-            {/* Info */}
-            <div className="p-2.5">
-              <h3 className="text-xs font-semibold text-white/80 truncate group-hover:text-white transition-colors">
-                {movie.title}
-              </h3>
-              <p className="text-[10px] text-white/25 mt-0.5">
-                {movie.duration}s{movie.main_language ? ` · ${movie.main_language}` : ""}
-              </p>
-              {vote && (
-                <div className="mt-1">
-                  <VotePill note={vote.note} tiny />
+
+              {/* Film grain */}
+              <div className="absolute inset-0 opacity-[0.07] pointer-events-none mix-blend-overlay" style={{ backgroundImage: GRAIN, backgroundSize: "120px 120px" }} />
+
+              {/* Vignettes */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black via-black/35 to-transparent" />
+
+              {/* Corner marks */}
+              <div className="absolute top-2.5 left-2.5 w-3 h-3 border-t border-l border-white/20" />
+              <div className="absolute top-2.5 right-2.5 w-3 h-3 border-t border-r border-white/20" />
+              <div className="absolute bottom-2.5 left-2.5 w-3 h-3 border-b border-l border-white/20" />
+              <div className="absolute bottom-2.5 right-2.5 w-3 h-3 border-b border-r border-white/20" />
+
+              {/* Top-left badges */}
+              <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 z-10">
+                {(movie.Awards || []).length > 0 && (
+                  <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest backdrop-blur-sm rounded-sm bg-yellow-400/20 text-yellow-300 border border-yellow-400/30">
+                    🏆
+                  </span>
+                )}
+                {showSecondVoteBadge && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-widest backdrop-blur-sm rounded-sm bg-amber-900/70 text-amber-200 border border-amber-500/30">
+                    2e
+                  </span>
+                )}
+              </div>
+
+              {/* Top-right badges */}
+              <div className="absolute top-2.5 right-2.5 flex flex-col gap-1 z-10">
+                {showVoteBadge && vote && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-[8px] font-bold backdrop-blur-sm rounded-sm bg-sky-500/25 text-sky-300 border border-sky-500/30">
+                    ✓
+                  </span>
+                )}
+                {showCandidateBadge && (
+                  <span className="inline-flex items-center px-1.5 py-0.5 text-[8px] font-bold backdrop-blur-sm rounded-sm bg-emerald-500/25 text-emerald-300 border border-emerald-500/30">
+                    ★
+                  </span>
+                )}
+              </div>
+
+              {/* Bottom text */}
+              <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 pt-1">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <div className="flex-1 h-px bg-white/20" />
+                  <span className="text-[6px] tracking-[0.2em] text-white/35 uppercase font-medium">MarsAI</span>
+                  <div className="flex-1 h-px bg-white/20" />
                 </div>
-              )}
+                <p
+                  className="font-bold uppercase tracking-wide leading-tight text-white group-hover:text-[#C179FB] transition-colors duration-300 line-clamp-2"
+                  style={{ fontSize: "clamp(8px, 1.8vw, 12px)", textShadow: "0 1px 6px rgba(0,0,0,1)" }}
+                >
+                  {movie.title}
+                </p>
+                <div className="flex items-center gap-1 mt-1 text-white/35" style={{ fontSize: "8px" }}>
+                  {movie.main_language && <span className="uppercase tracking-wider">{movie.main_language}</span>}
+                  {movie.duration && movie.main_language && <span>·</span>}
+                  {movie.duration && <span>{movie.duration}s</span>}
+                </div>
+                {/* Vote pill */}
+                {vote && (
+                  <div className="mt-1.5">
+                    <VotePill note={vote.note} tiny />
+                  </div>
+                )}
+              </div>
             </div>
           </button>
         );

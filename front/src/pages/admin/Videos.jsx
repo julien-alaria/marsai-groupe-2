@@ -15,7 +15,7 @@
  *   B-08 — Confirmation visuelle affichée après la suppression définitive d'un film.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   getCategories, getVideos, deleteMovie,
@@ -38,7 +38,6 @@ async function setFestivalPhase(phase) {
   return r.json();
 }
 import { getVotes } from "../../api/votes.js";
-import { VideoPreview } from "../../components/VideoPreview.jsx";
 import { UPLOAD_BASE } from "../../utils/constants.js";
 import { getPoster, getTrailer } from "../../utils/movieUtils.js";
 
@@ -705,23 +704,68 @@ function FilmModal({ movie, summary, categories, catSel, setCatSel,
   const pIdx     = PIPELINE_ORDER.indexOf(status);
   const [manual,  setManual]  = useState(false);
   const [fsVideo, setFsVideo] = useState(false);
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    if (fsVideo) {
+      // Small timeout lets the DOM render the <video> before we call play()
+      setTimeout(() => videoRef.current?.play().catch(() => null), 50);
+    } else if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  }, [fsVideo]);
   const currentCats = catSel[movie.id_movie] || [];
 
   return (
     <>
     {/* Fullscreen video overlay */}
     {fsVideo && (
-      <div className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-xl flex items-center justify-center"
+      <div className="fixed inset-0 z-[60] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4"
            onClick={() => setFsVideo(false)}>
-        <button className="absolute top-4 right-4 text-white/50 hover:text-white text-2xl z-10 transition-all duration-300" onClick={() => setFsVideo(false)}>✕</button>
-        {trailer
-          ? <div className="w-full max-w-5xl px-2" onClick={(e) => e.stopPropagation()}>
-              <VideoPreview title={movie.title} src={`${UPLOAD_BASE}/${trailer}`} poster={poster || undefined} />
+        <div className="w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
+
+          {/* Header */}
+          <div className="flex items-start justify-between mb-3 px-1">
+            <div>
+              <p className="text-[8px] tracking-[0.25em] uppercase text-amber-400/50 mb-1">
+                MarsAI Festival
+              </p>
+              <h2 className="text-white font-bold text-lg sm:text-xl uppercase tracking-wide">
+                {movie.title}
+              </h2>
             </div>
-          : <a href={movie.youtube_link} target="_blank" rel="noreferrer" className="text-amber-400 text-lg underline hover:text-amber-300 transition-all duration-300">
-              Ouvrir sur YouTube ↗
-            </a>
-        }
+            <button
+              className="flex-shrink-0 w-8 h-8 rounded-lg bg-white/8 hover:bg-white/15 border border-white/10 text-white/50 hover:text-white flex items-center justify-center transition-all ml-4"
+              onClick={() => setFsVideo(false)}
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="flex items-center gap-3 mb-4 px-1">
+            <div className="flex-1 h-px bg-white/10" />
+            <div className="flex-1 h-px bg-white/10" />
+          </div>
+
+          {/* Player — no poster to avoid the 1s flash */}
+          {trailer
+            ? <div className="rounded-xl overflow-hidden border border-white/8 bg-black shadow-[0_0_60px_rgba(0,0,0,0.8)]">
+                <video
+                  ref={videoRef}
+                  className="w-full aspect-video object-contain bg-black"
+                  src={`${UPLOAD_BASE}/${trailer}`}
+                  controls
+                />
+              </div>
+            : <a href={movie.youtube_link} target="_blank" rel="noreferrer" className="text-amber-400 text-lg underline hover:text-amber-300 transition-all duration-300">
+                Ouvrir sur YouTube ↗
+              </a>
+          }
+        </div>
       </div>
     )}
 
