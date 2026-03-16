@@ -7,10 +7,10 @@ import { showAppAlert } from "../utils/appAlert";
  * Timeout: 5000ms (increased for DB operations)
  */
 const instance = axios.create({
-  // baseURL: "http://localhost:3000/",
-  // timeout: 5000,
-  baseURL: "http://127.0.0.1:3000/",
+  baseURL: import.meta.env.VITE_API_URL || "http://127.0.0.1:3000/",
   timeout: 10000,
+  // Nécessaire pour ngrok (évite la page d'avertissement sur les requêtes API)
+  headers: { "ngrok-skip-browser-warning": "true" },
 });
 
 /**
