@@ -55,7 +55,9 @@ export default function JuryHome() {
             ? `${uploadBase}/${movie.picture2}`
             : movie.picture3
               ? `${uploadBase}/${movie.picture3}`
-              : null
+              : movie?.youtube_movie_id
+                ? `https://img.youtube.com/vi/${movie.youtube_movie_id}/hqdefault.jpg`
+                : null
   );
 
   const getTrailer = (movie) => (

@@ -249,13 +249,17 @@ function Awards() {
   };
 
   const getPoster = (movie) => {
-    return movie.thumbnail
+    const localPoster = movie.thumbnail
       ? `${UPLOAD_BASE}/${movie.thumbnail}`
       : movie.display_picture
         ? `${UPLOAD_BASE}/${movie.display_picture}`
         : movie.picture1
           ? `${UPLOAD_BASE}/${movie.picture1}`
           : null;
+
+    if (localPoster) return localPoster;
+    const youtubeId = movie?.youtube_movie_id || movie?.youtube_link?.trim?.().match?.(/[?&]v=([^&]+)/)?.[1] || null;
+    return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
   };
 
   const getTrailer = (movie) => (

@@ -176,7 +176,19 @@ function Leaderboard() {
 
   function getPoster(movie) {
     if (!movie) return null;
-    return movie.thumbnail || movie.display_picture || movie.picture1 || movie.picture2 || movie.picture3 || null;
+    return movie.thumbnail
+      || movie.display_picture
+      || movie.picture1
+      || movie.picture2
+      || movie.picture3
+      || (movie.youtube_movie_id ? `https://img.youtube.com/vi/${movie.youtube_movie_id}/hqdefault.jpg` : null)
+      || null;
+  }
+
+  function getPosterSrc(movie) {
+    const poster = getPoster(movie);
+    if (!poster) return null;
+    return poster.startsWith("http") ? poster : `${uploadBase}/${poster}`;
   }
 
   function getTrailer(movie) {
@@ -267,7 +279,7 @@ function Leaderboard() {
             />
             <div className="flex gap-3">
               <img 
-                src={getPoster(movie) ? `${uploadBase}/${getPoster(movie)}` : undefined} 
+                src={getPosterSrc(movie) || undefined} 
                 alt="Vignette" 
                 className="w-24 h-16 object-cover rounded bg-gray-800"
               />
@@ -343,7 +355,7 @@ function Leaderboard() {
                       <VideoPreview
                         title={movieToView.title}
                         src={`${uploadBase}/${getTrailer(movieToView)}`}
-                        poster={getPoster(movieToView) ? `${uploadBase}/${getPoster(movieToView)}` : undefined}
+                        poster={getPosterSrc(movieToView) || undefined}
                         openMode="fullscreen"
                         modalPlacement="bottom"
                         modalTopOffsetClass="top-20 left-0 right-0 bottom-0"
