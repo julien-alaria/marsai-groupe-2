@@ -18,7 +18,9 @@ async function getMyMovies() {
  */
 async function createMovie(formData) {
   return await instance.post("movies/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" }
+    headers: { "Content-Type": "multipart/form-data" },
+    // Upload vidéo via ngrok peut dépasser 10s: on étend ce timeout uniquement ici.
+    timeout: 180000
   });
 }
 
