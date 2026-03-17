@@ -21,8 +21,18 @@ const PORT = process.env.PORT || 3000;
 /**
  * Configuration des middlewares
  */
+const allowedOrigins = process.env.FRONTEND_URL
+  ? process.env.FRONTEND_URL.split(",").map(o => o.trim())
+  : ["http://localhost:5173", "http://localhost:5174"];
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || ["http://localhost:5173", "http://localhost:5174"],
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+      callback(null, true);
+    } else {
+      callback(new Error(`CORS: origin not allowed: ${origin}`));
+    }
+  },
   credentials: true
 }));
 app.use(express.json());
