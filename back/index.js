@@ -27,7 +27,10 @@ const allowedOrigins = process.env.FRONTEND_URL
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.some(o => origin.startsWith(o))) {
+    const isAllowedExplicitly = allowedOrigins.some(o => origin?.startsWith(o));
+    const isVercelPreview = /\.vercel\.app$/.test(new URL(origin || "http://localhost").hostname);
+
+    if (!origin || isAllowedExplicitly || isVercelPreview) {
       callback(null, true);
     } else {
       callback(new Error(`CORS: origin not allowed: ${origin}`));
