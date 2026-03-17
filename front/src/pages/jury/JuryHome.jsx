@@ -59,12 +59,14 @@ export default function JuryHome() {
   );
 
   const getTrailer = (movie) => (
-    movie.trailer
-      || movie.trailer_video
-      || movie.trailerVideo
-      || movie.filmFile
-      || movie.video
-      || null
+    (typeof movie?.youtube_link === "string" && movie.youtube_link.trim())
+      ? null
+      : movie.trailer
+        || movie.trailer_video
+        || movie.trailerVideo
+        || movie.filmFile
+        || movie.video
+        || null
   );
 
   useEffect(() => {
@@ -623,7 +625,7 @@ export default function JuryHome() {
                       {selectedMovie.youtube_link && (
                         <a
                           className="text-[#AD46FF] hover:text-[#F6339A] font-semibold"
-                          href={selectedMovie.youtube_link}
+                          href={selectedMovie.youtube_link.trim()}
                           target="_blank"
                           rel="noreferrer"
                         >
@@ -646,7 +648,7 @@ export default function JuryHome() {
                             openMode="fullscreen"
                           />
                         ) : (
-                          <a className="text-[#AD46FF] hover:text-[#F6339A]" href={selectedMovie.youtube_link} target="_blank" rel="noreferrer">
+                          <a className="text-[#AD46FF] hover:text-[#F6339A]" href={selectedMovie.youtube_link.trim()} target="_blank" rel="noreferrer">
                             Ouvrir la vidéo
                           </a>
                         )}
