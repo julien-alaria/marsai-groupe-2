@@ -46,24 +46,32 @@ export const getPoster = (movie) => {
     movie.picture2 ||
     movie.picture3 ||
     null;
-  if (field) return `${UPLOAD_BASE}/${field}`;
+  if (field) {
+    // Ensure uploaded/ prefix for local files
+    const withPrefix = field.startsWith("uploaded/") ? field : `uploaded/${field}`;
+    return `${UPLOAD_BASE}/${withPrefix}`;
+  }
 
   const youtubeVideoId = getYoutubeVideoId(movie);
   return youtubeVideoId ? `https://img.youtube.com/vi/${youtubeVideoId}/hqdefault.jpg` : null;
 };
 
 /**
- * Returns the local video filename for a movie if one exists.
+ * Returns the local video path for a movie if one exists.
+ * Ensures the path includes the 'uploaded/' prefix for files stored in back/uploads/uploaded/.
  * Returns null if no local file — caller should fall back to youtube_link.
  */
 export const getTrailer = (movie) => {
   if (!movie) return null;
-  return (
+  const fileName =
     movie.trailer ||
     movie.trailer_video ||
     movie.trailerVideo ||
     movie.filmFile ||
     movie.video ||
-    null
-  );
+    null;
+
+  if (!fileName) return null;
+  // If file doesn't already start with 'uploaded/', prepend it
+  return fileName.startsWith("uploaded/") ? fileName : `uploaded/${fileName}`;
 };

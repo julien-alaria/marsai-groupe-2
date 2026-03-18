@@ -176,13 +176,12 @@ function Leaderboard() {
 
   function getPoster(movie) {
     if (!movie) return null;
-    return movie.thumbnail
-      || movie.display_picture
-      || movie.picture1
-      || movie.picture2
-      || movie.picture3
-      || (movie.youtube_movie_id ? `https://img.youtube.com/vi/${movie.youtube_movie_id}/hqdefault.jpg` : null)
-      || null;
+    const field = movie.thumbnail || movie.display_picture || movie.picture1 || movie.picture2 || movie.picture3 || null;
+    if (field) {
+      // Ensure uploaded/ prefix for local files (those without http)
+      return field.startsWith("http") ? field : (field.startsWith("uploaded/") ? field : `uploaded/${field}`);
+    }
+    return movie.youtube_movie_id ? `https://img.youtube.com/vi/${movie.youtube_movie_id}/hqdefault.jpg` : null;
   }
 
   function getPosterSrc(movie) {
@@ -193,8 +192,9 @@ function Leaderboard() {
 
   function getTrailer(movie) {
     if (!movie) return null;
-    if (typeof movie.youtube_link === "string" && movie.youtube_link.trim()) return null;
-    return movie.trailer || movie.trailer_video || movie.trailerVideo || movie.filmFile || movie.video || null;
+    const fileName = movie.trailer || movie.trailer_video || movie.trailerVideo || movie.filmFile || movie.video || null;
+    if (!fileName) return null;
+    return fileName.startsWith("uploaded/") ? fileName : `uploaded/${fileName}`;
   }
 
   function getStatusStepMeta(status) {

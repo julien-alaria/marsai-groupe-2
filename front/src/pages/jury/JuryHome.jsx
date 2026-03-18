@@ -44,30 +44,21 @@ export default function JuryHome() {
   });
   const uploadBase = UPLOAD_BASE;
 
-  const getPoster = (movie) => (
-    movie.thumbnail
-      ? `${uploadBase}/${movie.thumbnail}`
-      : movie.display_picture
-        ? `${uploadBase}/${movie.display_picture}`
-        : movie.picture1
-          ? `${uploadBase}/${movie.picture1}`
-          : movie.picture2
-            ? `${uploadBase}/${movie.picture2}`
-            : movie.picture3
-              ? `${uploadBase}/${movie.picture3}`
-              : movie?.youtube_movie_id
-                ? `https://img.youtube.com/vi/${movie.youtube_movie_id}/hqdefault.jpg`
-                : null
-  );
+  const getPoster = (movie) => {
+    const field = movie?.thumbnail || movie?.display_picture || movie?.picture1 || movie?.picture2 || movie?.picture3 || null;
+    if (field) {
+      const withPrefix = field.startsWith("http") || field.startsWith("uploaded/") ? field : `uploaded/${field}`;
+      return withPrefix.startsWith("http") ? withPrefix : `${uploadBase}/${withPrefix}`;
+    }
+    const youtubeId = movie?.youtube_movie_id || movie?.youtube_link?.trim?.().match?.(/[?&]v=([^&]+)/)?.[1] || null;
+    return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
+  };
 
-  const getTrailer = (movie) => (
-    movie?.trailer
-      || movie?.trailer_video
-      || movie?.trailerVideo
-      || movie?.filmFile
-      || movie?.video
-      || null
-  );
+  const getTrailer = (movie) => {
+    const fileName = movie?.trailer || movie?.trailer_video || movie?.trailerVideo || movie?.filmFile || movie?.video || null;
+    if (!fileName) return null;
+    return fileName.startsWith("uploaded/") ? fileName : `uploaded/${fileName}`;
+  };
 
   useEffect(() => {
     localStorage.setItem("juryArchivedMovies", JSON.stringify(archivedMovieIds));

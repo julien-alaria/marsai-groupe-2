@@ -249,15 +249,11 @@ function Awards() {
   };
 
   const getPoster = (movie) => {
-    const localPoster = movie.thumbnail
-      ? `${UPLOAD_BASE}/${movie.thumbnail}`
-      : movie.display_picture
-        ? `${UPLOAD_BASE}/${movie.display_picture}`
-        : movie.picture1
-          ? `${UPLOAD_BASE}/${movie.picture1}`
-          : null;
-
-    if (localPoster) return localPoster;
+    const field = movie.thumbnail || movie.display_picture || movie.picture1 || null;
+    if (field) {
+      const withPrefix = field.startsWith("http") || field.startsWith("uploaded/") ? field : `uploaded/${field}`;
+      return withPrefix.startsWith("http") ? withPrefix : `${UPLOAD_BASE}/${withPrefix}`;
+    }
     const youtubeId = movie?.youtube_movie_id || movie?.youtube_link?.trim?.().match?.(/[?&]v=([^&]+)/)?.[1] || null;
     return youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null;
   };

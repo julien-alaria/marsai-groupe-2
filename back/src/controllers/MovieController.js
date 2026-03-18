@@ -267,7 +267,7 @@ async function createMovie(req, res) {
       release_year: movieReleaseYear,
       nationality,
       display_picture: movieDisplayPicture,
-      trailer: filmFile || req.body.trailer || req.body.trailer_video || null,
+      trailer: (filmFile ? `uploaded/${filmFile}` : null) || req.body.trailer || req.body.trailer_video || null,
       youtube_link: movieYoutubeLink,
       production: movieProduction,
       workshop: movieWorkshop,
