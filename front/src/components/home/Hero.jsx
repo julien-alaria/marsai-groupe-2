@@ -1,6 +1,5 @@
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
-import TitleInBox from "../TitleInBox.jsx";
 import Button from "../Button.jsx";
 
 export default function Hero() {
@@ -8,100 +7,66 @@ export default function Hero() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   useEffect(() => {
-    // Controlla se l'utente è loggato verificando il token in localStorage
     const token = localStorage.getItem("token");
     setIsLoggedIn(!!token);
   }, []);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden">
-
-      {/* Vidéo responsive */}
-      <div className="absolute inset-0 w-full h-full overflow-hidden">
-        <video
-          className="w-full h-full object-cover object-center
-                     [@media(max-aspect-ratio:4/5)]:object-[50%_30%]"
-          autoPlay
-          loop
-          muted
-          playsInline
-        >
-          <source src="./src/assets/videos/accueil_marsai_2.mp4" type="video/mp4" />
-        </video>
+    <div className="relative w-full min-h-screen overflow-hidden">
+      <div className="absolute inset-0">
+        <img
+          src="./src/assets/images/festival.png"
+          alt=""
+          className="w-full h-full object-cover"
+        />
       </div>
 
-      {/* Overlay sombre */}
-      <div className="absolute inset-0 bg-black/45"></div>
+      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/30 to-black/15"></div>
 
-      {/* Contenu */}
-      <div className="relative z-10 flex items-center justify-center w-full h-full px-4 md:px-6">
-        <div className="text-center w-full">
-
-          {/* Sur‑titre */}
-          <TitleInBox 
-            title={t("pages.home.hero.subtitle")} 
-            spancolor="#AD46FF" 
-            title2={t("pages.home.hero.year")}
-          />
+      <div className="relative z-10 flex flex-col items-center justify-center w-full min-h-screen px-4 sm:px-6">
+        <div className="text-center max-w-5xl mx-auto space-y-6 md:space-y-8">
+          <div className="animate-fade-in-up">
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/40 backdrop-blur-sm border border-white/20">
+              <span className="size-2 rounded-full bg-[#C77DFF] animate-pulse"></span>
+              <span className="text-xs md:text-sm tracking-widest uppercase text-white">
+                {t("pages.home.hero.subtitle")} {t("pages.home.hero.year")}
+              </span>
+            </div>
+          </div>
         
-
-          {/* Titre principal */}
-          <h1
-            className="
-              font-extrabold leading-none text-white
-              text-[2.5rem] sm:text-[4rem] md:text-[6rem] lg:text-[8rem] xl:text-[11rem]
-              md:whitespace-nowrap
-            "
-          >
-            MARS{" "}
-            <span className="bg-linear-to-r from-[#51A2FF] via-[#AD46FF] to-[#FF2B7F] bg-clip-text text-transparent">
-              AI
-            </span>
-          </h1>
-
-          {/* Baseline */}
-          <h2
-            className="
-              mt-4 font-semibold uppercase tracking-[0.2em] text-gray-200
-              text-base sm:text-lg md:text-xl lg:text-2xl xl:text-3xl
-            "
-          >
-            {t("pages.home.hero.title1")}{" "}
-            <span className="bg-linear-to-r from-[#AD46FF] via-[#F6339A] to-[#FF6900] bg-clip-text text-transparent">
-              {t("pages.home.hero.title2")}
-            </span>{" "}
-            {t("pages.home.hero.title3")}
-          </h2>
-
-          {/* Description */}
-          <div className="text-white pt-3.5">
-            <TitleInBox
-              title={
-                <>
-                  {t("pages.home.hero.description1")}
-                  <br />
-                  <div className="text-[#fd6cba] pt-2.5">
-                    {t("pages.home.hero.description2")}
-                  </div>
-                </>
-              }
-            />
+          <div className="animate-fade-in-up animation-delay-150">
+            <h1 className="font-outfit font-bold md:font-extrabold text-white leading-none tracking-tight drop-shadow-[0_4px_20px_rgba(0,0,0,0.8)]">
+              <span className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem]">MARS</span>
+              <span className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl xl:text-[10rem] text-gradient-hero ml-2 sm:ml-4">AI</span>
+            </h1>
           </div>
 
-          {/* Bouton */}
-          <div className="flex justify-center pt-6 mt-6">
+          <div className="animate-fade-in-up animation-delay-300">
+            <p className="font-outfit font-light text-white text-base sm:text-lg md:text-xl lg:text-2xl tracking-wide drop-shadow-[0_2px_10px_rgba(0,0,0,0.8)]">
+              {t("pages.home.hero.title1")}{" "}
+              <span className="font-semibold text-gradient-hero-soft">
+                {t("pages.home.hero.title2")}
+              </span>{" "}
+              {t("pages.home.hero.title3")}
+            </p>
+          </div>
+
+          <div className="animate-fade-in-up animation-delay-450 max-w-xl mx-auto space-y-1">
+            <p className="font-outfit text-white/90 text-sm sm:text-base md:text-lg leading-relaxed drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+              {t("pages.home.hero.description1")}
+            </p>
+            <p className="font-outfit font-medium text-sm sm:text-base md:text-lg text-gradient-warm drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+              {t("pages.home.hero.description2")}
+            </p>
+          </div>
+
+          <div className="animate-fade-in-up animation-delay-600 pt-2">
             <Button
               title={isLoggedIn ? t("pages.home.hero.buttonLogged") : t("pages.home.hero.button")}
               href={isLoggedIn ? "/producer" : "/auth/register"}
-              backgroundColor="bg-white"
-              textColor="text-black"
-              hoverBackgroundColor="hover:bg-[#F5F5F5]"
-              hoverBorderColor="hover:border-[#F6339A]"
-              shadow = "shadow-[0_0_25px_rgba(255,255,255,0.35)]"
-              hoverShadow = "hover:shadow-[0_0_40px_rgba(173,70,255,0.7)]"
+              size="md"
             />
           </div>
-
         </div>
       </div>
     </div>
