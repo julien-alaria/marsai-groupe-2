@@ -1,20 +1,10 @@
 import db from "../models/index.js";
-const Collaborator = db.Collaborator;
 import { comparePassword } from "../utils/password.js";
 import { hashPassword } from "../utils/password.js";
 import UserController from "./UserController.js";
 import jwt from "jsonwebtoken";
 import { isMailerConfigured, sendEmail, sendTemplateEmail } from "../utils/mailer.js";
 
-const NewsletterSubscriber = db.NewsletterSubscriber;
-
-/**
- * Fonction de connexion (Login)
- * Valide les identifiants de l'utilisateur et crée un JWT
- * @param {Object} req - La requête HTTP contenant { email, password }
- * @param {Object} res - La réponse HTTP
- * @returns {Object} Un token JWT et les infos utilisateur si succès, sinon erreur 401
- */
 function login(req, res) {
   const { email, password } = req.body;
 
@@ -37,7 +27,6 @@ function login(req, res) {
       { expiresIn: process.env.JWT_EXPIRES_IN || "1h" }
     );
 
-
     // Ritornare il token e le info utente con wrapper data
       const responseData = {
         message: "Connexion réussie",
@@ -57,12 +46,6 @@ function login(req, res) {
   });
 }
 
-/**
- * Fonction d'enregistrement (Register)
- * Crée un nouvel utilisateur dans la base de données
- * @param {Object} req - La requête HTTP contenant les données d'enregistrement
- * @param {Object} res - La réponse HTTP
- */
 function register(req, res) {
   // Déléguer à UserController pour créer l'utilisateur
   UserController.createUser(req, res);
@@ -220,7 +203,7 @@ async function registerWithFilm(req, res) {
         collaborators
           .filter(collab => collab?.email)
           .map(async (collab) => {
-          const [record] = await Collaborator.findOrCreate({
+          const [record] = await db.Collaborator.findOrCreate({
             where: { email: collab.email },
             defaults: {
               first_name: collab.first_name || "",
@@ -241,7 +224,7 @@ async function registerWithFilm(req, res) {
 
     let mailNotification = "Email non envoyé (SMTP non configuré)";
     try {
-      const [subscriber, created] = await NewsletterSubscriber.findOrCreate({
+      const [subscriber, created] = await db.NewsletterSubscriber.findOrCreate({
         where: { email: newUser.email },
         defaults: {
           email: newUser.email,
