@@ -11,6 +11,7 @@ import {
 } from "../../api/videos";
 import { getVotes } from "../../api/votes";
 import { VideoPreview } from "../../components/VideoPreview";
+import { UPLOAD_BASE } from "../../utils/constants";
 
 function Leaderboard() {
   const queryClient = useQueryClient();
@@ -19,7 +20,6 @@ function Leaderboard() {
   const [message, setMessage] = useState("");
   const [showVotesModal, setShowVotesModal] = useState(false);
   const [movieToView, setMovieToView] = useState(null);
-  const uploadBase = "http://localhost:3000/uploads";
 
   // Fetch all movies
   const { data } = useQuery({
@@ -265,7 +265,7 @@ function Leaderboard() {
             />
             <div className="flex gap-3">
               <img 
-                src={getPoster(movie) ? `${uploadBase}/${getPoster(movie)}` : undefined} 
+                src={getPoster(movie) ? `${UPLOAD_BASE}/${getPoster(movie)}` : undefined} 
                 alt="Vignette" 
                 className="w-24 h-16 object-cover rounded bg-gray-800"
               />
@@ -340,8 +340,8 @@ function Leaderboard() {
                     {getTrailer(movieToView) ? (
                       <VideoPreview
                         title={movieToView.title}
-                        src={`${uploadBase}/${getTrailer(movieToView)}`}
-                        poster={getPoster(movieToView) ? `${uploadBase}/${getPoster(movieToView)}` : undefined}
+                        src={`${UPLOAD_BASE}/${getTrailer(movieToView)}`}
+                        poster={getPoster(movieToView) ? `${UPLOAD_BASE}/${getPoster(movieToView)}` : undefined}
                         openMode="fullscreen"
                         modalPlacement="bottom"
                         modalTopOffsetClass="top-20 left-0 right-0 bottom-0"
@@ -372,7 +372,7 @@ function Leaderboard() {
                       getThumbnails(movieToView).map((thumb) => (
                         <img
                           key={thumb}
-                          src={`${uploadBase}/${thumb}`}
+                          src={`${UPLOAD_BASE}/${thumb}`}
                           alt="Vignette film"
                           className="w-full h-16 object-cover rounded border border-gray-800 bg-gray-950"
                         />

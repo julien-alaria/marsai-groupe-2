@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { sponsorService } from "../../api/adminSponsors";
+import { UPLOAD_BASE } from "../../utils/constants";
 
 export default function SponsorsAdmin() {
   const { getSponsors, createSponsor, deleteSponsor } = sponsorService();
@@ -141,7 +142,7 @@ export default function SponsorsAdmin() {
         {sponsors.map((sponsor) => (
           <div key={sponsor.id_sponsor} className="border p-4 rounded">
             <img
-              src={`http://localhost:3000${sponsor.logo}`}
+              src={`${UPLOAD_BASE}${sponsor.logo}`}
               alt={sponsor.name}
               className="h-20 object-contain mb-2"
             />

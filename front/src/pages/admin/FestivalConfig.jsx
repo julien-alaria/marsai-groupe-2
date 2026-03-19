@@ -271,6 +271,7 @@ import { useFestivalConfig } from "../../hooks/useFestivalConfig";
 import SectionCard from "../../components/admin/config/SectionCard";
 import ConfigInput from "../../components/admin/config/ConfigInput";
 import ColorPicker from "../../components/admin/config/ColorPicker";
+import { UPLOAD_BASE } from "../../utils/constants";
 
 // ─── Icon helpers ──────────────────────────────────────────────────────────────
 const Icon = ({ d, size = 18 }) => (
@@ -367,7 +368,7 @@ function SponsorsManager() {
 
   const startEdit = (sp) => {
     setForm({ name: sp.name, category: sp.category || "divers", url: sp.url || "", logo: null });
-    setPreview(`http://localhost:3000${sp.logo}`);
+    setPreview(`${UPLOAD_BASE}${sp.logo}`);
     setEditId(sp.id_sponsor);
     setShowForm(true);
   };
@@ -553,7 +554,7 @@ function SponsorsManager() {
                     >
                       <div className="w-12 h-10 flex-shrink-0 bg-white/8 rounded-lg flex items-center justify-center overflow-hidden">
                         <img
-                          src={`http://localhost:3000${sp.logo}`}
+                          src={`${UPLOAD_BASE}${sp.logo}`}
                           alt={sp.name}
                           className="max-h-full max-w-full object-contain p-1"
                           onError={(e) => { e.target.style.display = "none"; }}

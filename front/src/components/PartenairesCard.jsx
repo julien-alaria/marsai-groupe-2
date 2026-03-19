@@ -8,6 +8,9 @@ const colors = [
 
 let colorIndex = 0;
 
+const UPLOAD_BASE =
+  import.meta.env.VITE_UPLOAD_BASE || "http://localhost:3000/uploads";
+
 export default function PartenaireCard({ name, logo, color, url }) {
   const finalColor = color || colors[colorIndex % colors.length];
 
@@ -31,7 +34,7 @@ export default function PartenaireCard({ name, logo, color, url }) {
     >
       <div className="w-full h-40 flex items-center justify-center mb-3">
         <img
-          src={`http://localhost:3000${logo}`}
+          src={`${UPLOAD_BASE}${logo}`}
           alt={name}
           className="max-h-full object-contain"
         />
