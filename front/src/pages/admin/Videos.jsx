@@ -325,7 +325,65 @@ export default function Videos() {
             <p className="text-sm">{allMovies.length === 0 ? "Aucun film soumis." : "Aucun film pour ce filtre."}</p>
           </div>
         ) : (
-          <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden backdrop-blur-sm">
+          <>
+            {/* Mobile cards */}
+            <div className="lg:hidden space-y-3">
+              {filteredMovies.map((movie) => {
+                const status = movie.selection_status || "submitted";
+                const meta = scfg(status);
+                const poster = getPoster(movie);
+                const summary = voteSummary[movie.id_movie];
+
+                return (
+                  <button
+                    key={`mobile-${movie.id_movie}`}
+                    type="button"
+                    onClick={() => setSelectedMovie(movie)}
+                    className="w-full rounded-2xl border border-white/10 bg-white/5 overflow-hidden text-left"
+                  >
+                    <div className="aspect-video bg-black/40">
+                      {poster ? (
+                        <SafeImage
+                          src={poster}
+                          alt={movie.title}
+                          className="w-full h-full object-cover"
+                          fallback={<div className="w-full h-full flex items-center justify-center text-white/20">🎬</div>}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white/20">🎬</div>
+                      )}
+                    </div>
+
+                    <div className="p-3 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <h3 className="text-sm font-semibold text-white truncate">{movie.title}</h3>
+                        <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-1 rounded-lg font-medium ${meta.badge}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${meta.dot}`} />
+                          {meta.label}
+                        </span>
+                      </div>
+
+                      <p className="text-xs text-white/50 truncate">
+                        {movie.Producer ? `${movie.Producer.first_name} ${movie.Producer.last_name}` : "—"}
+                      </p>
+
+                      {summary ? (
+                        <div className="flex gap-2 text-[11px] font-['JetBrains_Mono']">
+                          <span className="text-emerald-400">{summary.YES}👍</span>
+                          <span className="text-amber-400">{summary["TO DISCUSS"]}💬</span>
+                          <span className="text-red-400">{summary.NO}👎</span>
+                        </div>
+                      ) : (
+                        <span className="text-[11px] text-white/30">—</span>
+                      )}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden lg:block rounded-2xl border border-white/10 bg-white/5 overflow-hidden backdrop-blur-sm">
             <div className="grid grid-cols-[40px_70px_minmax(200px,1fr)_130px_100px_120px_1fr] gap-2 px-4 py-3 border-b border-white/10 bg-white/5">
               <input type="checkbox" checked={selectedIds.length === filteredMovies.length && filteredMovies.length > 0}
                 onChange={() => setSelectedIds(selectedIds.length === filteredMovies.length ? [] : filteredMovies.map((m) => m.id_movie))}
@@ -448,7 +506,8 @@ export default function Videos() {
                 );
               })}
             </div>
-          </div>
+            </div>
+          </>
         )}
       </div>
 
