@@ -29,17 +29,17 @@ AI</span></h2>
           <div className="text-right">
             <h3 className="text-base font-semibold mb-4 text-[#AD46FF]">{t("footer.navigation.title")}</h3>
             <ul className="space-y-2 text-gray-300">
-              <li><a href="#" className="hover:text-white transition">{t("footer.navigation.jury")}</a></li>
-              <li><a href="#" className="hover:text-white transition">{t("footer.navigation.program")}</a></li>
-              <li><a href="#" className="hover:text-white transition">{t("footer.navigation.ticketing")}</a></li>
+              <li><a href="/juryPublic" className="hover:text-white transition">{t("footer.navigation.jury")}</a></li>
+              <li><a href="/program" className="hover:text-white transition">{t("footer.navigation.program")}</a></li>
+              <li><a href="/program" className="hover:text-white transition">{t("footer.navigation.ticketing")}</a></li>
             </ul>
           </div>
           <div className="text-right">
             <h3 className="text-base font-semibold mb-4 text-[#F6339A]">{t("footer.legal.title")}</h3>
             <ul className="space-y-2 text-gray-300">
-              <li><a href="#" className="hover:text-white transition">{t("footer.legal.partners")}</a></li>
-              <li><a href="#" className="hover:text-white transition">{t("footer.legal.faq")}</a></li>
-              <li><a href="#" className="hover:text-white transition">{t("footer.legal.contact")}</a></li>
+              <li><a href="/sponsors" className="hover:text-white transition">{t("footer.legal.partners")}</a></li>
+              <li><a href="/infos" className="hover:text-white transition">{t("footer.legal.faq")}</a></li>
+              <li><a href="/infos" className="hover:text-white transition">{t("footer.legal.contact")}</a></li>
             </ul>
           </div>
         </div>

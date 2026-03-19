@@ -117,7 +117,7 @@ export default function Program() {
       <div className="flex justify-center pt-2 mt-6 px-4">
         <Button
           title={t("pages.home.program.fullAgendaButton")}
-          href="/auth/register"
+          href="/program"
           border="border-white"
           backgroundColor="bg-gradient-to-r from-[#9810FA] to-[#E60076]"
           textColor="text-white"
