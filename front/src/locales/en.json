@@ -349,7 +349,8 @@
     },
 
     "programPublic": {
-    "title": "Festival Program",
+    "title": "Festival",
+    "titleAccent": "PROGRAMME",
     "platform": {
     "title": "The Platform",
     "description": "The epicenter of Marseille’s creative revolution. 4000m² dedicated to image and the future."
@@ -418,6 +419,8 @@
   },
 
   "juryPublic": {
+  "title": "The",
+  "titleAccent": "JURY",
   "presidentTitle": "President",
   "presidentRole": "Director and Screenwriter",
   "presidentBio": "Pierre Schoeller graduated from Louis Lumière School. After years working as a screenwriter, he directed his first fiction film for Arte...",
@@ -458,6 +461,7 @@
 
 "sponsors": {
   "title": "SPONSORS",
+    "titleAccent": "of the Festival",
   "categories": {
     "officiels": "OFFICIAL",
     "medias": "Media",

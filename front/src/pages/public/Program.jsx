@@ -108,9 +108,10 @@ export default function ProgramPublic() {
           </span>
 
           <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black tracking-tight leading-none">
-            <span className="text-white">Le </span>
-            <span className="bg-gradient-to-r from-[#AD46FF] to-[#F6339A] bg-clip-text text-transparent">
-              Programme
+            <span className="bg-gradient-to-r from-[#AD46FF] to-[#F6339A] bg-clip-text text-transparent">{t("pages.programPublic.title") || "programme"} </span>
+              <br/>
+            <span className="text-white">
+              {t("pages.programPublic.titleAccent") || "du Festival"}
             </span>
           </h1>
 

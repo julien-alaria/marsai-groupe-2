@@ -119,9 +119,9 @@ export default function JuryPublic() {
           </span>
 
           <h1 className="text-6xl sm:text-7xl md:text-8xl lg:text-9xl font-black tracking-tight leading-none">
-            <span className="text-white">Le </span>
+            <span className="text-white">{t("pages.juryPublic.title") || "Le"} {""}</span>
             <span className="bg-gradient-to-r from-[#AD46FF] to-[#F6339A] bg-clip-text text-transparent">
-              Jury
+              {t("pages.juryPublic.titleAccent") || "jury"} 
             </span>
           </h1>
 

@@ -111,7 +111,7 @@ export default function Partenaires() {
             <span className="text-white">{t("pages.sponsors.title")} </span>
             <br/>
             <span className="bg-gradient-to-r from-[#AD46FF] to-[#F6339A] bg-clip-text text-transparent">
-              du Festival
+              {t("pages.sponsors.titleAccent") || "du Festival"}
             </span>
           </h1>
 

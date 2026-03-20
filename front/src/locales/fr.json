@@ -345,7 +345,8 @@
     },
 
     "programPublic": {
-      "title": "Programme du festival",
+      "title": "PROGRAMME",
+      "titleAccent": "du Festival",
       "platform": {
      "title": "La plateforme",
      "description": "L'épicentre de la révolution créative marseillaise. 4000m² dédiés à l'image et au futur."
@@ -377,6 +378,8 @@
   },
 
   "juryPublic": {
+  "title": "Le",
+  "titleAccent": "JURY",
   "presidentTitle": "Président",
   "presidentRole": "Réalisateur et scénariste",
   "presidentBio": "Pierre Schoeller est diplômé de l’École Louis Lumière. Après des années de travail comme scénariste, il réalise sa première fiction pour Arte Zero Défaut. Puis un premier long métrage Versailles...",
@@ -417,6 +420,7 @@
 
 "sponsors": {
   "title": "PARTENAIRES",
+  "titleAccent": "du Festival",
   "categories": {
     "officiels": "OFFICIELS",
     "medias": "Médias",
