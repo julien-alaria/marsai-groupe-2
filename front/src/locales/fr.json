@@ -473,6 +473,15 @@
     "copyright": "© 2026 MARS.A.I PROTOCOL • MARSEILLE HUB",
     "design": "DESIGN SYSTÈME CYBER-PREMIUM",
     "legal": "LÉGAL"
+  },
+  "newsletter": {
+    "title": "RESTEZ",
+    "titleAccent": "INFORMÉ",
+    "description": "Inscrivez-vous à notre newsletter pour recevoir les dernières nouvelles et mises à jour du festival.",
+    "placeholder": "Votre adresse e-mail",
+    "button": "S'inscrire",
+    "success": "Merci pour votre inscription !",
+    "error": "Erreur lors de l'inscription. Veuillez réessayer."
   }
 },
 
