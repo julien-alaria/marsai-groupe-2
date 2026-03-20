@@ -1,4 +1,7 @@
 import { useTranslation } from "react-i18next";
+import logoplateforme from "../../assets/images/plateforme_logo.png";
+import logomobilefilm from "../../assets/images/mobile_film_logo.png";
+
 
 export default function Promoters() {
     const { t } = useTranslation();
@@ -8,8 +11,8 @@ export default function Promoters() {
           {t("pages.home.promoters.partnersTitle")}
         </h2>
     <div className="w-full flex items-center justify-center pt-20 pb-3.5 gap-100">
-    <img className="w-100"src="../../src/assets/images/plateforme_logo.png" alt="Logo de la plateforme" />
-    <img className="w-120" src="../../src/assets/images/mobile_film_logo.png" alt="Logo mobile film" />
+     <img className="w-100" src={logoplateforme} alt="Logo de la plateforme" />
+    <img className="w-120" src={logomobilefilm} alt="Logo mobile film" />
       </div>
 </div>
     )
