@@ -130,11 +130,16 @@ export default function JuryManagement() {
   );
 
   /* Films éligibles à l'assignation : tous sauf refused et awarded */
+
+  /* Films éligibles à l'assignation : uniquement les films acceptés par l'admin
+     (statut != submitted, refused, awarded) */
+
   const assignableMovies = useMemo(
     () =>
       allMovies.filter(
         (m) =>
-          !["refused", "awarded"].includes(m.selection_status || "submitted"),
+          // !["refused", "awarded"].includes(m.selection_status || "submitted"),
+         !["submitted", "refused", "awarded"].includes(m.selection_status || "submitted"),
       ),
     [allMovies],
   );
@@ -570,11 +575,13 @@ export default function JuryManagement() {
                     <option value="all" className="bg-[#1a1c20]">
                       Tous les statuts
                     </option>
-                    {Object.entries(STATUS_CONFIG).map(([key, cfg]) => (
-                      <option key={key} value={key} className="bg-[#1a1c20]">
-                        {cfg.label}
-                      </option>
-                    ))}
+                    {Object.entries(STATUS_CONFIG)
+                      .filter(([key]) => key !== "submitted")
+                      .map(([key, cfg]) => (
+                        <option key={key} value={key} className="bg-[#1a1c20]">
+                          {cfg.label}
+                        </option>
+                      ))}
                   </select>
 
                   <button
@@ -602,7 +609,9 @@ export default function JuryManagement() {
                   <div className="flex flex-col items-center py-16 text-white/20">
                     <span className="text-4xl mb-3">🎬</span>
                     <p className="text-xs">
-                      Aucun film disponible pour cette sélection.
+                     {assignableMovies.length === 0
+                        ? "Aucun film accepté. Acceptez des films dans \"Gestion des films\" pour les faire apparaître ici."
+                        : "Aucun film pour cette sélection."}
                     </p>
                   </div>
                 ) : (
@@ -755,8 +764,7 @@ export default function JuryManagement() {
               film(s) à ce membre du jury.
             </p>
             <p className="text-white/40 text-[11px] mb-5">
-              Les films au statut "Soumis" passeront automatiquement en "En
-              évaluation".
+              Seuls les films acceptés par l'admin apparaissent dans cette liste.
             </p>
 
             {/* Liste des films sélectionnés */}

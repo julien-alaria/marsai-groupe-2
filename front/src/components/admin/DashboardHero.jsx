@@ -16,7 +16,10 @@ export default function DashboardHero() {
   const active = data?.active === true;
 
   function handleConnect() {
-    const apiBase = import.meta.env.VITE_API_BASE_URL || "http://localhost:3000";
+    // FIX: utiliser VITE_API_URL (cohérent avec tout le reste du projet)
+    // La version précédente utilisait VITE_API_BASE_URL qui n'est définie nulle part
+    // dans .env.local, rendant la connexion YouTube impossible en production.
+    const apiBase = import.meta.env.VITE_API_URL || "http://localhost:3000";
     window.open(`${apiBase}/google/auth`, "_blank");
     setTimeout(() => refetch(), 5000);
     setTimeout(() => refetch(), 12000);
@@ -109,11 +112,6 @@ export default function DashboardHero() {
           <span className="text-[10px] sm:text-xs text-white/60">Édition</span>
           <p className="text-xs sm:text-sm font-medium text-white">2026</p>
         </div>
-        {/* <div className="h-4 sm:h-8 w-px bg-white/10" /> */}
-        {/* <div className="text-right">
-          <span className="text-[10px] sm:text-xs text-white/60">Statut</span>
-          <p className="text-xs sm:text-sm font-medium text-green-400">Actif</p>
-        </div> */}
       </div>
 
       {/* Decorative badge */}

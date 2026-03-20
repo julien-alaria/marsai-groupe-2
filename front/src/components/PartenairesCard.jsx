@@ -1,43 +1,36 @@
-const colors = [
-  "#F6339A",
-  "#4ECDC4",
-  "#00A8E1",
-  "#9B5DE5",
-  "#F7B801"
-];
+/**
+ * PartenaireCard
+ *
+ * FIX: remplace http://localhost:3000 hardcodé par VITE_API_URL (env var)
+ * FIX: plus de inline styles pour border/boxShadow — Tailwind uniquement
+ */
 
-let colorIndex = 0;
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
-export default function PartenaireCard({ name, logo, color, url }) {
-  const finalColor = color || colors[colorIndex % colors.length];
+export default function PartenaireCard({ name, logo, url }) {
+  const logoSrc = logo ? `${API_BASE}${logo}` : null;
 
-  if (!color) {
-    colorIndex++;
+  const card = (
+    <div className="group flex flex-col items-center justify-center gap-4 bg-white/[0.04] border border-white/10 rounded-2xl p-6 w-52 h-40 transition-all duration-400 hover:border-[#AD46FF]/40 hover:bg-white/[0.07] hover:shadow-[0_0_30px_rgba(173,70,255,0.18)] hover:-translate-y-0.5 cursor-pointer">
+      {logoSrc ? (
+        <img
+          src={logoSrc}
+          alt={name || "Partenaire"}
+          className="max-h-20 max-w-full object-contain transition-transform duration-400 group-hover:scale-105"
+        />
+      ) : (
+        <span className="text-white/20 text-sm font-medium">{name || "—"}</span>
+      )}
+    </div>
+  );
+
+  if (url) {
+    return (
+      <a href={url} target="_blank" rel="noopener noreferrer" className="block">
+        {card}
+      </a>
+    );
   }
 
-  return (
-    <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block bg-gray-200 w-80 p-4 rounded-[40px] transition-shadow"
-      style={{ border: `2px solid ${finalColor}` }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.boxShadow = `0 0 15px ${finalColor}`;
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.boxShadow = `0 0 0 transparent`;
-      }}
-    >
-      <div className="w-full h-40 flex items-center justify-center mb-3">
-        <img
-          src={`http://localhost:3000${logo}`}
-          alt={name}
-          className="max-h-full object-contain"
-        />
-      </div>
-
-      <h3 className="text-center font-semibold">{name}</h3>
-    </a>
-  );
+  return card;
 }

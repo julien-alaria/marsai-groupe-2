@@ -1,38 +1,45 @@
-
 import { useTranslation } from "react-i18next";
-import OneCard from "./cards/OneCard";
+
 export default function Statistics() {
   const { t } = useTranslation();
-  return (
 
-<div className="w-full grid grid-cols-1 md:grid-cols-3 gap-20 place-items-center"> 
-    <div className="w-full md:max-w-95"> 
-        <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-left text-white uppercase leading-tight"> 
-            {t("pages.home.statistics.title")} <span className="text-[#F6339A]">{t("pages.home.statistics.titleAccent")}</span> </h2> 
-            <p className="text-white text-base uppercase pt-6"> {t("pages.home.statistics.description")} </p> 
-            </div>
-<div className="w-full md:max-w-95">
-    <OneCard
-      width="200"
-      textSize="text-lg sm:text-xl md:text-5xl"
-      title={t("pages.home.statistics.card1Title")}
-      description={t("pages.home.statistics.card1Description")}
-      accentColor="#2B7FFF"
-      borderColor="border-[rgba(43,127,255,0.40)]"
-      hoverShadow="hover:shadow-[0_0_40px_rgba(43,127,255,0.7)]"
-    />
-    </div>
-<div className="w-full md:max-w-95">
-    <OneCard
-      width="200"
-      textSize="text-lg sm:text-xl md:text-5xl"
-      title={t("pages.home.statistics.card2Title")}
-      description={t("pages.home.statistics.card2Description")}
-      accentColor="#C27AFF"
-      borderColor="border-[rgba(194,122,255,0.40)]"
-      hoverShadow="hover:shadow-[0_0_40px_rgba(173,70,255,0.7)]"
-    />
-  </div>
-</div>
-    );
+  return (
+    <section className="max-w-6xl mx-auto px-6 py-24">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-10 items-center">
+
+        {/* Left — title */}
+        <div className="flex flex-col gap-5">
+          <h2 className="text-4xl sm:text-5xl font-black tracking-tight uppercase leading-tight">
+            <span className="text-white">{t("pages.home.statistics.title")} </span>
+            <span className="bg-gradient-to-r from-[#AD46FF] to-[#F6339A] bg-clip-text text-transparent">
+              {t("pages.home.statistics.titleAccent")}
+            </span>
+          </h2>
+          <div className="h-px w-20 bg-gradient-to-r from-[#AD46FF]/40 to-transparent" />
+          <p className="text-white/40 text-sm uppercase tracking-widest font-medium">
+            {t("pages.home.statistics.description")}
+          </p>
+        </div>
+
+        {/* Stat cards */}
+        {[
+          { titleKey: "card1Title", descKey: "card1Description", accent: "text-[#2B7FFF]", border: "border-[#2B7FFF]/20", bar: "bg-[#2B7FFF]", glow: "hover:shadow-[0_0_40px_rgba(43,127,255,0.18)]" },
+          { titleKey: "card2Title", descKey: "card2Description", accent: "text-[#AD46FF]", border: "border-[#AD46FF]/20", bar: "bg-[#AD46FF]", glow: "hover:shadow-[0_0_40px_rgba(173,70,255,0.18)]" },
+        ].map((s) => (
+          <div
+            key={s.titleKey}
+            className={`group flex flex-col items-center justify-center gap-4 p-10 bg-white/[0.03] border ${s.border} rounded-3xl text-center transition-all duration-400 ${s.glow} hover:-translate-y-1`}
+          >
+            <h3 className={`text-5xl sm:text-6xl font-black tabular-nums ${s.accent}`}>
+              {t(`pages.home.statistics.${s.titleKey}`)}
+            </h3>
+            <div className={`h-0.5 w-8 rounded-full ${s.bar} transition-all duration-500 group-hover:w-3/4`} />
+            <p className="text-white/40 text-sm uppercase tracking-widest font-medium">
+              {t(`pages.home.statistics.${s.descKey}`)}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }

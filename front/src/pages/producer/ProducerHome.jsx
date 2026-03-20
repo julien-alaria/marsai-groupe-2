@@ -186,7 +186,13 @@ export default function ProducerHome() {
   /* FIX PRINCIPAL: thumbnails = 3 slots nommés (backend attend thumbnail1/2/3) */
   const [thumbFiles, setThumbFiles] = useState([null, null, null]);
   const [thumbNames, setThumbNames] = useState(["", "", ""]);
-  const thumbRefs = [useRef(null), useRef(null), useRef(null)];
+  // FIX (Rules of Hooks): useRef ne peut pas être appelé dans un tableau.
+  // Déclaration en trois refs séparées puis regroupées en array constant.
+  const thumbRef0 = useRef(null);
+  const thumbRef1 = useRef(null);
+  const thumbRef2 = useRef(null);
+  // thumbRefs est un array stable (référence fixe) — pas un hook lui-même.
+  const thumbRefs = [thumbRef0, thumbRef1, thumbRef2];
 
   /* ── React Hook Form ── */
   const {
@@ -359,6 +365,18 @@ export default function ProducerHome() {
       });
   }, []);
 
+  // FIX (fuite mémoire): nettoyer l'intervalle de polling si le composant est démonté
+  // avant que le watcher ait fini de traiter la vidéo. Sans ce cleanup, setMovies()
+  // serait appelé sur un composant démonté → avertissement React + fuite mémoire.
+  useEffect(() => {
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, []);
+
   /* ── Helpers ── */
   function resetForm() {
     setFormStep(1);
@@ -499,7 +517,7 @@ export default function ProducerHome() {
                   Espace Producteur
                 </h1>
                 <p className="text-white/55 mt-1 text-sm font-medium uppercase tracking-wide">
-                  {user.last_name} {user.first_name} 
+                  {user.first_name} {user.last_name}
                   <span className="ml-2 text-[10px] px-2 py-0.5 rounded-full bg-[#AD46FF]/15 text-[#AD46FF]/80 border border-[#AD46FF]/20 font-medium tracking-wide uppercase">
                     Producteur
                   </span>
@@ -516,8 +534,7 @@ export default function ProducerHome() {
                 </div>
                 <div className="w-px h-10 bg-white/10" />
                 <div className="w-10 h-10 rounded-2xl bg-[#AD46FF]/10 text-[#AD46FF]/70 border border-[#AD46FF]/50 flex items-center justify-center font-bold text-sm shadow-lg shadow-[#AD46FF]/20">
-                    {user.last_name?.[0]}
-                  {user.first_name?.[0]}
+                    {user.first_name?.[0]}{user.last_name?.[0]} {/* FIX: ordre prénom + nom */}
                 </div>
               </div>
             </div>
@@ -558,13 +575,13 @@ export default function ProducerHome() {
                     { name: "first_name", label: "Prénom", type: "text" },
                     { name: "last_name", label: "Nom", type: "text" },
                     { name: "phone", label: "Téléphone", type: "text" },
-                    { name: "nationality", label: "Nationalité", type: "text" },
+                    { name: "country", label: "Pays", type: "text" },
                     {
                       name: "biography",
                       label: "Biographie",
                       type: "textarea",
                     },
-                    { name: "website", label: "Site web", type: "text" },
+                    { name: "portfolio", label: "Site web", type: "text" },
                   ].map(({ name, label, type }) => (
                     <div
                       key={name}
@@ -1252,7 +1269,8 @@ export default function ProducerHome() {
                             disabled={
                               createMovieMutation.isPending ||
                               !acceptTerms ||
-                              !filmFileName
+                              // FIX: vérifier le ref directement (source de vérité) au lieu du state filmFileName
+                              !filmFileRef.current?.files?.[0]
                             }
                             className="px-5 py-2 bg-gradient-to-r from-[#AD46FF]/80 to-[#F6339A]/80 hover:from-[#AD46FF] hover:to-[#F6339A] text-white rounded-xl text-sm font-semibold transition-all duration-200 disabled:opacity-30 disabled:cursor-not-allowed"
                           >
@@ -1663,7 +1681,7 @@ export default function ProducerHome() {
                     {/* ── Vignettes ── */}
                     {(() => {
                       const imgs = [
-                        // selectedMovie.thumbnail,
+                        selectedMovie.thumbnail,  // FIX: décommenté — champ prioritaire de getPoster()
                         selectedMovie.display_picture,
                         selectedMovie.picture1,
                         selectedMovie.picture2,

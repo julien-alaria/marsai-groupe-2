@@ -1,13 +1,11 @@
 /**
  * JuryHome — Espace jury
  *
- * Corrections ciblées sur le fichier original :
- *  - Dossier "À voter" séparé en "1ère Votation" et "2ème Votation"
- *  - "Votes enregistrés" : filtre corrigé (tous les films ayant un vote)
- *  - Options de vote : emojis → SVG inline
- *  - Après fin de vidéo : mini-modale rapide (3 boutons Accepter / Discuter / Rejeter)
- *  - Badge "Mode second vote" → "2ème Votation"
- *  - Libellé du bouton submit contextuel (1er vote / 2e vote)
+ * FIXES appliqués :
+ *  - canReject : ne force plus le revisionnage si un vote existant est déjà enregistré
+ *  - confirmedWatched reset : conservé uniquement si aucun vote n'existe pour le film
+ *  - Dead code supprimé : FlatRow, MetaCard, MetaRow (jamais rendus)
+ *  - Dead code supprimé : GRAIN_INSIDE = null dans MovieGrid
  */
 
 import { useState } from "react";
@@ -45,7 +43,7 @@ function IconChat() {
   );
 }
 
-/* ─── Correspondance ENUM → libellé ──────────────────── */
+/* ─── Grain texture ───────────────────────────────────── */
 const GRAIN = `url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
 
 const VOTE_LABELS = {
@@ -162,7 +160,12 @@ export default function JuryHome() {
       commentaire: existingVote?.comments || "",
     });
     setHasWatched(false);
-    setConfirmedWatched(false);
+    // FIX: ne reset confirmedWatched que si aucun vote n'existe encore pour ce film.
+    // Si un vote existe déjà, le juré a forcément déjà confirmé avoir regardé le film —
+    // l'obliger à re-cocher la case à chaque réouverture de modale est inutile et frustrant.
+    if (!existingVote) {
+      setConfirmedWatched(false);
+    }
     setSelectedMovie(movie);
   }
 
@@ -186,13 +189,15 @@ export default function JuryHome() {
   const selectedVote     = selectedMovie ? getVote(selectedMovie) : null;
   const isSecondVoteOpen = selectedMovie?.selection_status === "to_discuss";
   const canEditVote      = selectedMovie ? !selectedVote || isSecondVoteOpen : false;
+  const watchedOk  = selectedMovie ? (getTrailer(selectedMovie) ? hasWatched : confirmedWatched) : false;
   const voteAllowed =
     selectedMovie
-      ? (getTrailer(selectedMovie) ? hasWatched : confirmedWatched) && canEditVote
+      ? watchedOk && canEditVote
       : false;
-  const watchedOk  = selectedMovie ? (getTrailer(selectedMovie) ? hasWatched : confirmedWatched) : false;
   const canPromote = isSecondVoteOpen && watchedOk;
-  const canReject  = isSecondVoteOpen && watchedOk;
+  // FIX: canReject ne force plus le revisionnage si un vote existe déjà.
+  // Un juré qui a déjà voté (phase 1 ou 2) peut rejeter sans re-visionner.
+  const canReject  = isSecondVoteOpen && (watchedOk || !!selectedVote);
 
   /* ── Statistiques de progression ── */
   const totalAssigned = assignedMovies.length;
@@ -707,7 +712,6 @@ function MovieGrid({ movies, votesByMovie, emptyText, onSelect, showVoteBadge, s
     );
   }
 
-  const GRAIN_INSIDE = null; // moved to module level
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
       {movies.map((movie) => {
@@ -821,15 +825,6 @@ function VotePill({ note, tiny }) {
   );
 }
 
-function FlatRow({ label, value }) {
-  return (
-    <div className="flex gap-1.5">
-      <span className="text-[10px] text-white/20 shrink-0 w-14">{label}</span>
-      <span className="text-[10px] text-white/50 truncate">{value}</span>
-    </div>
-  );
-}
-
 function ModalBlock({ title, children }) {
   return (
     <div className="bg-white/3 border border-white/6 rounded-xl p-2">
@@ -843,24 +838,6 @@ function ModalRow({ label, value }) {
   return (
     <div className="flex gap-1.5 mb-0.5 last:mb-0">
       <span className="text-white/20 text-[11px] shrink-0">{label} :</span>
-      <span className="text-white/50 text-[11px] truncate">{value}</span>
-    </div>
-  );
-}
-
-function MetaCard({ title, children }) {
-  return (
-    <div className="bg-white/3 border border-white/6 rounded-2xl p-4">
-      <p className="text-[10px] tracking-widest uppercase text-white/20 font-medium mb-3">{title}</p>
-      {children}
-    </div>
-  );
-}
-
-function MetaRow({ label, value }) {
-  return (
-    <div className="flex gap-1.5 mb-1.5 last:mb-0">
-      <span className="text-white/25 text-xs shrink-0 w-24">{label}</span>
       <span className="text-white/50 text-[11px] truncate">{value}</span>
     </div>
   );

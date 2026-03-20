@@ -37,6 +37,15 @@ function generatePosterFromVideo(videoFilename) {
 
 //////////////////////////////////////////////////////////// Récupérer tous les films
 
+/**
+ * GET /movies — route PUBLIQUE (pas d'AuthMiddleware)
+ *
+ * FIX SÉCURITÉ: La version précédente exposait les emails et rôles des jurés
+ * (NominatorJury.email, Juries.email, Juries.role) dans une réponse publique
+ * accessible sans authentification. Ces champs sont retirés de la projection.
+ * L'association Juries entière est supprimée de la réponse publique car elle
+ * n'est utile qu'à l'admin (géré dans getMovieById via route authentiée séparée).
+ */
 async function getMovies(req, res) {
   try {
     const movies = await Movie.findAll({
@@ -54,23 +63,20 @@ async function getMovies(req, res) {
           required: false
         },
         {
+          // Producteur : prénom + nom uniquement, pas d'email
           model: User,
           as: "Producer",
           attributes: ["id_user", "first_name", "last_name"]
         },
         {
+          // NominatorJury : sans email pour la route publique
           model: User,
           as: "NominatorJury",
-          attributes: ["id_user", "first_name", "last_name", "email"],
-          required: false
-        },
-        {
-          model: User,
-          as: "Juries",
-          attributes: ["id_user", "first_name", "last_name", "email", "role"],
-          through: { attributes: [] },
+          attributes: ["id_user", "first_name", "last_name"],
           required: false
         }
+        // FIX: Juries retiré de la réponse publique — emails et rôles ne doivent
+        // pas être exposés sans authentification.
       ]
     });
 
@@ -409,14 +415,11 @@ async function updateMovie(req, res) {
 
 
 // FIX B-04: helper pour supprimer un fichier en cherchant dans uploads/ ET uploads/uploaded/
-// Le watcher YouTube déplace les vidéos dans uploaded/ avec un préfixe timestamp,
-// donc il faut chercher aux deux endroits pour garantir la suppression.
 function unlinkUploadFile(filename) {
   if (!filename) return;
   const candidates = [
     path.join(uploadDir, filename),
     path.join(uploadedDir, filename),
-    // Si filename contient déjà "uploaded/" comme préfixe (chemin relatif stocké en DB)
     path.join(uploadDir, filename.replace(/^uploaded\//, ""))
   ];
   for (const filePath of candidates) {
@@ -437,9 +440,6 @@ function unlinkUploadFile(filename) {
 async function deleteMovie(req, res) {
   try {
     const { id } = req.params;
-    /* BUG #4 FIX: AuthMiddleware sets req.user, NOT req.userId.
-       Using req.userId was always undefined → ownership check was
-       always false → any PRODUCER could delete any film. */
     const userId = req.user.id_user;
     const userRole = req.user?.role;
 
@@ -449,12 +449,11 @@ async function deleteMovie(req, res) {
       return res.status(404).json({ error: "Film non trouvé" });
     }
 
-    // Se l'utente è PRODUCER, verifica che sia il proprietario del film
+    // PRODUCER ne peut supprimer que son propre film
     if (userRole === "PRODUCER" && movie.id_user !== userId) {
       return res.status(403).json({ error: "Vous n'êtes pas autorisé à supprimer ce film" });
     }
 
-    // FIX B-04: Utilise unlinkUploadFile qui cherche dans uploads/ ET uploads/uploaded/
     const fileFields = ["trailer", "display_picture", "picture1", "picture2", "picture3", "thumbnail", "subtitle"];
     for (const field of fileFields) {
       unlinkUploadFile(movie[field]);
@@ -507,12 +506,6 @@ async function updateMovieStatus(req, res) {
 
     const previousStatus = movie.selection_status;
 
-    // FIX B-02: transitionMap complétée avec toutes les transitions manquantes :
-    //   • to_discuss  → selected, finalist  (étaient absentes → "Passer en Sélection/Finaliste" bloqué)
-    //   • selected    → finalist            (manquait → "Passer Finaliste" bloqué depuis Sélectionné)
-    //   • candidate   → finalist            (manquait → cohérence avec selected)
-    //   • awarded     → finalist            (manquait → "Retirer du palmarès" bloqué)
-    //   • refused     → submitted           (manquait → "Remettre en attente" bloqué)
     const transitionMap = {
       submitted:  ["assigned", "candidate", "refused"],
       assigned:   ["to_discuss", "candidate", "refused"],
@@ -601,7 +594,6 @@ async function promoteMovieToCandidateByJury(req, res) {
       return res.status(400).json({ error: "Le film doit être en statut to_discuss pour proposer une candidature." });
     }
 
-    // Proposition jury: l'admin doit valider/refuser ensuite.
     movie.selection_status = "selected";
     movie.assigned_jury_id = id_user;
     if (typeof jury_comment === "string") {
@@ -746,7 +738,6 @@ async function updateMovieJuries(req, res) {
 
     await movie.setJuries(juries);
 
-    // Si au moins un jury est assigné et le statut n'est pas encore avancé → passer à "assigned"
     const advancedStatuses = ["to_discuss", "candidate", "selected", "finalist", "awarded", "refused"];
     if (juries.length > 0 && !advancedStatuses.includes(movie.selection_status)) {
       movie.selection_status = "assigned";
@@ -828,11 +819,6 @@ async function updateMovieCollaborators(req, res) {
 
     await movie.setCollaborators(collaboratorRecords);
 
-    // FIX B-01: Le bloc ci-dessous (gestion des fichiers + mise à jour du film) contenait
-    // du code orphelin copié depuis updateMovieJuries qui référençait une variable "juries"
-    // inexistante dans ce contexte → ReferenceError à chaque appel.
-    // Correction : le code orphelin (movie.setJuries / advancedStatuses) est supprimé.
-    // Seule la gestion légitime des fichiers uploadés est conservée.
     if (req.user.role === "ADMIN" || movie.id_user === req.user.id_user) {
       const files = req.files || {};
       const filmFile = files.filmFile?.[0]?.filename || null;
@@ -842,7 +828,6 @@ async function updateMovieCollaborators(req, res) {
       const subtitleFile = files.subtitlesSrt?.[0]?.filename || null;
 
       const updateData = { ...req.body };
-      // Supprimer les champs non-colonne qui viendraient du body pour éviter les erreurs Sequelize
       delete updateData.collaborators;
 
       if (filmFile) updateData.trailer = filmFile;
@@ -868,8 +853,6 @@ async function updateMovieCollaborators(req, res) {
 }
 
 async function phase2Movies(req, res) {
-  // Phase 2 publique : films en délibération / sélectionnés / finalistes
-  // Statuts éligibles : to_discuss, selected, candidate, finalist
   try {
     const phase2 = await Movie.findAll({
       where: {
@@ -891,7 +874,6 @@ async function phase2Movies(req, res) {
 }
 
 async function phase3Movies(req, res) {
-  // Phase 3 publique : palmarès — films primés uniquement
   try {
     const movies = await Movie.findAll({
       where: {
@@ -911,10 +893,6 @@ async function phase3Movies(req, res) {
     });
   }
 }
-
-
-
-
 
 export default {
   getMovies,

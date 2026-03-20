@@ -1,48 +1,33 @@
 import { useTranslation } from "react-i18next";
-import FourCards from "./cards/FourCards";
+
+const CARDS = [
+  { key: "card1", accent: "text-[#AD46FF]", border: "border-[#AD46FF]/20", bg: "bg-[#AD46FF]/10", bar: "bg-[#AD46FF]", glow: "hover:shadow-[0_0_40px_rgba(173,70,255,0.15)]" },
+  { key: "card2", accent: "text-[#00D492]", border: "border-[#00D492]/20", bg: "bg-[#00D492]/10", bar: "bg-[#00D492]", glow: "hover:shadow-[0_0_40px_rgba(0,212,146,0.15)]"  },
+  { key: "card3", accent: "text-[#F6339A]", border: "border-[#F6339A]/20", bg: "bg-[#F6339A]/10", bar: "bg-[#F6339A]", glow: "hover:shadow-[0_0_40px_rgba(246,51,154,0.15)]"  },
+  { key: "card4", accent: "text-[#2B7FFF]", border: "border-[#2B7FFF]/20", bg: "bg-[#2B7FFF]/10", bar: "bg-[#2B7FFF]", glow: "hover:shadow-[0_0_40px_rgba(43,127,255,0.15)]"  },
+];
 
 export default function Reassure() {
   const { t } = useTranslation();
 
   return (
-<div className="pt-12 pb-12 w-full grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-4 place-items-center gap-10">
-
-      <FourCards
-        title={t("pages.home.reassure.card1.title")}
-        description={t("pages.home.reassure.card1.description")}
-        accentColor="#C27AFF"
-        borderColor="border-[rgba(194,122,255,0.40)]"
-        hoverBorderColor="hover:border-[#C27AFF]"
-        hoverShadow="hover:shadow-[0_0_40px_rgba(173,70,255,0.7)]"
-      />
-
-      <FourCards
-        title={t("pages.home.reassure.card2.title")}
-        description={t("pages.home.reassure.card2.description")}
-        accentColor="#00D492"
-        borderColor="border-[rgba(0,212,146,0.40)]"
-        hoverBorderColor="hover:border-[#00D492]"
-        hoverShadow="hover:shadow-[0_0_40px_rgba(0,212,146,0.7)]"
-      />
-
-      <FourCards
-        title={t("pages.home.reassure.card3.title")}
-        description={t("pages.home.reassure.card3.description")}
-        accentColor="#FB64B6"
-        borderColor="border-[rgba(251,100,182,0.40)]"
-        hoverBorderColor="hover:border-[#FB64B6]"
-        hoverShadow="hover:shadow-[0_0_40px_rgba(251,100,182,0.7)]"
-      />
-
-      <FourCards
-        title={t("pages.home.reassure.card4.title")}
-        description={t("pages.home.reassure.card4.description")}
-        accentColor="#2B7FFF"
-        borderColor="border-[rgba(43,127,255,0.40)]"
-        hoverBorderColor="hover:border-[#2B7FFF]"
-        hoverShadow="hover:shadow-[0_0_40px_rgba(43,127,255,0.7)]"
-      />
-
-    </div>
+    <section className="max-w-6xl mx-auto px-6 py-20">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {CARDS.map((c) => (
+          <div
+            key={c.key}
+            className={`group flex flex-col items-center justify-center gap-3 p-8 bg-white/[0.03] border ${c.border} rounded-3xl text-center transition-all duration-400 ${c.glow} hover:-translate-y-1`}
+          >
+            <h3 className={`text-3xl sm:text-4xl font-black tracking-tight ${c.accent}`}>
+              {t(`pages.home.reassure.${c.key}.title`)}
+            </h3>
+            <div className={`h-0.5 w-8 rounded-full ${c.bar} transition-all duration-500 group-hover:w-3/4`} />
+            <p className="text-white/45 text-sm leading-relaxed">
+              {t(`pages.home.reassure.${c.key}.description`)}
+            </p>
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }
